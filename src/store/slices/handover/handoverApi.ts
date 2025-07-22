@@ -9,7 +9,7 @@ export const handoverApi = apiSlice.injectEndpoints({
     // Create Handover Report
     createHandover: builder.mutation({
       query: (file: FormData) => ({
-        url: '/api/handover/create',
+        url: 'handover/create',
         method: 'POST',
         body: file,
         credentials: 'include' as const,
@@ -22,7 +22,7 @@ export const handoverApi = apiSlice.injectEndpoints({
     // Get My Reports
     getMyHandoverReport: builder.query({
       query: () => ({
-        url: '/api/handover/report',
+        url: 'handover/report',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -31,7 +31,7 @@ export const handoverApi = apiSlice.injectEndpoints({
     // team get by department  Reports
     teamGetHandoverReportByDepartment: builder.query({
       query: () => ({
-        url: '/api/handover/reports',
+        url: 'handover/reports',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -41,7 +41,7 @@ export const handoverApi = apiSlice.injectEndpoints({
     // handoverApi.ts
     deleteHandoverById: builder.mutation({
       query: (id: string) => ({
-        url: `/api/handover/report/${id}`,
+        url: `handover/report/${id}`,
         method: 'DELETE',
         credentials: 'include' as const,
       }),

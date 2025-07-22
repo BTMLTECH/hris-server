@@ -26,7 +26,7 @@ export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // register: builder.mutation<RegistrationData, RegistrationData>({
     //   query: (data) => ({
-    //     url: '/api/auth/register',
+    //     url: 'auth/register',
     //     method: 'POST',
     //     body: data,
     //     credentials: 'include' as const,
@@ -48,7 +48,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     activation: builder.mutation({
       query: ({ activation_token, activation_code }) => ({
-        url: '/api/auth/activate-user',
+        url: 'auth/activate-user',
         method: 'POST',
         body: { activation_token, activation_code },
       }),
@@ -56,7 +56,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     login: builder.mutation<LoginResponse, { email: string; password: string }>({
       query: ({ email, password }) => ({
-        url: '/api/auth/login',
+        url: 'auth/login',
         method: 'POST',
         body: { email, password },
         credentials: 'include' as const,
@@ -66,7 +66,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     requestPassword: builder.mutation({
       query: ({ email }) => ({
-        url: '/api/auth/request-password',
+        url: 'auth/request-password',
         method: 'POST',
         body: { email },
         credentials: 'include' as const,
@@ -76,7 +76,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     verify2fa: builder.mutation({
       query: ({ email, code }) => ({
-        url: '/api/auth/verify-2fa',
+        url: 'auth/verify-2fa',
         method: 'POST',
         body: { email, code },
         credentials: 'include' as const,
@@ -86,7 +86,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     resetPassword: builder.mutation({
       query: ({ email }: ResetPasswordData) => ({
-        url: '/api/auth/reset-user-password',
+        url: 'auth/reset-user-password',
         method: 'PUT',
         body: { email },
         credentials: 'include' as const,
@@ -95,7 +95,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     resendPassword: builder.mutation({
       query: ({ email }: ResetPasswordData) => ({
-        url: '/api/auth/resend-password',
+        url: 'auth/resend-password',
         method: 'POST',
         body: { email },
         credentials: 'include' as const,
@@ -103,10 +103,10 @@ export const authApi = apiSlice.injectEndpoints({
     }),  
 
     newSetPassword: builder.mutation({
-      query: ({ newPassword, passwordConfig, temporaryPassword }) => ({
-        url: '/api/auth/set-password',
+      query: ({ newPassword, passwordConfig, temporaryPassword, token }) => ({
+        url: 'auth/set-password',
         method: 'POST',
-        body: { newPassword, passwordConfig, temporaryPassword },
+        body: { newPassword, passwordConfig, temporaryPassword , token},
         credentials: 'include' as const,
       }),
     }),  
@@ -114,7 +114,7 @@ export const authApi = apiSlice.injectEndpoints({
     
     inviteUser: builder.mutation({
       query: (data) => ({
-        url: '/api/auth/invite-user',
+        url: 'auth/invite-user',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
@@ -123,7 +123,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     resendIviteLink: builder.mutation({
       query: (email) => ({
-        url: '/api/auth/reset-activation',
+        url: 'auth/reset-activation',
         method: 'POST',
         body: email,
         credentials: 'include' as const,
@@ -133,7 +133,7 @@ export const authApi = apiSlice.injectEndpoints({
 
     bulkInviteUsers: builder.mutation({
       query: (formData) => ({
-        url: '/api/auth/bulk-invite',
+        url: 'auth/bulk-invite',
         method: 'POST',
         body: formData,
         credentials: 'include' as const,
@@ -143,7 +143,7 @@ export const authApi = apiSlice.injectEndpoints({
  
     logoutUser: builder.mutation({
       query: () => ({
-        url: '/api/auth/logout',
+        url: 'auth/logout',
         method: 'POST',
         credentials: 'include' as const,
       }),

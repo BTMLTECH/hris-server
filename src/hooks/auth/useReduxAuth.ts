@@ -120,9 +120,9 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
   }
 };
 
-  const setNewPassword = async (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string): Promise<boolean> => {
+  const setNewPassword = async (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string): Promise<boolean> => {
     try {
-      await newSetPassword({ newPassword, passwordConfig, temporaryPassword }).unwrap();
+      await newSetPassword({ newPassword, passwordConfig, temporaryPassword , token}).unwrap();
       toast({
         title: 'Password set successfully',
         description: 'You can now log in.',

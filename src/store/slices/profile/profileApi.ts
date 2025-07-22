@@ -9,7 +9,7 @@ export const profileApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     editProfile: builder.mutation({
       query: (data) => ({
-        url: '/api/user/me',
+        url: 'user/me',
         method: 'PUT',
         body: data,
         credentials: 'include' as const,
@@ -19,7 +19,7 @@ export const profileApi = apiSlice.injectEndpoints({
 
     uploadProfile: builder.mutation({
       query: (file:FormData) => ({
-        url: '/api/user/upload',
+        url: 'user/upload',
         method: 'PUT',
         body: file,
         credentials: 'include' as const,
@@ -31,7 +31,7 @@ export const profileApi = apiSlice.injectEndpoints({
 
     getProfile: builder.query({
       query: () => ({
-        url: '/api/user/me',
+        url: 'user/me',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -40,7 +40,7 @@ export const profileApi = apiSlice.injectEndpoints({
 
     getAllProfile: builder.query({
       query: () => ({
-        url: '/api/user/users',
+        url: 'user/users',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -49,7 +49,7 @@ export const profileApi = apiSlice.injectEndpoints({
 
     deleteProfile: builder.mutation({
       query: (id) => ({
-        url: `/api/user/${id}`,
+        url: `user/${id}`,
         method: 'DELETE',
         credentials: 'include' as const,
       }),

@@ -80,7 +80,7 @@ export interface AuthContextType {
   resend2fa: (email: string) => Promise<boolean>;
   reqestNewPassword: (email: string) => Promise<boolean>;
   resendInvite: (email: string) => Promise<boolean>;
-  setNewPassword: (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string) => Promise<boolean>;
+  setNewPassword: (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string) => Promise<boolean>;
   logout: () => void;
   inviteUser: (userData: Partial<User>) => Promise<boolean>;
   bulkInviteUsers: (formData: FormData) => Promise<boolean>;  

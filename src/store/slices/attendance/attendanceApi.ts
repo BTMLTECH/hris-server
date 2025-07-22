@@ -10,7 +10,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Biometry Check-In
     biometryCheckIn: builder.mutation({
       query: (data) => ({
-        url: '/api/attendance/biometry-check-in',
+        url: 'attendance/biometry-check-in',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
@@ -20,7 +20,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Biometry Check-Out
     biometryCheckOut: builder.mutation({
       query: (data) => ({
-        url: '/api/attendance/biometry-check-out',
+        url: 'attendance/biometry-check-out',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
@@ -30,7 +30,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Manual Check-In
     manualCheckIn: builder.mutation({
       query: (data) => ({
-        url: '/api/attendance/check-in',
+        url: 'attendance/check-in',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
@@ -40,7 +40,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Manual Check-Out
     manualCheckOut: builder.mutation({
       query: (data) => ({
-        url: '/api/attendance/check-out',
+        url: 'attendance/check-out',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
@@ -50,7 +50,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Get My Attendance History
     getMyAttendanceHistory: builder.query({
       query: () => ({
-        url: '/api/attendance/my-history',
+        url: 'attendance/my-history',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -59,7 +59,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Get Admin Attendance Report
     adminAttendanceReport: builder.query({
       query: () => ({
-        url: '/api/attendance/admin/report',
+        url: 'attendance/admin/report',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -68,7 +68,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // // Get My Attendance Stats
     // getMyAttendanceStats: builder.query({
     //   query: () => ({
-    //     url: '/api/attendance/my-stats',
+    //     url: 'attendance/my-stats',
     //     method: 'GET',
     //     credentials: 'include' as const,
     //   }),
@@ -77,7 +77,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Get Company Attendance Summary
     getCompanyAttendanceSummary: builder.query({
       query: () => ({
-        url: '/api/attendance/company-summary',
+        url: 'attendance/company-summary',
         method: 'GET',
         credentials: 'include' as const,
       }),
@@ -86,7 +86,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
     // Export Attendance Data to Excel
     exportAttendanceExcel: builder.query({
       query: () => ({
-        url: '/api/attendance/admin/export-excel',
+        url: 'attendance/admin/export-excel',
         method: 'GET',
         credentials: 'include' as const,
       }),
