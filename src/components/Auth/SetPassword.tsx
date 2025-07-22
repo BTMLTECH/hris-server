@@ -111,9 +111,16 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h2 className="text-2xl font-bold mb-2">Password Set Successfully!</h2>
             <p className="text-gray-600 mb-6">You can now log in to your account using your new password.</p>
-            <Button className="w-full" onClick={() => window.location.href = '/login'}>
-              Go to Login
-            </Button>
+           
+ <Button
+            className="w-full"
+            onClick={() =>
+              window.location.href = 'http://staging-hris.btmlimited.net'
+            }
+          >
+            Go to Login
+          </Button>
+
           </CardContent>
         </Card>
       </div>
@@ -148,7 +155,7 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tempPassword">Temporary Password</Label>
+              <Label htmlFor="tempPassword">Activation Code</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
@@ -156,7 +163,7 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
                   type={showTempPassword ? "text" : "password"}
                   value={tempPassword}
                   onChange={(e) => setTempPassword(e.target.value)}
-                  placeholder="Enter temporary password"
+                  placeholder="Enter your activation code"
                   className="pl-10 pr-10"
                   required
                 />
