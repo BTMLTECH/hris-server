@@ -95,13 +95,7 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
   if (success) {
     setIsSuccess(true);
   }
-    // setTimeout(() => {
-    //   setIsSuccess(true);
-    //   toast({
-    //     title: "Password Set Successfully",
-    //     description: "You can now log in with your new password",
-    //   });
-    // }, 2000);
+  
   };
 
  if (isSuccess) {
@@ -122,12 +116,12 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
           >
             Go to Login
           </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
