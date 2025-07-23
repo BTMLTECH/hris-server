@@ -218,13 +218,37 @@ const handleSubmit = async (event: React.FormEvent) => {
   }
 };
 
- const handleEdit = (employee: ProfileFormData) => {
+//  const handleEdit = (employee: ProfileFormData) => {
+//   console.log("employeeEdit", employee)
+//   setLoadingStates(prev => ({ ...prev, [employee._id]: 'edit' }));
+//   dispatch(setFormData(employee));
+//   dispatch(setIsEditMode(true));
+//   dispatch(setIsDialogOpen(true));
+//   setLoadingStates(prev => ({ ...prev, [employee._id]: null }));
+// };
+
+const handleEdit = (employee: ProfileFormData) => {
   setLoadingStates(prev => ({ ...prev, [employee._id]: 'edit' }));
-  dispatch(setFormData(employee));
+
+  const formatDate = (dateStr: string | undefined) => {
+    if (!dateStr) return '';
+    return new Date(dateStr).toISOString().split('T')[0]; // "YYYY-MM-DD"
+  };
+
+  const cleanedData = {
+    ...employee,
+    dateOfBirth: formatDate(employee.dateOfBirth),
+    startDate: formatDate(employee.startDate),
+    salary: typeof employee.salary === 'string' ? employee.salary : String(employee.salary),
+  };
+
+  dispatch(setFormData(cleanedData));
   dispatch(setIsEditMode(true));
   dispatch(setIsDialogOpen(true));
+
   setLoadingStates(prev => ({ ...prev, [employee._id]: null }));
 };
+
 
 const handleDelete = async (employeeId: string) => {
   setLoadingStates(prev => ({ ...prev, [employeeId]: 'delete' }));

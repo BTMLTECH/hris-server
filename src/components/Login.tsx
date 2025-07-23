@@ -59,17 +59,6 @@ const handleSubmit = async (e: React.FormEvent) => {
     setPendingLogin(null);
   };
 
-  // const demoAccounts = [
-  //   { role: 'Admin', email: 'admin@hris.com', password: 'Admin@123', color: 'bg-red-500' },
-  //   { role: 'HR', email: 'hr@hris.com', password: 'hr123', color: 'bg-blue-500' },
-  //   { role: 'Manager', email: 'manager@hris.com', password: 'manager123', color: 'bg-green-500' },
-  //   { role: 'Employee', email: 'employee@hris.com', password: 'emp123', color: 'bg-gray-500' },
-  // ];
-
-  // const fillDemoCredentials = (demoEmail: string, demoPassword: string) => {
-  //   setEmail(demoEmail);
-  //   setPassword(demoPassword);
-  // };
 
   return (
     <>

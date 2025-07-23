@@ -6,17 +6,33 @@ import Login from '@/components/Login';
 import Dashboard from '@/components/Dashboard/Dashboard';
 import DashboardSkeleton from '@/components/Dashboard/DashboardSkeleton';
 import { useCombinedContext } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
+import { logout } from '@/store/slices/auth/authSlice';
 
 const Index = () => {
   try {
   
     const {user: userDashboard } = useCombinedContext();
-    const { user, isAuthenticated } = userDashboard  
+     const {
+    user,
+    isAuthenticated,
+    profileError,
+  } = userDashboard;
+
+  useEffect(() => {
+    if (
+      profileError &&
+      typeof profileError === 'object' &&
+      'status' in profileError &&
+      profileError.status === 401
+    ) {
+      logout(); 
+    }
+  }, [profileError, logout]);  
     
-    // if (userDashboard.isLoading && user) {
-    //   // Show skeleton when user is authenticated but dashboard data is loading
-    //   return <DashboardSkeleton />;
-    // }
+    if (userDashboard.isLoading && user) {
+      return <DashboardSkeleton />;
+    }
     
 
 

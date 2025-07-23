@@ -21,9 +21,11 @@ export const useReduxProfile= (): ProfileContextType => {
  
 const editProfile = async (profile: any): Promise<boolean> => {
 
+   const { _id, __v, createdAt, updatedAt, ...updatedData } = profile;
+
   dispatch(setLoading(true));
   try {
-    const result = await editProfileMutation(profile).unwrap();
+    const result = await editProfileMutation(updatedData).unwrap();
     
     // Assuming result contains the updated profile data
     if (result?.profile) {

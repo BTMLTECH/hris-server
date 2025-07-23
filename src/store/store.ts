@@ -1,43 +1,4 @@
 
-// import { configureStore } from '@reduxjs/toolkit';
-// import { authApi } from './slices/auth/authApi';
-// import { apiSlice } from './slices/auth/apiSlice';
-// import authReducer, { initializeFromStorage } from './slices/auth/authSlice';
-// import profileReducer from './slices/profile/profileSlice';
-// import attendanceReducer from './slices/attendance/attendanceSlice';
-// import leaveReducer from './slices/leave/leaveSlice';
-// // import storage from 'redux-persist/lib/storage'; 
-// // import { persistReducer, persistStore } from 'redux-persist';
-
-
-// // const persistConfig = {
-// //   key: 'root',
-// //   storage,
-// //   whitelist: ['auth'], // Only persist the 'auth' slice
-// // };
-
-
-// // Create a persisted reducer for auth slice
-// // const persistedAuthReducer = persistReducer(persistConfig, authReducer);
-// export const store = configureStore({
-//   reducer: {
-//     auth: authReducer,
-//     profile: profileReducer,
-//     attendance: attendanceReducer,
-//     leave: leaveReducer,
-//     [authApi.reducerPath]: authApi.reducer,
-//   },
-//   devTools: process.env.NODE_ENV !== 'production',
-//   middleware: (getDefaultMiddleware) =>
-//     getDefaultMiddleware().concat(apiSlice.middleware),
-// });
-// // Persist the store and create the persistor
-// // export const persistor = persistStore(store);
-
-
-// export type RootState = ReturnType<typeof store.getState>;
-// export type AppDispatch = typeof store.dispatch;
-
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import storage from 'redux-persist/lib/storage';
 import { persistReducer, persistStore } from 'redux-persist';
@@ -59,7 +20,7 @@ const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
 });
 
-export type RootReducerType = ReturnType<typeof rootReducer>; // ✅ explicitly type it
+export type RootReducerType = ReturnType<typeof rootReducer>; 
 
 // 2. Create persisted reducer with type
 const persistConfig = {
@@ -84,11 +45,5 @@ export const store = configureStore({
 
 export const persistor = persistStore(store);
 
-// const initializeApp = async() => {
-//   await store.dispatch(apiSlice.endpoints.loadUser.initiate({}, {forceRefetch: true}));
-// }
-
-// initializeApp();
-// 4. App-wide types
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
