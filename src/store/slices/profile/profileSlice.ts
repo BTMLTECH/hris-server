@@ -93,18 +93,19 @@ const profileSlice = createSlice({
   extraReducers: (builder) => {
     // Get Profile matchers
     builder
-      .addMatcher(profileApi.endpoints.getProfile.matchPending, (state) => { 
+      .addMatcher(profileApi.endpoints.getAllProfile.matchPending, (state) => { 
         state.isLoading = true;
         state.error = null;
       })
-      .addMatcher(profileApi.endpoints.getProfile.matchFulfilled, (state, action) => {
-        state.isLoading = false;
-              state.formData = action.payload.data; 
-            })
-            
       .addMatcher(profileApi.endpoints.getAllProfile.matchFulfilled, (state, action) => {
         state.isLoading = false;
-        state.bulkEmployees = action.payload.data.data; 
+        state.bulkEmployees = action.payload.data.data
+        })
+            
+      .addMatcher(profileApi.endpoints.getAllProfile.matchRejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || 'Failed to update profile';
+   
       })
       // .addMatcher(profileApi.endpoints.getProfile.matchRejected, (state, action) => {
       //   console.log("actionGET", action.payload.data)

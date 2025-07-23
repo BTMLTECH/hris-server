@@ -302,9 +302,11 @@ const logout = async () => {
 
   return {
     user,
+    profileRecord,
     // token: user?.token,
     isLoading,
     error: error || '',
+    profileError,
     isAuthenticated,
     profilesIsLoading,
     login,

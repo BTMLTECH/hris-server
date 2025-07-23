@@ -69,6 +69,8 @@ export interface PasswordConfig {
 
 export interface AuthContextType {
   user: User | null;
+  profileRecord: User | null;
+  profileError: any
   // token: string | null;
   isLoading: boolean;
   error: string | null;

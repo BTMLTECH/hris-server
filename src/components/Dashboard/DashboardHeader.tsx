@@ -8,6 +8,7 @@ import { LogOut, Bell, Settings } from 'lucide-react';
 
 const DashboardHeader: React.FC = () => {
   const { user: userContext } = useCombinedContext();
+  // const { user, logout } = userContext;
   const { user, logout } = userContext;
   
   if (!user) return null;
