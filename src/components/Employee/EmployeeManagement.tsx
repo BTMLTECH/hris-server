@@ -174,7 +174,6 @@ const handleSubmit = async (event: React.FormEvent) => {
 
   if (isEditMode) {
     const updatedData: ProfileFormData = { ...formData };
-
     success = await editProfile(updatedData);
   } else {
   const {
@@ -218,14 +217,7 @@ const handleSubmit = async (event: React.FormEvent) => {
   }
 };
 
-//  const handleEdit = (employee: ProfileFormData) => {
-//   console.log("employeeEdit", employee)
-//   setLoadingStates(prev => ({ ...prev, [employee._id]: 'edit' }));
-//   dispatch(setFormData(employee));
-//   dispatch(setIsEditMode(true));
-//   dispatch(setIsDialogOpen(true));
-//   setLoadingStates(prev => ({ ...prev, [employee._id]: null }));
-// };
+
 
 const handleEdit = (employee: ProfileFormData) => {
   setLoadingStates(prev => ({ ...prev, [employee._id]: 'edit' }));

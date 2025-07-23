@@ -4,7 +4,7 @@
 import { useEditProfileMutation, useUploadProfileMutation, useGetProfileQuery, useDeleteProfileMutation, useGetAllProfileQuery } from "@/store/slices/profile/profileApi";
 import { toast } from "../use-toast";
 import { ProfileContextType, ProfileFormData } from "@/types/user";
-import { setFormData, setLoading } from "@/store/slices/profile/profileSlice";
+import { setBulkEmployees, setFormData, setLoading } from "@/store/slices/profile/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 
 
@@ -21,15 +21,16 @@ export const useReduxProfile= (): ProfileContextType => {
  
 const editProfile = async (profile: any): Promise<boolean> => {
 
-   const { _id, __v, createdAt, updatedAt, ...updatedData } = profile;
+  //  const { _id, __v, createdAt, updatedAt, email, ...updatedData } = profile;
 
   dispatch(setLoading(true));
   try {
-    const result = await editProfileMutation(updatedData).unwrap();
+    const result = await editProfileMutation(profile).unwrap();
     
     // Assuming result contains the updated profile data
-    if (result?.profile) {
+    if (result?.data) {
       dispatch(setFormData(result.data)); 
+      dispatch(setBulkEmployees(result.data))
     }
 
     toast({ title: 'Profile updated successfully',
