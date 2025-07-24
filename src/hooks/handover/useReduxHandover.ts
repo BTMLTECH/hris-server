@@ -17,6 +17,7 @@ import {
 
 import { HandoverContextType } from "@/types/handover";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 export const useReduxHandover = (): HandoverContextType => {
   const dispatch = useAppDispatch();
@@ -55,9 +56,10 @@ const [deleteHandoverById, { isLoading: deleteLoading }] =   useDeleteHandoverBy
       });
       return true;
     } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, 'Failed to submit handover report');      
       toast({
         title: "Submit Error",
-        description: error?.data?.message || "Failed to submit handover report",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -77,9 +79,11 @@ const deleteHandover = async (id: string): Promise<boolean> => {
     });
     return true;
   } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, 'Failed to delete handover report');      
+
     toast({
       title: 'Delete Error',
-      description: error?.data?.message || 'Failed to delete handover report',
+      description: errorMessage,
       variant: 'destructive',
     });
     return false;

@@ -1,52 +1,38 @@
 
-/* eslint-disable react-hooks/rules-of-hooks */
 
-
+import { useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import Login from '@/components/Login';
 import Dashboard from '@/components/Dashboard/Dashboard';
 import DashboardSkeleton from '@/components/Dashboard/DashboardSkeleton';
 import { useCombinedContext } from '@/contexts/AuthContext';
-import { useEffect } from 'react';
-import { logout } from '@/store/slices/auth/authSlice';
+import { RootState } from '@/store/store';
 
 const Index = () => {
-  try {
-  
-    const {user: userDashboard } = useCombinedContext();
-     const {
+  const { user: userDashboard } = useCombinedContext();
+  const {
     user,
     isAuthenticated,
-    profileError,
+    isLoading,
   } = userDashboard;
 
-  useEffect(() => {
-    if (
-      profileError &&
-      typeof profileError === 'object' &&
-      'status' in profileError &&
-      profileError.status === 401
-    ) {
-      logout(); 
-    }
-  }, [profileError, logout]);  
-    
-    if (userDashboard.isLoading && user) {
-      return <DashboardSkeleton />;
-    }
-    
+  // if (isLoading && user) {
+  //   return <DashboardSkeleton />;
+  // }
 
-
-    return (isAuthenticated && user)  ? <Dashboard /> : <Login />;
+  try {
+    return isAuthenticated && user ? <Dashboard /> : <Login />;
   } catch (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h1>
           <p className="text-gray-600">Please refresh the page to try again.</p>
-        </div>
+      </div>
       </div>
     );
   }
 };
 
 export default Index;
+

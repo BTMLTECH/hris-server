@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect } from 'react';
+import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { 
   useBulkInviteUsersMutation,
@@ -26,8 +27,9 @@ import { toast } from '@/hooks/use-toast';
 import { AuthContextType, PasswordConfig, User } from '@/types/auth';
 import { setBulkEmployees, setFormData, setLoading } from '@/store/slices/profile/profileSlice';
 import { set } from 'date-fns';
-import { apiSlice } from '@/store/slices/auth/apiSlice';
+// import { apiSlice } from '@/store/slices/auth/apiSlice';
 import { useGetAllProfileQuery, useGetProfileQuery } from '@/store/slices/profile/profileApi';
+import { extractErrorMessage } from '@/utils/errorHandler';
 
 export const useReduxAuth = (): AuthContextType => {
   const dispatch = useAppDispatch();
@@ -43,16 +45,19 @@ export const useReduxAuth = (): AuthContextType => {
   const [resendIviteLink] = useResendIviteLinkMutation();
   const [newSetPassword] = useNewSetPasswordMutation();
   const [requestPassword] = useRequestPasswordMutation();
+
+      
+    const shouldSkipProfile = !isAuthenticated || !user;
+
     const {
       data: profileRecord,
       isLoading: profileIsLoading,
       error: profileError,
       refetch: refetchProfile,
     } = useGetProfileQuery(undefined, {
-       skip: false,
+      skip: shouldSkipProfile,
     });
 
-  
       const {
         data: profilesRecord,
         isLoading: profilesIsLoading,
@@ -64,27 +69,27 @@ export const useReduxAuth = (): AuthContextType => {
 
 
 
+const login = async (email: string, password: string): Promise<boolean> => {
+  dispatch(setIsLoading(true));
+  try {
+    await loginMutation({ email, password }).unwrap();
+    toast({
+      title: '2FA code sent to your email',
+    });
+    return true;
+  } catch (error) {
+  const errorMessage = extractErrorMessage(error, 'Login failed');
+  toast({
+    title: 'Login Error',
+    description: errorMessage,
+    variant: 'destructive',
+  });
+  return false;
+} finally {
+    dispatch(setIsLoading(false));
+  }
+};
 
-  const login = async (email:string, password:string): Promise<boolean> => {
-    dispatch(setIsLoading(true));
-    try {
-      const result = await loginMutation({ email, password }).unwrap();      
-      toast({
-        title: '2FA code sent to your email',
-      });
-      return true;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Login failed';
-      toast({
-        title: 'Login Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    }finally{
-      dispatch(setIsLoading(false))
-    }
-  };
 
 const verify2fa = async (email: string, code: string): Promise<boolean> => {
   dispatch(setIsLoading(true));
@@ -103,24 +108,21 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
     return true;
   } catch (error: any) {
 
-    const errorMessage =
-      error?.data?.message || 
-      error?.error ||         
-      error?.message ||     
-      'Login failed';         
-
-    toast({
-      title: 'Login Error',
-      variant: 'destructive',
-    });
-
-    return false;
+      const errorMessage = extractErrorMessage(error, 'Login failed');
+  toast({
+    title: 'Login Error',
+    description: errorMessage,
+    variant: 'destructive',
+  });
+  return false;
   } finally {
     dispatch(setIsLoading(false));
   }
 };
 
   const setNewPassword = async (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string): Promise<boolean> => {
+   dispatch(setIsLoading(true));
+   
     try {
       await newSetPassword({ newPassword, passwordConfig, temporaryPassword , token}).unwrap();
       toast({
@@ -129,16 +131,20 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
-      toast({
-        title: 'Password Set Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    }
-  };
-  const reqestNewPassword = async (email: string): Promise<boolean> => {
+      const errorMessage = extractErrorMessage(error, 'Set new password failed');
+  toast({
+    title: 'Password Set Error',
+    description: errorMessage,
+    variant: 'destructive',
+  });
+  return false;
+    }finally {
+    dispatch(setIsLoading(false));
+  }
+};
+
+const reqestNewPassword = async (email: string): Promise<boolean> => {  
+  dispatch(setIsLoading(true));
     try {
       await requestPassword({ email }).unwrap();
       toast({
@@ -147,17 +153,21 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
+      const errorMessage = extractErrorMessage(error, 'Password request failed');
+
       toast({
-        title: 'Password Reset Error',
+        title: 'Password Request Error',
         description: errorMessage,
         variant: 'destructive',
       });
       return false;
+    }finally{
+      dispatch(setIsLoading(false))
     }
   };
-
+  
   const resetPassword = async (email: string): Promise<boolean> => {
+    dispatch(setIsLoading(true))
     try {
       await resetPasswordMutation({ email }).unwrap();
       toast({
@@ -166,13 +176,17 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
+ 
+      const errorMessage = extractErrorMessage(error, 'Password reset failed');
+
       toast({
         title: 'Password Reset Error',
         description: errorMessage,
         variant: 'destructive',
       });
       return false;
+    }finally{
+      dispatch(setIsLoading(false))
     }
   };
 
@@ -181,14 +195,16 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
     try {
       await resendPassword({ email }).unwrap();
       toast({
-        title: 'Password Reset Initiated',
+        title: 'Password Resend Initiated',
         description: 'Check your email for further instructions',
       });
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Password reset failed';
+
+      const errorMessage = extractErrorMessage(error, 'Password resend failed');
+
       toast({
-        title: 'Password Reset Error',
+        title: 'Password Resend Error',
         description: errorMessage,
         variant: 'destructive',
       });
@@ -209,9 +225,11 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, 'User resend-invite failed');
+
       toast({
-        title: 'Invite Failed',
-        description: error?.data?.message || 'User invite failed',
+        title: 'Resend Invite Failed',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
@@ -230,9 +248,11 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, 'User invite failed');
+
       toast({
         title: 'Invite Failed',
-        description: error?.data?.message || 'User invite failed',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
@@ -255,9 +275,11 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
       });
       return true;
     } catch (error: any) {
+    const errorMessage = extractErrorMessage(error, 'Bulk invite failed');
+
       toast({
         title: 'Bulk Invite Failed',
-        description: error?.data?.message || 'Could not process bulk invite.',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;
@@ -270,20 +292,14 @@ const verify2fa = async (email: string, code: string): Promise<boolean> => {
 const logout = async () => {
   dispatch(setIsLoading(true))
   try {
-    // Call backend logout endpoint and wait for it to finish
     const response = await logoutUser({}).unwrap();
-
-    // Now update the client-side state
     dispatch(logoutAction());
-
-    // Show feedback only after successful logout
     toast({
       title: 'Logged Out',
       description: response?.message || 'You have been successfully logged out.',
     });
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Logout failed';
+    const errorMessage = extractErrorMessage(error, 'Logout failed');
     toast({
       title: 'Logout Error',
       description: errorMessage,

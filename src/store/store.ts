@@ -3,12 +3,13 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import storage from 'redux-persist/lib/storage';
 import { persistReducer, persistStore } from 'redux-persist';
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
-import { apiSlice } from './slices/auth/apiSlice';
+
 import authReducer from './slices/auth/authSlice';
 import leaveReducer from './slices/leave/leaveSlice';
 import attendanceReducer from './slices/attendance/attendanceSlice'
 import profileReducer from './slices/profile/profileSlice'
 import handoverReducer from './slices/handover/handoverSlice'
+import { baseApi } from './slices/baseApi';
 
 // 1. Combine all reducers
 const rootReducer = combineReducers({
@@ -17,7 +18,7 @@ const rootReducer = combineReducers({
   attendance: attendanceReducer,
   leave: leaveReducer,
   handover: handoverReducer,
-  [apiSlice.reducerPath]: apiSlice.reducer,
+  [baseApi.reducerPath]: baseApi.reducer,
 });
 
 export type RootReducerType = ReturnType<typeof rootReducer>; 
@@ -40,7 +41,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }).concat(apiSlice.middleware),
+    }).concat(baseApi.middleware),
 });
 
 export const persistor = persistStore(store);

@@ -13,6 +13,7 @@ import {
 import { toast } from "../use-toast";
 import { setLoading } from "@/store/slices/leave/leaveSlice";
 import { LeaveRequest, UseReduxLeaveReturnType } from "@/types/leave";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 
 
@@ -71,9 +72,11 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
       refetchApprovalQueue();
       return true;
     } catch (error: any) {
+          const errorMessage = extractErrorMessage(error, 'Leave Request Failed');
+      
       toast({
         title: "Leave Request Failed",
-        description: error?.message || "Something went wrong.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -92,9 +95,11 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
       refetchActivityFeed();
       return true;
     } catch (error: any) {
+          const errorMessage = extractErrorMessage(error, 'Approval Failed');
+
       toast({
         title: "Approval Failed",
-        description: error?.message || "Something went wrong.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;
@@ -112,9 +117,11 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
       refetchActivityFeed();
       return true;
     } catch (error: any) {
+          const errorMessage = extractErrorMessage(error, 'Rejection Failed');
+
       toast({
         title: "Rejection Failed",
-        description: error?.message || "Something went wrong.",
+        description: errorMessage,
         variant: "destructive",
       });
       return false;

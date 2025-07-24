@@ -6,6 +6,7 @@ import { toast } from "../use-toast";
 import { ProfileContextType, ProfileFormData } from "@/types/user";
 import { setBulkEmployees, setFormData, setLoading } from "@/store/slices/profile/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { extractErrorMessage } from "@/utils/errorHandler";
 
 
 
@@ -20,14 +21,9 @@ export const useReduxProfile= (): ProfileContextType => {
   const [deleteProfileMutation] = useDeleteProfileMutation();  
  
 const editProfile = async (profile: any): Promise<boolean> => {
-
-  //  const { _id, __v, createdAt, updatedAt, email, ...updatedData } = profile;
-
   dispatch(setLoading(true));
   try {
-    const result = await editProfileMutation(profile).unwrap();
-    
-    // Assuming result contains the updated profile data
+    const result = await editProfileMutation(profile).unwrap();  
     if (result?.data) {
       dispatch(setFormData(result.data)); 
       dispatch(setBulkEmployees(result.data))
@@ -37,9 +33,10 @@ const editProfile = async (profile: any): Promise<boolean> => {
      });
     return true;
   } catch (error: any) {
+    const errorMessage = extractErrorMessage(error, 'Profile Update Error');
     toast({
       title: 'Profile Update Error',
-      description: error?.data?.message || 'Failed to update profile',
+      description: errorMessage,
       variant: 'destructive',
     });
     return false;
@@ -65,10 +62,11 @@ const uploadProfile = async (formData: FormData): Promise<boolean> => {
       return true;
     }
   } catch (error: any) {
-    // If there's an error, show the error toast
+    const errorMessage = extractErrorMessage(error, 'Failed to upload profile picture');
+
     toast({
       title: 'Upload Error',
-      description: error?.data?.message || 'Failed to upload profile picture',
+      description: errorMessage,
       variant: 'destructive',
     });
     return false;
@@ -86,9 +84,11 @@ const uploadProfile = async (formData: FormData): Promise<boolean> => {
       // Optional: dispatch logout or redirect
       return true;
     } catch (error: any) {
+    const errorMessage = extractErrorMessage(error, 'Failed to delete profile');
+
       toast({
         title: 'Delete Error',
-        description: error?.data?.message || 'Failed to delete profile',
+        description: errorMessage,
         variant: 'destructive',
       });
       return false;

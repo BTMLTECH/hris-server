@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
+import { baseApi } from "../baseApi";
 import { apiSlice } from "./apiSlice";
 
 
@@ -22,30 +23,9 @@ interface ResetPasswordData {
 }
 
 
-export const authApi = apiSlice.injectEndpoints({
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // register: builder.mutation<RegistrationData, RegistrationData>({
-    //   query: (data) => ({
-    //     url: 'auth/register',
-    //     method: 'POST',
-    //     body: data,
-    //     credentials: 'include' as const,
-    //   }),
-    //   async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-    //     try {
-    //       const result = await queryFulfilled;
-    //       dispatch(
-    //         userRegistration({
-    //           token: result.data.activationToken,
-    //         }),
-    //       );
-    //     } catch (error) {
-    //       if (import.meta.env.NODE_ENV !== 'production') {
-    //       }
-    //     }
-    //   },
-    // }),
-
+ 
     activation: builder.mutation({
       query: ({ activation_token, activation_code }) => ({
         url: 'auth/activate-user',
@@ -128,7 +108,7 @@ export const authApi = apiSlice.injectEndpoints({
         body: email,
         credentials: 'include' as const,
       }),
-      invalidatesTags: ['Profiles'],
+      // invalidatesTags: ['Profiles'],
     }),
 
     bulkInviteUsers: builder.mutation({
