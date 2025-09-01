@@ -23,15 +23,13 @@ export const useReduxHandover = (): HandoverContextType => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
 
-  const [createHandoverMutation, { isLoading: createLoading }] =
-    useCreateHandoverMutation();
+  const [createHandoverMutation] = useCreateHandoverMutation();
 
-const [deleteHandoverById, { isLoading: deleteLoading }] =   useDeleteHandoverByIdMutation();
+const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
 
   const {
     data: myReports,
     isLoading: myReportsLoading,
-    error: myReportsError,
     refetch: refetchMyReports,
   } = useGetMyHandoverReportQuery(undefined, {
     skip: !user || user?.role !== "employee",
@@ -40,11 +38,11 @@ const [deleteHandoverById, { isLoading: deleteLoading }] =   useDeleteHandoverBy
   const {
     data: teamReports,
     isLoading: teamReportsLoading,
-    error: teamReportsError,
     refetch: refetchTeamReports,
   } = useTeamGetHandoverReportByDepartmentQuery(undefined, {
-    skip: !user || user?.role !== "teamlead",
+    skip: !user,
   });
+
 
   const createHandover = async (formData: any): Promise<boolean> => {
     dispatch(setIsLoading(true));

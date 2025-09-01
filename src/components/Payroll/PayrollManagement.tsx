@@ -1,990 +1,1060 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Download, Eye, Calculator, DollarSign, Plus, Edit, Trash2, Upload, Send, FileSpreadsheet } from 'lucide-react';
-import { PayrollRecord, SalaryStructure } from '@/types/payroll';
+
+import { Download, Eye, Plus, Trash2, Upload, Loader2, Settings, PlayCircle, Undo2, FileText } from 'lucide-react';
+import { extractPayrollArray, IPayroll } from '@/types/payroll';
 
 import { toast } from '@/hooks/use-toast';
-import { useCombinedContext } from '@/contexts/AuthContext';
 
-const mockPayrollRecords: PayrollRecord[] = [
-  {
-    id: '1',
-    employeeId: '4',
-    employeeName: 'Jane Doe',
-    month: 'January',
-    year: 2024,
-    basicSalary: 70000,
-    allowances: [
-      { name: 'Housing', amount: 10000 },
-      { name: 'Transport', amount: 5000 }
-    ],
-    bonuses: [
-      { name: 'Performance', amount: 8000 }
-    ],
-    deductions: [
-      { name: 'Tax', amount: 12000 },
-      { name: 'Insurance', amount: 2000 }
-    ],
-    grossSalary: 93000,
-    tax: 12000,
-    netSalary: 79000,
-    status: 'paid',
-    paidDate: '2024-01-31'
-  }
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import {  setEditingRecord, setFiltersApplied,  setIsBulkDeleteDialogOpen, setIsBulkUploadOpen, setIsCreateDialogOpen, setIsDeleteDialogOpen, setIsEditDialogOpen, setIsProcessingBulkUpload, setNewRecord, setPayrollPagination, setSearchTerm, setSelectedMonth, setSelectedPayslip, setSelectedRecords, setSelectedYear, setSortDirection, setSubmitted, setYear, setLoadingPdf, setIsDraftBulkOpen } from '@/store/slices/payroll/payrollSlice';
+import { useReduxPayroll } from '@/hooks/payroll/useReduxPayroll';
+
+import { PaginationNav } from '../ui/paginationNav';
+
+import { Skeleton } from '../ui/skeleton';
+import { generatePayslip } from '@/utils/generatePayslip';
+import { PayslipWithTaxDialog } from './TaxInfo';
+import ClassResultDialog from './ClassResultDialog';
+import { setClassRecord, setIsBand, setIsPaygrade,  setIsResultDialogOpen} from '@/store/slices/class/classSlice';
+import { useReduxClass } from '@/hooks/class/useReduxClass';
+import { IClassLevelInput } from '@/types/class';
+import { getPayrollStatusBadge } from '../getAppraisalBadge';
+import { useLoadingState } from '@/hooks/useLoadingState';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { NairaSign } from '../ui/NairaSign';
+
+
+
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
-const mockSalaryStructures: SalaryStructure[] = [
-  {
-    employeeId: '4',
-    basicSalary: 70000,
-    allowances: [
-      { name: 'Housing', amount: 10000, type: 'fixed' },
-      { name: 'Transport', amount: 5000, type: 'fixed' }
-    ],
-    deductions: [
-      { name: 'Insurance', amount: 2000, type: 'fixed' },
-      { name: 'Tax', amount: 15, type: 'percentage' }
-    ]
-  }
+const years = [
+  '2030', '2029', '2028', '2027', '2026',
+  '2025', '2024'
 ];
 
 const PayrollManagement: React.FC = () => {
-  const {user: userPayrollManagement,  profile } = useCombinedContext();
-  const { user} = userPayrollManagement
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>(mockPayrollRecords);
-  const [salaryStructures, setSalaryStructures] = useState<SalaryStructure[]>(mockSalaryStructures);
-  const [selectedMonth, setSelectedMonth] = useState('January');
-  const [selectedYear, setSelectedYear] = useState('2024');
-  const [selectedPayslip, setSelectedPayslip] = useState<PayrollRecord | null>(null);
-  const [selectedRecords, setSelectedRecords] = useState<string[]>([]);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isBulkSendDialogOpen, setIsBulkSendDialogOpen] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<PayrollRecord | null>(null);
+const dispatch = useAppDispatch()
+  const { user } = useAppSelector((state) => state.auth);
+  const {cachedPayrolls, deletePayroll, draftPayroll, processSinglePayroll, paidPayroll, payrollAsPayBulk, reverseBulkPayroll, payrollsAsDraftBulk, reverseSinglePayroll, processBulkPayroll} =  useReduxPayroll()
+  const {handleCalculateClass, bulkUploadClass, handleCreateClassLevel, bulkDeleteClass} = useReduxClass()
+  const {isLoading, loadingPdf, searchTerm, selectedMonth, selectedYear, selectedPayslip, 
+    isEditDialogOpen,   
+    editingRecord,    payrollPagination,
   
-  // Form states for creating new payroll records
-  const [newRecord, setNewRecord] = useState({
-    employeeName: '',
-    month: 'January',
-    year: 2024,
-    basicSalary: 0,
-    allowances: [{ name: '', amount: 0 }],
-    deductions: [{ name: '', amount: 0 }]
-  });
-
+    sortDirection,
+    payrollRecords,
+  
+    isDeleteDialogOpen,
+  
+    isBulkUploadOpen,
+    isBulkDeleteDialogOpen,
+    year,
+  
+ } = useAppSelector((state) => state.payroll);
+   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();    
+ 
+ const {classRecord, isBand, isLoading:bandIsLoading ,isResultDialogOpen, classResponse, isPaygrade } = useAppSelector((state) => state.classlevel);
+  const [deleteParams, setDeleteParams] = useState<{ id: string; action: string } | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null); 
   const canManagePayroll = user?.role === 'admin' || user?.role === 'hr';
 
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
 
-  const years = ['2024', '2023', 2022];
+const newRecords = extractPayrollArray(cachedPayrolls.length ? cachedPayrolls : payrollRecords);
 
-  const getStatusBadge = (status: PayrollRecord['status']) => {
-    const variants = {
-      draft: 'outline',
-      processed: 'secondary',
-      paid: 'default'
-    } as const;
+const filteredRecords = canManagePayroll
+  ? newRecords
+  : newRecords.filter((r) => r.user?._id === user?._id);
 
-    return (
-      <Badge variant={variants[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
 
-  const handleCreateRecord = () => {
-    const grossSalary = newRecord.basicSalary + newRecord.allowances.reduce((sum, a) => sum + a.amount, 0);
-    const totalDeductions = newRecord.deductions.reduce((sum, d) => sum + d.amount, 0);
-    const netSalary = grossSalary - totalDeductions;
 
-    const record: PayrollRecord = {
-      id: (payrollRecords.length + 1).toString(),
-      employeeId: (payrollRecords.length + 1).toString(),
-      employeeName: newRecord.employeeName,
-      month: newRecord.month,
-      year: newRecord.year,
-      basicSalary: newRecord.basicSalary,
-      allowances: newRecord.allowances.filter(a => a.name && a.amount > 0),
-      bonuses: [],
-      deductions: newRecord.deductions.filter(d => d.name && d.amount > 0),
-      grossSalary,
-      tax: totalDeductions,
-      netSalary,
-      status: 'draft'
-    };
+const sortedRecords = [...filteredRecords].sort((a, b) => {
+  const monthIndex = (month: string) => months.indexOf(month);
+  const aDate = new Date(Number(a.year), monthIndex(a.month));
+  const bDate = new Date(Number(b.year), monthIndex(b.month));
+  return sortDirection === 'asc'
+    ? aDate.getTime() - bDate.getTime()
+    : bDate.getTime() - aDate.getTime();
+});
 
-    setPayrollRecords([...payrollRecords, record]);
-    setIsCreateDialogOpen(false);
-    setNewRecord({
-      employeeName: '',
-      month: 'January',
-      year: 2024,
-      basicSalary: 0,
-      allowances: [{ name: '', amount: 0 }],
-      deductions: [{ name: '', amount: 0 }]
-    });
+const now = new Date();
+const currentMonth = now.getMonth() + 1;
+const currentYear = now.getFullYear();
 
-    toast({
-      title: "Payroll Record Created",
-      description: `Payroll record for ${record.employeeName} has been created successfully.`,
-    });
-  };
+const allStatus = useMemo(() => {
+  if (!filteredRecords.length) return "none";
+  const currentRecords = filteredRecords.filter(
+    r => Number(r.month) === currentMonth && Number(r.year) === currentYear
+  );
+  if (!currentRecords.length) return "none";
 
-  const handleEditRecord = (record: PayrollRecord) => {
-    setEditingRecord(record);
-    setIsEditDialogOpen(true);
-  };
+  const statuses = currentRecords.map(r => r.status);
 
-  const handleUpdateRecord = () => {
-    if (!editingRecord) return;
+  if (statuses.every(s => s === "pending")) return "pending";
+  if (statuses.every(s => s === "draft")) return "draft";
+  if (statuses.every(s => s === "processed")) return "processed";
+  if (statuses.every(s => s === "paid")) return "paid";
 
-    const grossSalary = editingRecord.basicSalary + editingRecord.allowances.reduce((sum, a) => sum + a.amount, 0);
-    const totalDeductions = editingRecord.deductions.reduce((sum, d) => sum + d.amount, 0);
-    const netSalary = grossSalary - totalDeductions;
+  return "mixed";
+}, [filteredRecords, currentMonth, currentYear]);
 
-    const updatedRecord = {
-      ...editingRecord,
-      grossSalary,
-      tax: totalDeductions,
-      netSalary
-    };
 
-    setPayrollRecords(payrollRecords.map(r => r.id === editingRecord.id ? updatedRecord : r));
-    setIsEditDialogOpen(false);
-    setEditingRecord(null);
 
-    toast({
-      title: "Payroll Record Updated",
-      description: `Payroll record for ${updatedRecord.employeeName} has been updated successfully.`,
-    });
-  };
-
-  const handleDeleteRecord = (recordId: string) => {
-    setPayrollRecords(payrollRecords.filter(r => r.id !== recordId));
-    toast({
-      title: "Record Deleted",
-      description: "Payroll record has been deleted successfully.",
-    });
-  };
-
-  const handleExcelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Simulate Excel processing
-    toast({
-      title: "Excel File Uploaded",
-      description: `Processing ${file.name}. This would parse the Excel file and create payroll records.`,
-    });
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleDeleteRecord =async (recordId: string, p0: string) => {
+    const success = await deletePayroll(recordId)
+    if(success){
+      dispatch(setIsDeleteDialogOpen(false))
     }
   };
-
-  const handleBulkSend = () => {
-    if (selectedRecords.length === 0) {
-      toast({
-        title: "No Records Selected",
-        description: "Please select payroll records to send.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    toast({
-      title: "Payslips Sent",
-      description: `${selectedRecords.length} payslips have been sent to employees via email.`,
-    });
-
-    setSelectedRecords([]);
-    setIsBulkSendDialogOpen(false);
+  const handleOpenDeleteDialog = (recordId: string, action: string) => {
+    setDeleteParams({ id: recordId, action });
+    dispatch(setIsDeleteDialogOpen(true));
   };
 
-  const handleSelectRecord = (recordId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedRecords([...selectedRecords, recordId]);
-    } else {
-      setSelectedRecords(selectedRecords.filter(id => id !== recordId));
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedRecords(filteredRecords.map(r => r.id));
-    } else {
-      setSelectedRecords([]);
-    }
-  };
-
-  const addAllowanceField = () => {
-    setNewRecord({
-      ...newRecord,
-      allowances: [...newRecord.allowances, { name: '', amount: 0 }]
-    });
-  };
-
-  const addDeductionField = () => {
-    setNewRecord({
-      ...newRecord,
-      deductions: [...newRecord.deductions, { name: '', amount: 0 }]
-    });
-  };
-
-  const addEditAllowanceField = () => {
-    if (!editingRecord) return;
-    setEditingRecord({
-      ...editingRecord,
-      allowances: [...editingRecord.allowances, { name: '', amount: 0 }]
-    });
-  };
-
-  const addEditDeductionField = () => {
-    if (!editingRecord) return;
-    setEditingRecord({
-      ...editingRecord,
-      deductions: [...editingRecord.deductions, { name: '', amount: 0 }]
-    });
-  };
-
-  const handleDownloadPayslip = (record: PayrollRecord) => {
+  const handleDownloadPayslip = async (record: IPayroll) => {
+    dispatch(setLoadingPdf(true))
+    await generatePayslip(record);    
     toast({
       title: "Payslip Download",
-      description: `Payslip for ${record.month} ${record.year} would be downloaded.`,
+      description: `Payslip for ${record.month} ${record.year} has been downloaded.`,
     });
+    dispatch(setLoadingPdf(false))
+    dispatch(setIsCreateDialogOpen(false))
+    dispatch(setIsCreateDialogOpen(false))
+    dispatch(setSelectedPayslip(null))   
   };
 
-  const handleViewPayslip = (record: PayrollRecord) => {
-    setSelectedPayslip(record);
+  const handleViewPayslip = (record: IPayroll) => {
+    dispatch(setSelectedPayslip(record));
   };
 
-  const filteredRecords = payrollRecords.filter(record => {
-    if (!canManagePayroll && record.employeeId !== user?._id) return false;
-    return record.month === selectedMonth && record.year.toString() === selectedYear;
+  const handleCloseDialog = () => {
+    dispatch(setSelectedPayslip(null))  
+  };
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const validExt = ['.xlsx', '.xls', '.csv'];
+  const isValid = validExt.some(ext => file.name.toLowerCase().endsWith(ext));
+  if (!isValid) {
+    toast({
+      title: "Invalid File Type",
+      description: "Please upload an Excel or CSV file (.xlsx, .xls, .csv)",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setUploadedFile(file);
+  dispatch(setIsBulkUploadOpen(true));
+};
+
+const handleBulkUploads = async () => {
+  if (!uploadedFile) {
+    toast({
+      title: "No File Uploaded",
+      description: "Please upload a file first before importing.",
+      variant: "destructive",
+    });
+    return;
+  }
+  const formData = new FormData();
+  formData.append('file', uploadedFile);
+    const response = await bulkUploadClass(formData);
+    if (response) {
+      setUploadedFile(null);
+      dispatch(setIsBulkUploadOpen(false));          
+    }
+  };
+
+const downloadClassLevelTemplate = () => {
+  const csvContent = `data:text/csv;charset=utf-8,
+Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
+2025,1,1.0,90000,49500,22500,18000
+2025,1,1.1,100000,55000,25000,20000
+2025,1,1.2,125000,68750,31250,25000
+2025,1,1.3,156250,85937.5,39062.5,31250
+2025,2,2.1,203125,111718.75,50781.25,40625
+2025,2,2.2,253906.25,139648.44,63476.56,50781.25
+2025,2,2.3,317382.81,174560.55,79345.7,63476.56
+2025,3,3.1,412597.66,226928.71,103149.42,82519.53
+2025,3,3.2,453857.42,249621.58,113464.36,90771.48
+2025,3,3.3,499243.16,274583.74,124810.79,99848.63
+2025,4,4.1,549167.48,302042.11,137291.87,109833.5
+2025,4,4.2,604084.23,332246.33,151021.06,120816.85
+2025,4,4.3,664492.65,365471.96,166123.16,132898.53
+2025,5,5.1,730941.92,402018.06,182735.48,146188.38
+2025,5,5.2,804036.11,442219.86,201009.03,160807.22
+2025,5,5.3,884439.72,486441.85,221109.93,176887.94
+2025,6,6.1,972883.69,535085.03,243220.92,194576.74
+2025,6,6.2,1070172.06,588444.63,267543.02,214344.41
+2025,6,6.3,1177189.27,647454.1,294297.32,235437.85
+2025,7,7.1,1550000,852500,387500,310000
+2025,7,7.2,2200000,1210000,550000,440000
+2025,7,7.3,2420000,1331000,605000,484000
+`;
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "class_levels_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  toast({
+    title: "Template Downloaded",
+    description: "Class Levels template CSV has been downloaded.",
   });
+};
+
+
+const handleGenerate = async() =>{
+  if (!classRecord?.band) return;
+  dispatch(setIsPaygrade(true))
+  const success = await handleCalculateClass(classRecord?.band)
+  if(success){
+    dispatch(setClassRecord({...classRecord, band: ''}));
+    dispatch(setIsBand(false))  
+    dispatch(setIsResultDialogOpen(true));
+  }
+  dispatch(setIsPaygrade(false))
+}
+
+const handleAddClass = async () => {
+  if (!classRecord.level || !classRecord.payGrade || !classRecord.year) return;
+  const formattedPayGrade = `${classRecord.year} ${classRecord.payGrade}`.trim();
+  const payload: IClassLevelInput = {
+    level: classRecord.level,
+    payGrade: formattedPayGrade,  
+    year: classRecord.year,
+    basicSalary: classResponse?.basicSalary ?? 0,
+    housingAllowance: classResponse?.housingAllowance ?? 0,
+    transportAllowance: classResponse?.transportAllowance ?? 0,
+  };
+  const success = await handleCreateClassLevel(payload);
+  if (success) {
+    dispatch(
+      setClassRecord({
+        ...classRecord,
+        level: "",
+        payGrade: "", 
+        year: "",
+      })
+    );
+    dispatch(setIsBand(false));
+    dispatch(setIsResultDialogOpen(false));
+  }
+};
+
+
+const handleBulkDelete = async () => {
+  const success = await bulkDeleteClass(year)
+  if(success){
+    dispatch(setIsBulkDeleteDialogOpen(false))
+    dispatch(setYear(''))
+  }
+}
+
+const handleAction = async (
+  key: string,
+  actionType: string,
+  actionFn: () => Promise<boolean>
+) => {
+  // ✅ mark as loading
+  setLocalLoading(key, actionType);
+  try {
+    await actionFn();
+  } finally {
+    clearLocalLoading(key, actionType);
+  }
+};
+
+// Individual actions
+const handleMarkDraft = (recordId: string) =>
+  handleAction(recordId, "draft", () => draftPayroll(recordId));
+
+const handleProcessPayroll = (recordId: string) =>
+  handleAction(recordId, "processPayroll", () => processSinglePayroll(recordId));
+
+const handleReversePayroll = (recordId: string) =>
+  handleAction(recordId, "reversePayroll", () => reverseSinglePayroll(recordId));
+
+const handleMarkPaid = (recordId: string) =>
+  handleAction(recordId, "paid", () => paidPayroll(recordId));
+
+// Bulk actions
+const handleBulkDraft = () =>
+  handleAction(
+    "bulk-draft",
+    "bulk-draft",
+    () => payrollsAsDraftBulk(currentMonth, currentYear)
+  );
+
+const handleBulkProcess = () =>
+  handleAction(
+    "bulk-process",
+    "bulk-process",
+    () => processBulkPayroll(currentMonth, currentYear)
+  );
+
+const handleBulkReverse = () =>
+  handleAction(
+    "bulk-reverse",
+    "bulk-reverse",
+    () => reverseBulkPayroll(currentMonth, currentYear)
+  );
+
+const handleBulkPay = () =>
+  handleAction(
+    "bulk-pay",
+    "bulk-pay",
+    () => payrollAsPayBulk(currentMonth, currentYear)
+  );
+
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Payroll Management</h2>
-          <p className="text-gray-600">Manage salary records and payslips</p>
-        </div>
-        {canManagePayroll && (
-          <div className="flex gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls,.csv"
-              onChange={handleExcelUpload}
-              className="hidden"
-            />
-            <Button 
-              variant="outline" 
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Upload Excel
-            </Button>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Create Payroll Record
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Payroll Record</DialogTitle>
-                  <DialogDescription>Enter the payroll details for the employee</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-6 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="employeeName">Employee Name</Label>
-                      <Input
-                        id="employeeName"
-                        value={newRecord.employeeName}
-                        onChange={(e) => setNewRecord({...newRecord, employeeName: e.target.value})}
-                        placeholder="Enter employee name"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="basicSalary">Basic Salary</Label>
-                      <Input
-                        id="basicSalary"
-                        type="number"
-                        value={newRecord.basicSalary}
-                        onChange={(e) => setNewRecord({...newRecord, basicSalary: Number(e.target.value)})}
-                        placeholder="Enter basic salary"
-                      />
-                    </div>
-                  </div>
+ <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+  {/* Left Side: Title & Subtitle */}
+  <div className="text-center md:text-left">
+    <h2 className="text-2xl font-bold">Payroll Management</h2>
+    <p className="text-gray-600">Manage salary records and payslips</p>
+  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Month</Label>
-                      <Select 
-                        value={newRecord.month} 
-                        onValueChange={(value) => setNewRecord({...newRecord, month: value})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {months.map(month => (
-                            <SelectItem key={month} value={month}>{month}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>Year</Label>
-                      <Select 
-                        value={newRecord.year.toString()} 
-                        onValueChange={(value) => setNewRecord({...newRecord, year: Number(value)})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {years.map(year => (
-                            <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+  {/* Right Side: Actions */}
+{canManagePayroll && (
+  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-center md:justify-end">
 
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <Label>Allowances</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addAllowanceField}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Allowance
-                      </Button>
-                    </div>
-                    {newRecord.allowances.map((allowance, index) => (
-                      <div key={index} className="grid grid-cols-2 gap-2 mb-2">
-                        <Input
-                          placeholder="Allowance name"
-                          value={allowance.name}
-                          onChange={(e) => {
-                            const updated = [...newRecord.allowances];
-                            updated[index].name = e.target.value;
-                            setNewRecord({...newRecord, allowances: updated});
-                          }}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Amount"
-                          value={allowance.amount}
-                          onChange={(e) => {
-                            const updated = [...newRecord.allowances];
-                            updated[index].amount = Number(e.target.value);
-                            setNewRecord({...newRecord, allowances: updated});
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+    {/* 🔹 Dropdown menu for payroll actions */}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="flex items-center gap-2">
+          <Settings className="h-4 w-4" />
+          Manage Payroll
+        </Button>
+      </DropdownMenuTrigger>
 
-                  <div>
-                    <div className="flex justify-between items-center mb-3">
-                      <Label>Deductions</Label>
-                      <Button type="button" variant="outline" size="sm" onClick={addDeductionField}>
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Deduction
-                      </Button>
-                    </div>
-                    {newRecord.deductions.map((deduction, index) => (
-                      <div key={index} className="grid grid-cols-2 gap-2 mb-2">
-                        <Input
-                          placeholder="Deduction name"
-                          value={deduction.name}
-                          onChange={(e) => {
-                            const updated = [...newRecord.deductions];
-                            updated[index].name = e.target.value;
-                            setNewRecord({...newRecord, deductions: updated});
-                          }}
-                        />
-                        <Input
-                          type="number"
-                          placeholder="Amount"
-                          value={deduction.amount}
-                          onChange={(e) => {
-                            const updated = [...newRecord.deductions];
-                            updated[index].amount = Number(e.target.value);
-                            setNewRecord({...newRecord, deductions: updated});
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </div>
+      <DropdownMenuContent className="w-60">
+        {/* Bulk Upload */}
+        <DropdownMenuItem
+          onClick={() => dispatch(setIsBulkUploadOpen(true))}
+          className="flex items-center gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          Bulk Upload Class
+        </DropdownMenuItem>
 
-                  <div className="flex justify-end space-x-2">
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateRecord}>
-                      Create Record
-                    </Button>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+        {/* Delete Previous Class Levels */}
+        <DropdownMenuItem
+          onClick={() => dispatch(setIsBulkDeleteDialogOpen(true))}
+          className="flex items-center gap-2 text-red-600"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete Previous Class Levels
+        </DropdownMenuItem>
+
+        {/* Generate Pay Class */}
+        <DropdownMenuItem
+          onClick={() => dispatch(setIsBand(true))}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Generate Pay Class
+        </DropdownMenuItem>
+
+  
+        {allStatus === "pending" && (
+          <DropdownMenuItem
+            onClick={handleBulkDraft}
+            className="flex items-center gap-2"
+            disabled={isLocalLoading("bulk-draft",  "bulk-draft")}
+          >
+            {isLocalLoading("bulk-draft",  "bulk-draft") && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+            <FileText className="h-4 w-4" />
+            Draft Bulk Payroll
+          </DropdownMenuItem>
         )}
-      </div>
 
-      <Tabs defaultValue="payslips" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="payslips">Payslips</TabsTrigger>
-          <TabsTrigger value="structure">Salary Structure</TabsTrigger>
-          {canManagePayroll && <TabsTrigger value="overview">Payroll Overview</TabsTrigger>}
-        </TabsList>
+        {allStatus === "draft" && (
+          <>
+            <DropdownMenuItem
+              onClick={handleBulkProcess}
+              className="flex items-center gap-2"
+              disabled={isLocalLoading("bulk-process", "bulk-process")}
+            >
+              {isLocalLoading("bulk-process", "bulk-process") && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              <PlayCircle className="h-4 w-4" />
+              Process Bulk Payroll
+            </DropdownMenuItem>
 
-        <TabsContent value="payslips" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span>Payslip Records</span>
-                {canManagePayroll && selectedRecords.length > 0 && (
-                  <Dialog open={isBulkSendDialogOpen} onOpenChange={setIsBulkSendDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="flex items-center gap-2">
-                        <Send className="h-4 w-4" />
-                        Send Selected ({selectedRecords.length})
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Send Payslips</DialogTitle>
-                        <DialogDescription>
-                          Send {selectedRecords.length} selected payslips to employees via email?
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="flex justify-end space-x-2">
-                        <Button variant="outline" onClick={() => setIsBulkSendDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleBulkSend}>
-                          Send Payslips
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
-              </CardTitle>
-              <CardDescription>View and manage payslips</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-6">
-                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Select month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {months.map(month => (
-                      <SelectItem key={month} value={month}>{month}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Select year" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {years.map(year => (
-                      <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <DropdownMenuItem
+              onClick={handleBulkReverse}
+              className="flex items-center gap-2 text-red-600"
+              disabled={isLocalLoading("bulk-reverse", "bulk-reverse")}
+            >
+              {isLocalLoading("bulk-reverse", "bulk-reverse") && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              <Undo2 className="h-4 w-4" />
+              Reverse Payroll
+            </DropdownMenuItem>
+          </>
+        )}
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {canManagePayroll && (
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={selectedRecords.length === filteredRecords.length && filteredRecords.length > 0}
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                    )}
-                    {canManagePayroll && <TableHead>Employee</TableHead>}
-                    <TableHead>Period</TableHead>
-                    <TableHead>Basic Salary</TableHead>
-                    <TableHead>Gross Salary</TableHead>
-                    <TableHead>Deductions</TableHead>
-                    <TableHead>Net Salary</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRecords.map((record) => (
-                    <TableRow key={record.id}>
-                      {canManagePayroll && (
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedRecords.includes(record.id)}
-                            onCheckedChange={(checked) => handleSelectRecord(record.id, checked as boolean)}
-                          />
-                        </TableCell>
-                      )}
-                      {canManagePayroll && (
-                        <TableCell className="font-medium">{record.employeeName}</TableCell>
-                      )}
-                      <TableCell>
-                        <div>{record.month} {record.year}</div>
-                        {record.paidDate && (
-                          <div className="text-sm text-gray-500">
-                            Paid: {new Date(record.paidDate).toLocaleDateString()}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        ${record.basicSalary.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600">
-                        ${record.grossSalary.toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-medium text-red-600">
-                        ${record.deductions.reduce((sum, d) => sum + d.amount, 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="font-bold text-blue-600">
-                        ${record.netSalary.toLocaleString()}
-                      </TableCell>
-                      <TableCell>{getStatusBadge(record.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewPayslip(record)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownloadPayslip(record)}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                          {canManagePayroll && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEditRecord(record)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteRecord(record.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {allStatus === "processed" && (
+          <DropdownMenuItem
+            onClick={handleBulkPay}
+            className="flex items-center gap-2 text-red-600"
+            disabled={isLocalLoading("bulk-pay", "bulk-pay")}
+          >
+            {isLocalLoading("bulk-pay", "bulk-pay") && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+            <NairaSign className="h-4 w-4" />
+            Pay Payroll
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
 
-        <TabsContent value="structure">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2" />
-                  Salary Components
-                </CardTitle>
-                <CardDescription>Your salary structure breakdown</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div>
-                  <h4 className="font-medium mb-3">Basic Salary</h4>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      ${salaryStructures[0]?.basicSalary.toLocaleString()}
-                    </div>
-                    <div className="text-sm text-blue-600">Per month</div>
-                  </div>
+
+    <Dialog
+      open={isBulkUploadOpen}
+      onOpenChange={(open) => {
+        dispatch(setIsBulkUploadOpen(open));
+        if (!open) setUploadedFile(null);
+      }}
+    >
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Bulk Upload Class</DialogTitle>
+          <DialogDescription>Upload an Excel file to import multiple class paygrades.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <Button onClick={downloadClassLevelTemplate} variant="outline" className="flex-1 flex items-center justify-center gap-2">
+              <Download className="h-4 w-4" />
+              Download Template
+            </Button>
+
+            <div className="flex-1 space-y-1">
+              <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" id="bulk-payslip-upload" />
+              <label htmlFor="bulk-payslip-upload">
+                <Button variant="outline" className="w-full cursor-pointer flex items-center justify-center gap-2" asChild>
+                  <span>
+                    <Upload className="h-4 w-4" />
+                    Upload File
+                  </span>
+                </Button>
+              </label>
+              {uploadedFile && (
+                <div className="text-sm text-muted-foreground">
+                  Selected file: <span className="font-medium">{uploadedFile.name}</span>
                 </div>
-
-                <div>
-                  <h4 className="font-medium mb-3">Allowances</h4>
-                  <div className="space-y-2">
-                    {salaryStructures[0]?.allowances.map((allowance, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                        <span>{allowance.name}</span>
-                        <span className="font-medium text-green-600">
-                          {allowance.type === 'percentage' 
-                            ? `${allowance.amount}%` 
-                            : `$${allowance.amount.toLocaleString()}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium mb-3">Deductions</h4>
-                  <div className="space-y-2">
-                    {salaryStructures[0]?.deductions.map((deduction, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 bg-red-50 rounded-lg">
-                        <span>{deduction.name}</span>
-                        <span className="font-medium text-red-600">
-                          {deduction.type === 'percentage' 
-                            ? `${deduction.amount}%` 
-                            : `$${deduction.amount.toLocaleString()}`}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Calculator className="h-5 w-5 mr-2" />
-                  Salary Calculation
-                </CardTitle>
-                <CardDescription>How your salary is calculated</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Basic Salary:</span>
-                    <span className="font-medium">${salaryStructures[0]?.basicSalary.toLocaleString()}</span>
-                  </div>
-                  
-                  {salaryStructures[0]?.allowances.map((allowance, index) => (
-                    <div key={index} className="flex justify-between text-green-600">
-                      <span>+ {allowance.name}:</span>
-                      <span className="font-medium">
-                        ${allowance.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
-                  
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between font-medium">
-                      <span>Gross Salary:</span>
-                      <span>${(salaryStructures[0]?.basicSalary + salaryStructures[0]?.allowances.reduce((sum, a) => sum + a.amount, 0)).toLocaleString()}</span>
-                    </div>
-                  </div>
-                  
-                  {salaryStructures[0]?.deductions.map((deduction, index) => (
-                    <div key={index} className="flex justify-between text-red-600">
-                      <span>- {deduction.name}:</span>
-                      <span className="font-medium">
-                        {deduction.type === 'percentage'
-                          ? `$${Math.round((salaryStructures[0].basicSalary * deduction.amount) / 100).toLocaleString()}`
-                          : `$${deduction.amount.toLocaleString()}`}
-                      </span>
-                    </div>
-                  ))}
-                  
-                  <div className="border-t pt-2">
-                    <div className="flex justify-between font-bold text-lg">
-                      <span>Net Salary:</span>
-                      <span className="text-blue-600">
-                        ${(salaryStructures[0]?.basicSalary + 
-                           salaryStructures[0]?.allowances.reduce((sum, a) => sum + a.amount, 0) -
-                           salaryStructures[0]?.deductions.reduce((sum, d) => 
-                             d.type === 'percentage' 
-                               ? sum + Math.round((salaryStructures[0].basicSalary * d.amount) / 100)
-                               : sum + d.amount, 0)
-                          ).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+              )}
+            </div>
           </div>
-        </TabsContent>
+        </div>
 
-        {canManagePayroll && (
-          <TabsContent value="overview">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">$450K</div>
-                  <p className="text-sm text-gray-600">Total Payroll</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">25</div>
-                  <p className="text-sm text-gray-600">Employees Paid</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">$18K</div>
-                  <p className="text-sm text-gray-600">Average Salary</p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-2xl font-bold">$67K</div>
-                  <p className="text-sm text-gray-600">Total Deductions</p>
-                </CardContent>
-              </Card>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => { dispatch(setIsBulkUploadOpen(false)); setUploadedFile(null); }} disabled={isLoading}>
+            Cancel
+          </Button>
+          <Button onClick={handleBulkUploads} disabled={bandIsLoading}>
+            {bandIsLoading && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+            {bandIsLoading ? "Processing..." : "Import Class PayGrade"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Bulk Delete Dialog */}
+    <Dialog open={isBulkDeleteDialogOpen} onOpenChange={(open) => dispatch(setIsBulkDeleteDialogOpen(open))}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Confirm Bulk Delete</DialogTitle>
+          <DialogDescription>This will permanently delete all class levels for the selected year.</DialogDescription>
+        </DialogHeader>
+
+        <div className="my-4">
+          <Select value={year} onValueChange={(val) => dispatch(setYear(val))}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="Select Year" /></SelectTrigger>
+            <SelectContent className="max-h-60 overflow-y-auto">
+              {years.map((yr) => <SelectItem key={yr} value={yr}>{yr}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => dispatch(setIsBulkDeleteDialogOpen(false))} disabled={isLoading}>Cancel</Button>
+          <Button variant="destructive" onClick={handleBulkDelete} disabled={bandIsLoading || !year}>
+            {bandIsLoading && <Loader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />}
+            Confirm
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Generate Pay Class Dialog */}
+    <Dialog open={isBand} onOpenChange={(open) => dispatch(setIsBand(open))}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Process Pay Class Value</DialogTitle>
+          <DialogDescription>Enter the gross paygrade for the level you want to generate</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          <div className="w-full flex items-end gap-3">
+            <div className="flex-1">
+              <Label htmlFor="grossPay">Enter the Gross</Label>
+              <Input
+                id="grossPay"
+                value={classRecord?.band ?? ""}
+                onChange={(e) => dispatch(setClassRecord({ ...classRecord, band: e.target.value }))}
+                placeholder="Enter the band paygrade"
+                className={isPaygrade && !classRecord?.band ? "border border-red-500" : ""}
+              />
+              {isPaygrade && !classRecord?.band && <p className="text-red-500 text-sm mt-1">Gross is required.</p>}
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>All Employee Payroll</CardTitle>
-                <CardDescription>Complete payroll overview</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Basic Salary</TableHead>
-                      <TableHead>Gross Salary</TableHead>
-                      <TableHead>Net Salary</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {payrollRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">{record.employeeName}</TableCell>
-                        <TableCell>Engineering</TableCell>
-                        <TableCell>${record.basicSalary.toLocaleString()}</TableCell>
-                        <TableCell className="text-green-600 font-medium">
-                          ${record.grossSalary.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-blue-600 font-bold">
-                          ${record.netSalary.toLocaleString()}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(record.status)}</TableCell>
-                      </TableRow>
+            <Button onClick={handleGenerate} disabled={bandIsLoading} size="sm" className="h-10 px-5 rounded-lg shadow-md">
+              {bandIsLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Generate
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Class Result Dialog */}
+    <ClassResultDialog
+      dispatch={dispatch}
+      open={isResultDialogOpen}
+      onOpenChange={setIsResultDialogOpen}
+      classResponse={classResponse}
+      newRecord={classRecord}
+      setNewRecord={setClassRecord}
+      onAddClass={handleAddClass}
+      bandIsLoading={bandIsLoading}
+    />
+  </div>
+)}
+
+</div>
+
+      <Tabs defaultValue="payslips" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="payslips">Payrolls</TabsTrigger>
+      </TabsList>
+      <TabsContent value="payslips" className="space-y-6">
+        <Card>
+        <CardHeader>
+            <CardDescription>View and manage payslips</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4 mb-6 items-end justify-between">
+              {/* Left side: Filters */}
+              <div className="flex flex-wrap gap-4 items-end w-full">
+                {/* Month Dropdown */}
+                <Select
+                  value={selectedMonth || ""}
+                  onValueChange={(value) => {
+                    dispatch(setSelectedMonth(value));
+                    dispatch(setFiltersApplied(true));
+                  }}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Search by month" />
+                  </SelectTrigger>
+                  <SelectContent side="bottom" sideOffset={4} className="max-h-48 overflow-y-auto">
+                    {months.map((month) => (
+                      <SelectItem key={month} value={month}>
+                        {month}
+                      </SelectItem>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        )}
+                  </SelectContent>
+                </Select>
+
+                {/* Year Dropdown */}
+                <Select
+                  value={selectedYear || ""}
+                  onValueChange={(value) => {
+                    dispatch(setSelectedYear(value));
+                    dispatch(setFiltersApplied(true));
+                  }}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Search by year" />
+                  </SelectTrigger>
+                  <SelectContent side="bottom" sideOffset={4} className="max-h-48 overflow-y-auto">
+                    {years.map((year) => (
+                      <SelectItem key={year} value={year.toString()}>
+                        {year}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Clear Filters Button */}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    dispatch(setSelectedMonth(""));
+                    dispatch(setSelectedYear(""));
+                    dispatch(setSortDirection("desc"));
+                    dispatch(setFiltersApplied(false));
+                    dispatch(setSearchTerm(""));
+                  }}
+                >
+                  Clear Filters
+                </Button>
+
+                {/* Sort Toggle */}
+                <Button
+                  variant="outline"
+                  onClick={() => dispatch(setSortDirection(sortDirection === 'desc' ? 'asc' : 'desc'))}
+                >
+                  Sort by {sortDirection === 'desc' ? 'Oldest' : 'Latest'}
+                </Button>
+
+                {/* Search Bar */}
+                <div className="flex-1 min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
+               <Input
+                type="text"
+                placeholder="Search employee by name..."
+                value={searchTerm}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  dispatch(setSearchTerm(value));
+
+                  if (value.trim() === "") {
+                    dispatch(setSelectedMonth(""));
+                    dispatch(setSelectedYear(""));
+                    dispatch(setSortDirection("desc"));
+                    dispatch(setFiltersApplied(false));
+                  } else {
+                    dispatch(setFiltersApplied(true));
+                  }
+                }}
+                className="w-full"
+              />
+
+                </div>
+              </div>
+            </div>
+
+        <Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Staff ID</TableHead>
+      <TableHead>Employee Name</TableHead>
+      <TableHead>Period</TableHead>
+      <TableHead>Status</TableHead>
+      <TableHead>Basic Salary</TableHead>
+      <TableHead>Gross Salary</TableHead>
+      <TableHead>Net Salary</TableHead>
+      <TableHead>Actions</TableHead>
+    </TableRow>
+  </TableHeader>
+
+  <TableBody>
+    {isLoading && (!sortedRecords || sortedRecords.length === 0) ? (
+      Array.from({ length: 6 }).map((_, index) => (
+        <TableRow key={index}>
+          <TableCell><Skeleton className="h-6 w-20" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-32" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-24" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-20" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-20" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-20" /></TableCell> 
+          <TableCell><Skeleton className="h-6 w-20" /></TableCell> 
+          <TableCell>
+            <div className="flex space-x-2">
+              <Skeleton className="h-6 w-8 rounded" /> 
+              <Skeleton className="h-6 w-8 rounded" /> 
+              <Skeleton className="h-6 w-8 rounded" /> 
+            </div>
+          </TableCell> 
+        </TableRow>
+      ))
+    ) : sortedRecords?.length === 0 ? (
+      <TableRow>
+        <TableCell colSpan={8} className="text-center py-8">
+          <div className="flex flex-col items-center space-y-2">
+            <div className="text-3xl">📭</div>
+            <div className="text-lg font-medium text-gray-700">No data found</div>
+            <div className="text-sm text-gray-400">Try clearing filters or adjust your search</div>
+          </div>
+        </TableCell>
+      </TableRow>
+    ) : (
+      sortedRecords.map((record) => (
+        <TableRow key={record._id}>
+          <TableCell className="font-medium">
+            {record.user.staffId}
+          </TableCell>
+          <TableCell className="font-medium">
+            {record.user.firstName} {record.user.lastName}
+          </TableCell>
+          <TableCell>
+            <div>{record.month} {record.year}</div>
+            {record.paidDate && (
+              <div className="text-sm text-gray-500">
+                Paid: {new Date(record.paidDate).toLocaleDateString()}
+              </div>
+            )}
+          </TableCell>
+          <TableCell>{getPayrollStatusBadge(record?.status)}</TableCell>
+          <TableCell className="font-medium">₦{record.basicSalary.toLocaleString()}</TableCell>
+          <TableCell className="font-medium text-green-600">₦{record.grossSalary.toLocaleString()}</TableCell>
+          <TableCell className="font-bold text-blue-600">₦{record.netSalary.toLocaleString()}</TableCell>
+          <TableCell>
+            <div className="flex space-x-2">
+              <Button variant="outline" size="sm" onClick={() => handleViewPayslip(record)}>
+                <Eye className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleDownloadPayslip(record)}>
+                <Download className="h-4 w-4" />
+              </Button>
+                {canManagePayroll && (
+                      <>
+                        {record.status !== "paid" && (
+                          <>
+                            {/* Delete Button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenDeleteDialog(record._id, "delete")}
+                              disabled={isLocalLoading(record._id, "delete")}                            >
+                              {isLocalLoading(record._id, "delete") ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-4 w-4" />
+                              )}
+                            </Button>
+
+                            {/* Mark Draft Button */}
+                            {record.status === "pending" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMarkDraft(record._id)}
+                                disabled={isLocalLoading(record._id,"draft")}
+                              >
+                                {isLocalLoading(record._id,"draft") && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                Mark Draft
+                              </Button>
+                            )}
+
+                          
+                            {record.status === "draft" && (
+                              <>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleProcessPayroll(record._id)}
+                                  disabled={isLocalLoading(record._id, "processPayroll")}
+                                >
+                                  {isLocalLoading(record._id, "processPayroll") && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                  Process
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleReversePayroll(record._id)}
+                                  disabled={isLocalLoading(record._id, "reversePayroll")}
+                                >
+                                  {isLocalLoading(record._id, "reversePayroll") && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                                  Reverse
+                                </Button>
+                              </>
+                            )}
+                          </>
+                        )}
+
+                        {/* Pay Button */}
+                        {record.status === "processed" && (
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleMarkPaid(record._id)}
+                            disabled={isLocalLoading(record._id, "paid")}
+                          >
+                            {isLocalLoading(record._id, "paid") && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                            Pay
+                          </Button>
+                        )}
+                      </>
+                    )}
+            </div>
+          </TableCell>
+        </TableRow>
+      ))
+    )}
+  </TableBody>
+</Table>
+
+
+            <PayslipWithTaxDialog
+              selectedPayslip={selectedPayslip}
+              onClose={handleCloseDialog}
+              onDownload={handleDownloadPayslip}
+              loadingPdf={loadingPdf}
+            />
+
+            {payrollPagination?.pages > 1 && (
+              <PaginationNav
+                page={payrollPagination?.page}
+                totalPages={payrollPagination.pages}
+                onPageChange={(newPage) =>
+                  dispatch(setPayrollPagination({ ...payrollPagination, page: newPage }))
+                }
+                className="mt-6"
+              />
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>         
+         
       </Tabs>
 
       {/* Edit Payroll Record Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Payroll Record</DialogTitle>
-            <DialogDescription>Update the payroll details</DialogDescription>
-          </DialogHeader>
-          {editingRecord && (
-            <div className="space-y-6 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="editEmployeeName">Employee Name</Label>
-                  <Input
-                    id="editEmployeeName"
-                    value={editingRecord.employeeName}
-                    onChange={(e) => setEditingRecord({...editingRecord, employeeName: e.target.value})}
-                    placeholder="Enter employee name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="editBasicSalary">Basic Salary</Label>
-                  <Input
-                    id="editBasicSalary"
-                    type="number"
-                    value={editingRecord.basicSalary}
-                    onChange={(e) => setEditingRecord({...editingRecord, basicSalary: Number(e.target.value)})}
-                    placeholder="Enter basic salary"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <Label>Allowances</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addEditAllowanceField}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Allowance
-                  </Button>
-                </div>
-                {editingRecord.allowances.map((allowance, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 mb-2">
-                    <Input
-                      placeholder="Allowance name"
-                      value={allowance.name}
-                      onChange={(e) => {
-                        const updated = [...editingRecord.allowances];
-                        updated[index].name = e.target.value;
-                        setEditingRecord({...editingRecord, allowances: updated});
-                      }}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Amount"
-                      value={allowance.amount}
-                      onChange={(e) => {
-                        const updated = [...editingRecord.allowances];
-                        updated[index].amount = Number(e.target.value);
-                        setEditingRecord({...editingRecord, allowances: updated});
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-3">
-                  <Label>Deductions</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addEditDeductionField}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Deduction
-                  </Button>
-                </div>
-                {editingRecord.deductions.map((deduction, index) => (
-                  <div key={index} className="grid grid-cols-2 gap-2 mb-2">
-                    <Input
-                      placeholder="Deduction name"
-                      value={deduction.name}
-                      onChange={(e) => {
-                        const updated = [...editingRecord.deductions];
-                        updated[index].name = e.target.value;
-                        setEditingRecord({...editingRecord, deductions: updated});
-                      }}
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Amount"
-                      value={deduction.amount}
-                      onChange={(e) => {
-                        const updated = [...editingRecord.deductions];
-                        updated[index].amount = Number(e.target.value);
-                        setEditingRecord({...editingRecord, deductions: updated});
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleUpdateRecord}>
-                  Update Record
-                </Button>
-              </div>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open)=>{
+        setIsEditDialogOpen(open);
+        if(!open){
+          dispatch(setIsEditDialogOpen(false))
+        }
+      }
+        }>
+    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Edit Payroll Record</DialogTitle>
+        <DialogDescription>Update the payroll details</DialogDescription>
+      </DialogHeader>
+      {editingRecord && (
+        <div className="space-y-6 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            {/* Email - read only */}
+            <div>
+              <Label htmlFor="editEmail">Employee Email</Label>
+              <Input
+                id="editEmail"
+                value={editingRecord.user?.email}
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+                placeholder="Employee email"
+              />
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
-      {/* Payslip Detail Dialog */}
-      <Dialog open={!!selectedPayslip} onOpenChange={() => setSelectedPayslip(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Payslip Details</DialogTitle>
-            <DialogDescription>
-              {selectedPayslip && `${selectedPayslip.month} ${selectedPayslip.year} - ${selectedPayslip.employeeName}`}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPayslip && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium mb-3">Earnings</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Basic Salary:</span>
-                      <span className="font-medium">${selectedPayslip.basicSalary.toLocaleString()}</span>
-                    </div>
-                    {selectedPayslip.allowances.map((allowance, index) => (
-                      <div key={index} className="flex justify-between text-green-600">
-                        <span>{allowance.name}:</span>
-                        <span>${allowance.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    {selectedPayslip.bonuses.map((bonus, index) => (
-                      <div key={index} className="flex justify-between text-blue-600">
-                        <span>{bonus.name}:</span>
-                        <span>${bonus.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="border-t pt-2 font-medium">
-                      <div className="flex justify-between">
-                        <span>Gross Salary:</span>
-                        <span>${selectedPayslip.grossSalary.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-3">Deductions</h4>
-                  <div className="space-y-2">
-                    {selectedPayslip.deductions.map((deduction, index) => (
-                      <div key={index} className="flex justify-between text-red-600">
-                        <span>{deduction.name}:</span>
-                        <span>${deduction.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="border-t pt-2 font-bold text-lg">
-                      <div className="flex justify-between text-blue-600">
-                        <span>Net Salary:</span>
-                        <span>${selectedPayslip.netSalary.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {/* Employee Name */}
+            <div>
+              <Label htmlFor="editEmployeeName">Employee Name</Label>
+              <Input
+                id="editEmployeeName"
+                className="bg-gray-100 cursor-not-allowed"
+                value={`${editingRecord.user?.firstName || ''} ${editingRecord.user?.lastName || ''}`.trim()}
+                readOnly
+                placeholder="Enter employee name"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Month */}
+            <div>
+              <Label htmlFor="editMonth">Month</Label>
+              <Input
+                id="editMonth"
+                value={editingRecord.month || ''}
+                onChange={(e) =>
+                  dispatch(setEditingRecord({ ...editingRecord, month: e.target.value }))
+                }
+                placeholder="Enter month"
+              />
+            </div>
+
+            {/* Year */}
+            <div>
+              <Label htmlFor="editYear">Year</Label>
+              <Input
+                id="editYear"
+                value={editingRecord.year || ''}
+                onChange={(e) =>
+                  dispatch(setEditingRecord({ ...editingRecord, year: e.target.value }))
+                }
+                placeholder="Enter year"
+                type="number"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Basic Salary */}
+            <div>
+              <Label htmlFor="editBasicSalary">Basic Salary</Label>
+              <Input
+                id="editBasicSalary"
+                type="number"
+                value={editingRecord.basicSalary || 0}
+                onChange={(e) =>
+                  dispatch(setEditingRecord({ ...editingRecord, basicSalary: Number(e.target.value) }))
+                }
+                placeholder="Enter basic salary"
+              />
+            </div>
+
+            {/* Total Allowances */}
+            <div>
+              <Label htmlFor="totalAllowances">Total Allowances</Label>
+              <Input
+                id="totalAllowances"
+                type="number"
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+                value={editingRecord.totalAllowances || 0}
               
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => handleDownloadPayslip(selectedPayslip)}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
+                placeholder="Enter total allowances"
+              />
+            </div>
+          </div>
+
+          {/* Allowances Section */}
+          <div>
+            <div className="mb-3">
+              <Label>Allowances</Label>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-2">
+              <div>
+                <Label htmlFor="housingAllowance">Housing Allowance</Label>
+                <Input
+                  id="housingAllowance"
+                  type="number"
+                  value={editingRecord.housingAllowance || 0}
+                  onChange={(e) =>
+                    dispatch(setEditingRecord({ ...editingRecord, housingAllowance: Number(e.target.value) }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="transportAllowance">Transport Allowance</Label>
+                <Input
+                  id="transportAllowance"
+                  type="number"
+                  value={editingRecord.transportAllowance || 0}
+                  onChange={(e) =>
+                    dispatch(setEditingRecord({ ...editingRecord, transportAllowance: Number(e.target.value) }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="lasgAllowance">LASG Allowance</Label>
+                <Input
+                  id="lasgAllowance"
+                  type="number"
+                  value={editingRecord.lasgAllowance || 0}
+                  onChange={(e) =>
+                    dispatch(setEditingRecord({ ...editingRecord, lasgAllowance: Number(e.target.value) }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="twentyFourHoursAllowance">24hrs Allowance</Label>
+                <Input
+                  id="twentyFourHoursAllowance"
+                  type="number"
+                  value={editingRecord.twentyFourHoursAllowance || 0}
+                  onChange={(e) =>
+                    dispatch(setEditingRecord({ ...editingRecord, twentyFourHoursAllowance: Number(e.target.value) }))
+                  }
+                />
+              </div>
+              <div>
+                <Label htmlFor="healthAllowance">Health Allowance</Label>
+                <Input
+                  id="healthAllowance"
+                  type="number"
+                  value={editingRecord.healthAllowance || 0}
+                  onChange={(e) =>
+                    dispatch(setEditingRecord({ ...editingRecord, healthAllowance: Number(e.target.value) }))
+                  }
+                />
               </div>
             </div>
-          )}
-        </DialogContent>
+          </div>
+
+          {/* Deductions Section */}
+          <div>
+            <div className="mb-3">
+              <Label htmlFor="deductions">Deductions</Label>
+            </div>
+            <Input
+              id="deductions"
+              type="number"
+              value={editingRecord.deductions || 0}
+              onChange={(e) =>
+                dispatch(setEditingRecord({ ...editingRecord, deductions: Number(e.target.value) }))
+              }
+            />
+          </div>
+
+      
+        </div>
+      )}
+    </DialogContent>
+
       </Dialog>
+
+
+
+
+        <Dialog
+                                  open={isDeleteDialogOpen}
+                                  onOpenChange={(open) => dispatch(setIsDeleteDialogOpen(open))}
+                                >
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Confirm Delete</DialogTitle>
+                                      <DialogDescription>
+                                        Are you sure you want to delete this payslip?
+                                      </DialogDescription>
+                                    </DialogHeader>
+
+                                    <DialogFooter>
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => dispatch(setIsDeleteDialogOpen(false))}
+                                        disabled={isLoading}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => handleDeleteRecord(deleteParams.id, 'delete')}
+                                        disabled={isLoading}
+                                      >
+                                        {isLoading && (
+                                          <Loader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />
+                                        )}
+                                        Confirm
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+        </Dialog>
+
     </div>
   );
 };
 
 export default PayrollManagement;
+
+
+

@@ -22,7 +22,9 @@ import {
   Shield,
   Users,
   Settings,
-  Loader2
+  Loader2,
+  HandCoins,
+  Upload
 } from 'lucide-react';
 import ProfilePictureUpload from './ProfilePictureUpload';
 import { useDispatch } from 'react-redux';
@@ -34,57 +36,23 @@ import { getEditableFields, getRoleColor, getRoleIcon } from '@/utils/getEditabl
 import { useReduxProfile } from '@/hooks/user/useReduxProfile';
 import { ProfileResponse, ProfileState } from '@/types/user';
 import { toast } from '@/hooks/use-toast';
+import { Switch } from '../ui/switch';
+import { setCooperativeRecord, setIsDialogOpen } from '@/store/slices/cooperative/cooperativeSlice';
+import { useReduxContribution } from '@/hooks/cooperative/useReduxCooperative';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 
 const UserProfile: React.FC = () => {
-    const {user: userUserProfile , profile: userProfile } = useCombinedContext();
-
-    const {profile:user,  isProfileLoading } = userProfile
-  const {editProfile} = useReduxProfile()
   const dispatch = useAppDispatch()
-  const {formData, isEditing, isLoading, bulkEmployees } = useAppSelector((state) => state.profile);  
+  const {profile: userProfile } = useCombinedContext();
+  const {profile:user  } = userProfile
+  const {formData } = useAppSelector((state) => state.profile);  
 
- 
-  const editableFields = getEditableFields(user?.role);
-
-
-const handleSave = async () => {
-  dispatch(setIsEditing(false))
-  await editProfile(formData) as unknown as ProfileResponse;
-
-};
-
-   const handleEdit = () => {
-    dispatch(setIsEditing(!isEditing)); // Enable editing
-  };
 
 
   const RoleIcon = getRoleIcon(user?.role || '');
-  const canEditAll = user?.role === 'admin' || user?.role === 'hr';
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-gray-600">Manage your personal information</p>
-        </div>
-        <Button 
-          onClick={() => isEditing ? handleSave() : handleEdit()}
-          className="flex items-center gap-2"
-        >
-          {isEditing ? (
-            <>
-              <Save className="h-4 w-4" />
-              Save Changes
-                {isProfileLoading && <Loader2 className="ml-2 h-5 w-5 animate-spin" />}
-            </>
-          ) : (
-            <>
-              <Edit className="h-4 w-4" />
-              Edit Profile
-            </>
-          )}
-        </Button>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Picture and Basic Info */}
@@ -134,211 +102,210 @@ const handleSave = async () => {
         </div>
 
         {/* Detailed Information */}
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="personal" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="personal">Personal</TabsTrigger>
-              <TabsTrigger value="professional">Professional</TabsTrigger>
-              <TabsTrigger value="emergency">Emergency</TabsTrigger>
-            </TabsList>
+        <div className="lg:col-span-2 w-full min-h-screen p-4 sm:p-6 lg:p-8">
+      <Tabs defaultValue="personal" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="personal">Personal</TabsTrigger>
+          <TabsTrigger value="professional">Professional</TabsTrigger>
+          <TabsTrigger value="financial">Financial</TabsTrigger>
+        </TabsList>
 
-            <TabsContent value="personal">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Your personal details and contact information</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => dispatch(setFormData({ ...formData, firstName: e.target.value }))}
-                         disabled={!(isEditing && editableFields.includes('firstName'))}
+        {/* Personal Information Tab */}
+        <TabsContent value="personal">
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>
+                Personal details and contact information.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input id="firstName" value={formData.firstName} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="middleName">Middle Name</Label>
+                  <Input id="middleName" value={formData.middleName || ''} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input id="lastName" value={formData.lastName} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" value={formData.title} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Input id="gender" value={formData.gender} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input id="dateOfBirth" type="date" value={formData.dateOfBirth} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mobile">Mobile Number</Label>
+                  <Input id="mobile" type="tel" value={formData.mobile} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input id="email" type="email" value={formData.email} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stateOfOrigin">State of Origin</Label>
+                  <Input id="stateOfOrigin" value={formData.stateOfOrigin} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">City</Label>
+                  <Input id="city" value={formData.city} disabled />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea id="address" value={formData.address} disabled />
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="staffId">Staff ID</Label>
+                  <Input value={formData.staffId} disabled />
+                </div>
+                <div className="space-y-2 flex items-center pt-8">
+                  <Switch checked={formData.isActive} disabled />
+                  <Label className="ml-2">Is Active</Label>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={formData?.lastName}
-                        onChange={(e) => dispatch(setFormData({ ...formData, lastName: e.target.value }))}
-                                                disabled={!(isEditing && editableFields.includes('lastName'))}
+        {/* Professional Information Tab */}
+        <TabsContent value="professional">
+          <Card>
+            <CardHeader>
+              <CardTitle>Professional Information</CardTitle>
+              <CardDescription>
+                Work-related details and qualifications.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="departmentName">Department</Label>
+                  <Input id="departmentName" value={formData.departmentName} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department ID</Label>
+                  <Input id="department" value={formData.department} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position</Label>
+                  <Input id="position" value={formData.position} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Input id="role" value={formData.role} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="employmentDate">Employment Date</Label>
+                  <Input id="employmentDate" type="date" value={formData.employmentDate} disabled />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="officeBranch">Office Branch</Label>
+                  <Input id="officeBranch" value={formData.officeBranch} disabled />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-                      />
-                    </div>
+        {/* Financial Information Tab */}
+        <TabsContent value="financial">
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial & Emergency Information</CardTitle>
+              <CardDescription>
+                Payroll and emergency contact details.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 rounded-md border p-4">
+                <h3 className="text-lg font-medium">Account & Payroll</h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="bankName">Bank Name</Label>
+                    <Input id="bankName" value={formData.accountInfo?.bankName} disabled />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData?.email}
-                      onChange={(e) => dispatch(setFormData({ ...formData, email: e.target.value }))}
-                                            disabled={!(isEditing && editableFields.includes('email'))}
-
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                    <Input id="bankAccountNumber" value={formData.accountInfo?.bankAccountNumber} disabled />
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        value={formData?.phoneNumber}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        disabled={!(isEditing && editableFields.includes('phone'))}                                      
-
-                        placeholder="+1 (555) 000-0000"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <Input
-                        id="dateOfBirth"
-                        type="date"
-                        value={formData?.dateOfBirth}
-                        onChange={(e) => dispatch(setFormData({ ...formData, dateOfBirth: e.target.value }))}
-                        disabled={!(isEditing && editableFields.includes('dateOfBirth'))}
-
-
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="basicPay">Basic Pay (USD)</Label>
+                    <Input id="basicPay" type="number" value={formData.accountInfo?.basicPay} disabled />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea
-                      id="address"
-                      value={formData?.address}
-                      onChange={(e) => dispatch(setFormData({ ...formData, address: e.target.value }))}
-                       disabled={!(isEditing && editableFields.includes('address'))}
-
-
-                      placeholder="Enter your full address"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="allowances">Allowances (USD)</Label>
+                    <Input id="allowances" type="number" value={formData.accountInfo?.allowances} disabled />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="professional">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Professional Information</CardTitle>
-                  <CardDescription>Your work-related details and qualifications</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="department">Department</Label>
-                      <Input
-                        id="department"
-                        value={formData?.department}
-                        onChange={(e) => dispatch(setFormData({ ...formData, department: e.target.value }))}
-                                                                                          disabled={!(isEditing && editableFields.includes('department'))}
-
-
-                        placeholder="Your department"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="position">Position</Label>
-                      <Input
-                        id="position"
-                        value={formData?.position}
-                        onChange={(e) => dispatch(setFormData({ ...formData, position: e.target.value }))}
-                                                                                          disabled={!(isEditing && editableFields.includes('position'))}
-
-
-                        placeholder="Your job position"
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="taxNumber">Tax Number</Label>
+                    <Input id="taxNumber" value={formData.accountInfo?.taxNumber || ''} disabled />
                   </div>
-
-                  <div>
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formatDateTime(formData?.createdAt)}
-                      onChange={(e) => dispatch(setFormData({ ...formData, startDate: e.target.value }))}
-                                                                                       disabled={!(isEditing && editableFields.includes('startDate'))}
-
-
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="pensionCompany">Pension Company</Label>
+                    <Input id="pensionCompany" value={formData.accountInfo?.pensionCompany || ''} disabled />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="skills">Skills & Competencies</Label>
-                    <Textarea
-                      id="skills"
-                      value={formData?.skills}
-                      onChange={(e) => dispatch(setFormData({ ...formData, skills: e.target.value }))}
-                                                                                       disabled={!(isEditing && editableFields.includes('skills'))}
-
-
-                      placeholder="List your key skills and competencies"
-                    />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pensionNumber">Pension Number</Label>
+                  <Input id="pensionNumber" value={formData.accountInfo?.pensionNumber || ''} disabled />
+                </div>
+              </div>
+              <div className="space-y-4 rounded-md border p-4">
+                <h3 className="text-lg font-medium">Cooperative</h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="monthlyContribution">Monthly Contribution (NGN)</Label>
+                    <Input id="monthlyContribution" type="number" value={formData.cooperative?.monthlyContribution || ''} disabled />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="education">Education</Label>
-                    <Textarea
-                      id="education"
-                      value={formData?.education}
-                      onChange={(e) => dispatch(setFormData({ ...formData, education: e.target.value }))}
-                                                                                       disabled={!(isEditing && editableFields.includes('education'))}
-
-
-                      placeholder="Your educational background"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="totalContributed">Total Contributed (NGN)</Label>
+                    <Input id="totalContributed" type="number" value={formData.cooperative?.totalContributed || ''} disabled />
                   </div>
-                  
-                  <div>
-                    <Label htmlFor="experience">Work Experience</Label>
-                    <Textarea
-                      id="experience"
-                      value={formData?.experience}
-                      onChange={(e) => dispatch(setFormData({ ...formData, experience: e.target.value }))}
-                                                                                       disabled={!(isEditing && editableFields.includes('experience'))}
-
-
-                      placeholder="Previous work experience"
-                    />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastContributionDate">Last Contribution Date</Label>
+                  <Input id="lastContributionDate" type="date" value={formData.cooperative?.lastContributionDate || ''} disabled />
+                </div>
+              </div>
+              <div className="space-y-4 rounded-md border p-4">
+                <h3 className="text-lg font-medium">Next of Kin</h3>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="nextOfKinName">Name</Label>
+                    <Input id="nextOfKinName" value={formData.nextOfKin?.name} disabled />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="emergency">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Emergency Contact</CardTitle>
-                  <CardDescription>Contact information for emergencies</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="emergencyContact">Emergency Contact Details</Label>
-                    <Textarea
-                      id="emergencyContact"
-                      value={formData?.emergencyContact?.name}
-                      onChange={(e) => dispatch(setFormData({ ...formData, emergencyContact: e.target.value }))}
-                    disabled={!(isEditing && editableFields.includes('emergencyContact'))}
-
-
-                      placeholder="Name, relationship, phone number, and address of emergency contact"
-                    />
+                  <div className="space-y-2">
+                    <Label htmlFor="nextOfKinPhone">Phone</Label>
+                    <Input id="nextOfKinPhone" type="tel" value={formData.nextOfKin?.phone} disabled />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nextOfKinEmail">Email</Label>
+                    <Input id="nextOfKinEmail" type="email" value={formData.nextOfKin?.email} disabled />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nextOfKinRelationship">Relationship</Label>
+                    <Input id="nextOfKinRelationship" value={formData.nextOfKin?.relationship} disabled />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
       </div>
     </div>
   );

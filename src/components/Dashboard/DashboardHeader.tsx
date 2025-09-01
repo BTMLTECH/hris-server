@@ -46,9 +46,9 @@ const DashboardHeader: React.FC = () => {
           <Button variant="ghost" size="sm">
             <Bell className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm">
+          {/* <Button variant="ghost" size="sm">
             <Settings className="h-4 w-4" />
-          </Button>
+          </Button> */}
           
           <div className="flex items-center space-x-3">
             <div className="text-right">

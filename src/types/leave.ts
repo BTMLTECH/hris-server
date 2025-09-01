@@ -1,57 +1,45 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// export interface LeaveRequest {
-//   id: string;
-//   employeeId: string;
-//   employeeName: string;
-//   type: 'annual' | 'sick' | 'maternity' | 'compensation';
-//   startDate: string;
-//   endDate: string;
-//   days: number;
-//   reason: string;
-//   status: 'pending' | 'approved' | 'rejected';
-//   teamLead: string
-//   appliedDate: string;
-//   approvedBy?: string;
-//   approvedDate?: string;
-//   comments?: string;
-//   teamLeadId?: string;
-//   teamLeadName?: string;
-// }
+
+export interface IReliever {
+  user: string;
+  firstName: string;
+  lastName: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
+  note?: string;
+  createdAt?: Date;
+}
+
+
+
 export interface LeaveRequest {
   id: string;
   employeeId: string;
   employeeName: string;
-  type: 'annual' | 'sick' | 'maternity' | 'compensation';
+  type: "annual" | "maternity" | "compassionate";
   startDate: string;
   endDate: string;
   days: number;
   reason: string;
-  status: 'pending' | 'approved' | 'rejected';
-  teamLead: string;
+  status: "pending" | "approved" | "rejected" | "expired";
   appliedDate: string;
-
-  // Optional approval trail
+  // Team lead details
+  teamlead: string;
+  teamleadId?: string;
+  teamleadName?: string;
+  // Extra leave metadata
+  typeIdentify?: "leave";
   approvedBy?: string;
   approvedDate?: string;
   comments?: string;
-
-  teamLeadId?: string;
-  teamLeadName?: string;
+  relievers?: IReliever[];
   reviewTrail?: {
-      reviewer: string;
-      role: "teamlead" | "hr" | "md";
-      action: "approved" | "rejected";
-      date: string;
-      note?: string;
+    reviewer: string;
+    role: "reliever" | "teamlead" | "hr";
+    action: "approved" | "rejected";
+    date: string;
+    note?: string;
   }[];
-  // reviewTrail?: {
-  //   reviewer: string;
-  //   role: string;
-  //   action: 'approved' | 'rejected';
-  //   date: string;
-  //   note?: string;
-  // }[];
 }
 
 export interface LeaveBalance {
@@ -97,8 +85,66 @@ export interface UseReduxLeaveReturnType {
   handleCreateLeaveRequest: (data: any) => Promise<boolean>;
   handleApproveLeaveRequest: (id: string) => Promise<boolean>;
   handleRejectLeaveRequest: (id: string, note:string) => Promise<boolean>;
-
   refetchApprovalQueue: () => void;
   refetchActivityFeed: () => void;
-   refetchTeamlead: () => void;
+  refetchTeamlead: () => void;
+}
+
+
+export interface ReviewTrailItem {
+  reviewer: string;
+  role: string;
+  action: 'approved' | 'rejected' | 'pending' | 'expired';
+  date: string;
+  note?: string;
+}
+
+
+export interface RelieverItem {
+  user: string;
+  firstName: string;
+  lastName: string;
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+}
+
+
+export interface LeaveActivityFeedItem {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: 'annual' | 'maternity' | 'compassionate'; 
+  startDate: Date | string;
+  endDate: Date | string;
+  days: number;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected' | 'expired'; 
+  appliedDate: Date | string;
+  teamlead?: string;
+  teamleadId?: string;
+  teamleadName?: string;
+  relievers?: RelieverItem[];
+  reviewTrail?: ReviewTrailItem[];
+  currentReviewerRole?: 'reliever' | 'teamlead' | 'hr' | null; 
+  allowance: boolean;
+  url: string
+  typeIdentify?:'leave'
+}
+
+export interface LeaveActivitySummary {
+  pending: number;
+  approved: number;
+  rejected: number;
+   expired: number;
+}
+
+export interface LeaveBalanceItem {
+  type: 'annual' | 'maternity' | 'compassionate';
+  remaining: number;
+}
+
+export interface LeaveActivityFeedResponse {
+  myRequests: LeaveActivityFeedItem[];
+  approvals: LeaveActivityFeedItem[];
+  summary: LeaveActivitySummary;
+  balance: LeaveBalanceItem[];  
 }

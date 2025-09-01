@@ -7,18 +7,10 @@ import Dashboard from '@/components/Dashboard/Dashboard';
 import DashboardSkeleton from '@/components/Dashboard/DashboardSkeleton';
 import { useCombinedContext } from '@/contexts/AuthContext';
 import { RootState } from '@/store/store';
+import { useAppSelector } from '@/store/hooks';
 
 const Index = () => {
-  const { user: userDashboard } = useCombinedContext();
-  const {
-    user,
-    isAuthenticated,
-    isLoading,
-  } = userDashboard;
-
-  // if (isLoading && user) {
-  //   return <DashboardSkeleton />;
-  // }
+  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   try {
     return isAuthenticated && user ? <Dashboard /> : <Login />;

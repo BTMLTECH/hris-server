@@ -13,41 +13,19 @@ import { useCombinedContext } from '@/contexts/AuthContext';
 import { AttendanceRecord } from '@/types/attendance';
 import { useReduxAttendance } from '@/hooks/attendance/useReduxAttendance';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { clearSelectedShift, setActiveTab, setCurrentSession, setIsCheckedIn, setIsClocking, setSelectedShift } from '@/store/slices/attendance/attendanceSlice';
+import { clearSelectedShift, setActiveTab, setAttendancePagination, setCurrentSession, setIsCheckedIn, setIsClocking, setSelectedShift } from '@/store/slices/attendance/attendanceSlice';
 import { getShiftClockStatus, getShiftInfo, getStatusColor, shiftUtils } from '@/utils/attendanceHelpers';
 import { useShiftClockStatus } from '@/hooks/useShiftClockStatus';
+import { PaginationNav } from '../ui/paginationNav';
 
 
 
-const AttendanceManagement: React.FC = () => {
-  // const { user } = useAuth();
+const AttendanceManagement: React.FC = () => { 
   const dispatch = useAppDispatch();  
-  const {user: userAttendanceManagement,  profile, attendance } = useCombinedContext();
-  const { user} = userAttendanceManagement
-  const { toast } = useToast();
-  const { activeTab, error, currentSession, isCheckedIn, records, companySummary, selectedShift, isLoading , isClocking } = useAppSelector((state) => state.attendance);
-
- const {handleManualCheckIn, handleManualCheckOut} = useReduxAttendance()
-  
-
-const { canClockIn } = useShiftClockStatus(records, selectedShift)
-
-  // const handleClockIn = async () => {
-  //   const now = new Date();
-  //   const timeString = now.toTimeString().slice(0, 5);
-  
-  //   dispatch(setCurrentSession({
-  //     shift: selectedShift,
-  //     checkInTime: timeString
-  //   }));
-    
-  //   await handleManualCheckIn({
-  //     shift: selectedShift,
-  //     checkInTime: timeString,
-  //   })
-
-  // };
-
+  const { activeTab, attendancePagination,  error, currentSession, isCheckedIn, records, companySummary, selectedShift, isLoading , isClocking } = useAppSelector((state) => state.attendance);
+  const {cachedRecords, handleManualCheckIn, handleManualCheckOut} = useReduxAttendance()
+  const newRecords = cachedRecords.length ? cachedRecords : records ?? [];
+  const { canClockIn } = useShiftClockStatus(newRecords, selectedShift)
 
 
   const handleClockIn = async () => {
@@ -95,8 +73,6 @@ useEffect(() => {
 }, [dispatch]);
 
 
-  // const canViewAllAttendance = user?.role.toLowerCase() === 'admin' || user?.role.toLowerCase() === 'hr' || user?.role.toLowerCase() === 'manager';
-
 
   return (
     <div className="space-y-6">
@@ -111,7 +87,6 @@ useEffect(() => {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="clock-in">Clock In/Out</TabsTrigger>
           <TabsTrigger value="my-attendance">My Attendance</TabsTrigger>
-          {/* {canViewAllAttendance && <TabsTrigger value="team-attendance">Team Attendance</TabsTrigger>} */}
           <TabsTrigger value="reports">Reports</TabsTrigger>
         </TabsList>
 
@@ -120,11 +95,11 @@ useEffect(() => {
             {/* Day Shift Card */}
             <Card className={`cursor-pointer transition-all ${selectedShift === 'day' ? 'ring-2 ring-yellow-500 bg-yellow-50' : ''}`}
                   onClick={() => {
-  if (!isCheckedIn) {
-    dispatch(setSelectedShift('day'));
-    shiftUtils.set('day');
-  }
-}}
+                if (!isCheckedIn) {
+                  dispatch(setSelectedShift('day'));
+                  shiftUtils.set('day');
+                }
+              }}
                   >
               <CardHeader>
                 <CardTitle className="flex items-center text-yellow-700">
@@ -144,24 +119,24 @@ useEffect(() => {
             {/* Night Shift Card */}
             <Card className={`cursor-pointer transition-all ${selectedShift === 'night' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
                   onClick={() => {
-  if (!isCheckedIn) {
-    dispatch(setSelectedShift('night'));
-    shiftUtils.set('night');
-  }
-}}
+              if (!isCheckedIn) {
+                dispatch(setSelectedShift('night'));
+                shiftUtils.set('night');
+              }
+            }}
 
                   >
               <CardHeader>
                 <CardTitle className="flex items-center text-purple-700">
                   <Moon className="h-6 w-6 mr-2" />
-                  Night Shift
+                  After Hours
                 </CardTitle>
-                <CardDescription>4:00 PM - 5:00 AM</CardDescription>
+                <CardDescription>5:00 PM - 5:00 AM</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="text-center space-y-2">
                   <div className="text-2xl font-bold">13 hours</div>
-                  <p className="text-sm text-gray-600">Night working hours</p>
+                  <p className="text-sm text-gray-600">After working hours</p>
                 </div>
               </CardContent>
             </Card>
@@ -238,8 +213,8 @@ useEffect(() => {
           </TableRow>
         </TableHeader>
        <TableBody>
-  {records?.length ? (
-    [...records]
+  {cachedRecords?.length ? (
+    [...cachedRecords]
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // 🔁 Sort by latest first
       .map((record) => {
         const shiftInfo = getShiftInfo(record.shift);
@@ -284,6 +259,17 @@ useEffect(() => {
 </TableBody>
 
       </Table>
+      {attendancePagination.pages > 1 && (
+        <PaginationNav
+          page={attendancePagination.page}
+          totalPages={attendancePagination.pages}
+          onPageChange={(newPage) =>
+            dispatch(setAttendancePagination({ ...attendancePagination, page: newPage }))
+          }
+          className="mt-6"
+        />
+      )}
+
     </CardContent>
   </Card>
 </TabsContent>
@@ -358,67 +344,3 @@ useEffect(() => {
 
 export default AttendanceManagement;
 
-
-
-
-
-// {canViewAllAttendance && (
-//   <TabsContent value="team-attendance">
-//     <Card>
-//       <CardHeader>
-//         <CardTitle>Team Attendance</CardTitle>
-//         <CardDescription>Monitor team attendance across all shifts</CardDescription>
-//       </CardHeader>
-//       <CardContent>
-//         <Table>
-//           <TableHeader>
-//             <TableRow>
-//               <TableHead>Employee</TableHead>
-//               <TableHead>Date</TableHead>
-//               <TableHead>Shift</TableHead>
-//               <TableHead>Check In</TableHead>
-//               <TableHead>Check Out</TableHead>
-//               <TableHead>Hours</TableHead>
-//               <TableHead>Status</TableHead>
-//             </TableRow>
-//           </TableHeader>
-//           <TableBody>
-//             {/* Safety check: ensure attendance.attendanceRecords is available */}
-//             {records?.length ? (
-//               records.map((record) => {
-//                 const shiftInfo = getShiftInfo(record.shift);
-//                 const ShiftIcon = shiftInfo.icon;
-//                 return (
-//                   <TableRow key={record.id}>
-//                     <TableCell className="font-medium">{record.employeeName}</TableCell>
-//                     <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
-//                     <TableCell>
-//                       <Badge className={shiftInfo.color}>
-//                         <ShiftIcon className="h-3 w-3 mr-1" />
-//                         {record.shift}
-//                       </Badge>
-//                     </TableCell>
-//                     <TableCell>{record.checkIn || '-'}</TableCell>
-//                     <TableCell>{record.checkOut || '-'}</TableCell>
-//                     <TableCell>{record.hoursWorked || '-'}</TableCell>
-//                     <TableCell>
-//                       <Badge className={getStatusColor(record.status)}>
-//                         {record.status}
-//                       </Badge>
-//                     </TableCell>
-//                   </TableRow>
-//                 );
-//               })
-//             ) : (
-//               <TableRow>
-//                 <TableCell colSpan={7} align="center">
-//                   No attendance records available for the team.
-//                 </TableCell>
-//               </TableRow>
-//             )}
-//           </TableBody>
-//         </Table>
-//       </CardContent>
-//     </Card>
-//   </TabsContent>
-// )}

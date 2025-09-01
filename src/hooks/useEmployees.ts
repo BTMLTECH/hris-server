@@ -77,13 +77,10 @@ export const useEmployees = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
     const loadEmployees = async () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setEmployees(mockEmployees);
-      
-      // Calculate stats
       const totalEmployees = mockEmployees.length;
       const activeEmployees = mockEmployees.filter(emp => emp.status === 'active').length;
       const newHires = mockEmployees.filter(emp => {

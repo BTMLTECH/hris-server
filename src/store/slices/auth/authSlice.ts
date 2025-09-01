@@ -2,15 +2,15 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { User, UserState } from '@/types/auth';
 import { authApi } from './authApi';
 // import { tokenUtils } from '@/utils/tokenUtils';
-import { set } from 'date-fns';
 
 export interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  code?: string | null; // Optional 2FA code or similar field
+  code?: string | null;
   isAuthenticated: boolean,
+  
 }
 
 const initialState: AuthState = {
@@ -19,7 +19,8 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   isAuthenticated: false,
-  code: null
+  code: null,
+  
 };
 
 const authSlice = createSlice({
@@ -67,6 +68,8 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.error?.message || 'Login failed';
       });
+
+ 
 
     // 2FA matchers
     builder

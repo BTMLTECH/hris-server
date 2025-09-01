@@ -14,10 +14,6 @@ import SetPassword from "./components/Auth/SetPassword";
 
 const queryClient = new QueryClient();
 
-// ✅ TEMP: Clear persisted Redux state (e.g., old types like 'personal')
-// persistor.purge().then(() => {
-//   console.log("Redux Persist store purged");
-// });
 
 const SetPasswordWithToken = () => {
   const [params] = useSearchParams();

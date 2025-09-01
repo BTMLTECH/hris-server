@@ -2,6 +2,9 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Calendar, TrendingUp, CheckCircle, Clock, DollarSign, FileText, UserPlus } from 'lucide-react';
 import { useCombinedContext } from '@/contexts/AuthContext';
+import { useAppSelector } from '@/store/hooks';
+import DashboardSkeleton from './DashboardSkeleton';
+import BirthdayAnalytics from './BirthdayAnalytics';
 
 
 interface DashboardOverviewProps {
@@ -12,6 +15,14 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
   // const { user } = useAuth();
   const {user:useDashboardOverview,  profile } = useCombinedContext();
   const {user} = useDashboardOverview
+  const { analytics } = useAppSelector((state) => state.profile);
+
+
+
+  if (!analytics) {
+    return <DashboardSkeleton />;
+  }
+
 
   const getQuickActionsForRole = () => {
     switch (user?.role) {
@@ -21,7 +32,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
           { icon: Users, label: 'Add Employee', color: 'text-blue-500', action: 'employees' },
           { icon: Calendar, label: 'Manage Leave', color: 'text-green-500', action: 'leave' },
           { icon: TrendingUp, label: 'View Reports', color: 'text-purple-500', action: 'reports' },
-          { icon: UserPlus, label: 'Recruitment', color: 'text-orange-500', action: 'recruitment' },
+          { icon: UserPlus, label: 'Attendance', color: 'text-orange-500', action: 'attendance' },
         ];
       
       case 'md':
@@ -30,7 +41,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
           { icon: Users, label: 'View Team', color: 'text-blue-500', action: 'employees' },
           { icon: Calendar, label: 'Leave Requests', color: 'text-green-500', action: 'leave' },
           { icon: TrendingUp, label: 'Team Reports', color: 'text-purple-500', action: 'reports' },
-          { icon: CheckCircle, label: 'Appraisals', color: 'text-orange-500', action: 'appraisal' },
+          { icon: CheckCircle, label: 'Complete Appraisal', color: 'text-orange-500', action: 'appraisal' },
+
         ];
       
       case 'employee':
@@ -38,7 +50,9 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
           { icon: Clock, label: 'Check Attendance', color: 'text-blue-500', action: 'attendance' },
           { icon: Calendar, label: 'Request Leave', color: 'text-green-500', action: 'leave' },
           { icon: DollarSign, label: 'View Payroll', color: 'text-purple-500', action: 'payroll' },
-          { icon: FileText, label: 'My Documents', color: 'text-orange-500', action: 'documents' },
+          // { icon: FileText, label: 'My Documents', color: 'text-orange-500', action: 'documents' },
+          { icon: CheckCircle, label: 'Complete Appraisal', color: 'text-orange-500', action: 'appraisal' },
+
         ];
       
       default:
@@ -77,22 +91,26 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
     }
   };
 
-  return (
+
+ 
+
+return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-gray-600">{getWelcomeMessage()}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">245</div>
-            <p className="text-xs text-muted-foreground">+2 from last month</p>
+            <div className="text-2xl font-bold">{analytics.dashboardCards.totalEmployees.value}</div>
+            <p className="text-xs text-muted-foreground">{analytics.dashboardCards.totalEmployees.trend}</p>
           </CardContent>
         </Card>
 
@@ -102,8 +120,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">3 pending approval</p>
+            <div className="text-2xl font-bold">{analytics.dashboardCards.activeLeave.value}</div>
+            <p className="text-xs text-muted-foreground">{analytics.dashboardCards.activeLeave.trend}</p>
           </CardContent>
         </Card>
 
@@ -113,23 +131,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">This month</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Tasks</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">128</div>
-            <p className="text-xs text-muted-foreground">+15% from last week</p>
+            <div className="text-2xl font-bold">{analytics.dashboardCards.appraisalsDue.value}</div>
+            <p className="text-xs text-muted-foreground">{analytics.dashboardCards.appraisalsDue.trend}</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Recent + Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -138,27 +146,15 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="text-sm font-medium">New employee onboarded</p>
-                  <p className="text-xs text-gray-500">2 hours ago</p>
+              {analytics.recentActivity.map((activity, idx) => (
+                <div key={idx} className="flex items-start space-x-3">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                  <div>
+                    <p className="text-sm font-medium">{activity.message}</p>
+                    <p className="text-xs text-gray-500">{new Date(activity.timestamp).toLocaleString()}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="text-sm font-medium">Leave request approved</p>
-                  <p className="text-xs text-gray-500">4 hours ago</p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
-                <div>
-                  <p className="text-sm font-medium">Appraisal submitted</p>
-                  <p className="text-xs text-gray-500">1 day ago</p>
-                </div>
-              </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -173,8 +169,8 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
               {quickActions.map((action) => {
                 const Icon = action.icon;
                 return (
-                  <button 
-                    key={action.label} 
+                  <button
+                    key={action.label}
                     className="p-4 border rounded-lg hover:bg-gray-50 text-left transition-colors"
                     onClick={() => handleQuickAction(action.action)}
                   >
@@ -187,6 +183,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate }) => 
           </CardContent>
         </Card>
       </div>
+      <BirthdayAnalytics birthdays={analytics.birthdayAnalytics} />
     </div>
   );
 };

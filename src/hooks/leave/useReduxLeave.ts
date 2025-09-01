@@ -12,7 +12,7 @@ import {
  
 import { toast } from "../use-toast";
 import { setLoading } from "@/store/slices/leave/leaveSlice";
-import { LeaveRequest, UseReduxLeaveReturnType } from "@/types/leave";
+import { UseReduxLeaveReturnType } from "@/types/leave";
 import { extractErrorMessage } from "@/utils/errorHandler";
 
 
@@ -20,16 +20,15 @@ import { extractErrorMessage } from "@/utils/errorHandler";
 export const useReduxLeave = (): UseReduxLeaveReturnType => {
   const dispatch = useAppDispatch();
 
-  const {user }= useAppSelector((state) => state.auth); // Replace with correct path
-
-
+  const {user }= useAppSelector((state) => state.auth); 
+  const isAuthorized =  !user || (user.role !== "teamlead" && user.role !== "hr" && user.role !== "employee");
   const {
     data: leaveApprovalQueue = [],
     isLoading: approvalQueueLoading,
     error: approvalQueueError,
     refetch: refetchApprovalQueue,
   } = useGetLeaveApprovalQueueQuery(undefined, {
-      skip: !user || (user.role !== "teamlead" && user.role !== "hr"),
+      skip: isAuthorized,
   });
 
   const {
@@ -47,15 +46,10 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     error: teamleadError,
     refetch: refetchTeamlead,
   } = useGetTeamLeadQuery(undefined, {
-       skip: !user || (user.role !== "teamlead" && user.role !== "hr"),
+      skip: isAuthorized,
   });
 
-  const {
-    data = {},
-    isLoading: statLoading,
-    error: statError,
-    refetch: refetchStats,
-  } = useGetStatOverviewQuery(undefined, {
+  const {} = useGetStatOverviewQuery(undefined, {
      skip: !user,
   });
 
@@ -68,8 +62,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     try {
       await createLeaveRequest(data).unwrap();
       toast({ title: "Leave Request Submitted" });
-      refetchActivityFeed();
-      refetchApprovalQueue();
+    
       return true;
     } catch (error: any) {
           const errorMessage = extractErrorMessage(error, 'Leave Request Failed');
@@ -91,8 +84,8 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     try {
       await approveLeaveRequest(id).unwrap();
       toast({ title: "Leave Approved" });
-      refetchApprovalQueue();
-      refetchActivityFeed();
+   
+
       return true;
     } catch (error: any) {
           const errorMessage = extractErrorMessage(error, 'Approval Failed');
@@ -113,8 +106,8 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     try {
       await rejectLeaveRequest({id, note}).unwrap();  
       toast({ title: "Leave Rejected" });
-      refetchApprovalQueue();
-      refetchActivityFeed();
+   
+
       return true;
     } catch (error: any) {
           const errorMessage = extractErrorMessage(error, 'Rejection Failed');

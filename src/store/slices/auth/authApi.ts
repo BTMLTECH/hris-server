@@ -61,7 +61,7 @@ export const authApi = baseApi.injectEndpoints({
         body: { email, code },
         credentials: 'include' as const,
       }),
-    
+      invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
     }),
 
     resetPassword: builder.mutation({
@@ -80,6 +80,7 @@ export const authApi = baseApi.injectEndpoints({
         body: { email },
         credentials: 'include' as const,
       }),
+      invalidatesTags: ['Profiles'],
     }),  
 
     newSetPassword: builder.mutation({
@@ -89,6 +90,7 @@ export const authApi = baseApi.injectEndpoints({
         body: { newPassword, passwordConfig, temporaryPassword , token},
         credentials: 'include' as const,
       }),
+      
     }),  
 
     
@@ -99,6 +101,7 @@ export const authApi = baseApi.injectEndpoints({
         body: data,
         credentials: 'include' as const,
       }),
+      invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
     }),
 
     resendIviteLink: builder.mutation({
@@ -108,7 +111,7 @@ export const authApi = baseApi.injectEndpoints({
         body: email,
         credentials: 'include' as const,
       }),
-      // invalidatesTags: ['Profiles'],
+      invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
     }),
 
     bulkInviteUsers: builder.mutation({
@@ -118,6 +121,7 @@ export const authApi = baseApi.injectEndpoints({
         body: formData,
         credentials: 'include' as const,
       }),
+      invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
     }),
 
  

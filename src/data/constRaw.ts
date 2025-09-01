@@ -1,0 +1,66 @@
+import { ProfileFormData } from "@/types/user";
+
+
+export const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe",
+  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara",
+  "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo",
+  "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"
+];
+
+export const NIGERIAN_BANKS = [
+  "Access Bank", "Citibank", "Ecobank", "Fidelity Bank", "First Bank of Nigeria",
+  "First City Monument Bank", "Globus Bank", "Guaranty Trust Bank",
+  "Heritage Bank", "Keystone Bank", "Kuda Bank", "Parallex Bank", "Polaris Bank",
+  "Providus Bank", "Stanbic IBTC Bank", "Standard Chartered Bank",
+  "Sterling Bank", "Suntrust Bank", "Union Bank of Nigeria", "United Bank for Africa",
+  "Unity Bank", "Wema Bank", "Zenith Bank"
+];
+
+export const PFA_COMPANIES = [
+  "ARM Pension Managers", "AXA Mansard Pensions", "CrusaderSterling Pensions",
+  "Fidelity Pension Managers", "First Guarantee Pension", "IEI-Anchor Pension",
+  "Leadway Pensure PFA", "NLPC Pension Fund Administrators", "OAK Pensions",
+  "Premium Pension Limited", "Stanbic IBTC Pension Managers", "Trustfund Pensions",
+  "Veritas Glanvills Pensions"
+];
+
+export const POSITIONS = [
+  "Level 1",
+  "Level 2",
+  "Level 3",
+  "Level 4",
+  "Level 5",
+  "Level 6",
+  "Level 7",
+  "New Role",
+  "Intent",
+  "Senior 1",
+  "Senior 2",
+  "Manager",
+  "Supervisor"
+];
+
+export const OFFICE_BRANCHES = ["Head Office", "SHELL SBU"];
+
+
+
+export const requiredFields: (keyof ProfileFormData)[] = [
+  'title',
+  'firstName',
+  'lastName',
+  'middleName',
+  'gender',
+  'dateOfBirth',
+  'stateOfOrigin',
+  'address',
+  'city',
+  'mobile',
+  'email',
+  'role',
+  'officeBranch',
+  'employmentDate',
+  'nextOfKin',
+  'accountInfo',
+];

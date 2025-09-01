@@ -6,7 +6,7 @@ const DashboardSkeleton: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar Skeleton */}
-      <div className="w-64 bg-white border-r border-gray-200 p-4">
+      {/* <div className="w-64 bg-white border-r border-gray-200 p-4">
         <div className="space-y-4">
           <Skeleton className="h-8 w-32" />
           <div className="space-y-2">
@@ -16,7 +16,7 @@ const DashboardSkeleton: React.FC = () => {
           </div>
         </div>
       </div>
-      
+       */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header Skeleton */}
         <header className="bg-white border-b border-gray-200 px-6 py-4">

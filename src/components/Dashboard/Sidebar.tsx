@@ -8,13 +8,9 @@ import {
   Users, 
   Clock, 
   Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  UserPlus, 
-  FileText, 
+
   Briefcase,
-  ClipboardList,
-  Timer,
+ 
   BarChart3,
   FileBarChart,
   Settings,
@@ -22,6 +18,8 @@ import {
   HandHeart,
   CreditCard
 } from 'lucide-react';
+import { NairaSign } from '../ui/NairaSign';
+import { useAppSelector } from '@/store/hooks';
 
 interface SidebarProps {
   activeItem: string;
@@ -29,26 +27,24 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick }) => {
-  const { user: userContext } = useCombinedContext();
-  const { user } = userContext;
-
+const { user } = useAppSelector((state) => state.auth);
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'employees', label: 'Employees', icon: Users, roles: ['admin', 'hr', 'manager'] },
-    { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'leave', label: 'Leave Management', icon: Calendar, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'loan', label: 'Loan Management', icon: CreditCard, roles: ['admin', 'hr', 'employee'] },
-    { id: 'appraisal', label: 'Appraisal', icon: Star, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardList, roles: ['admin', 'hr', 'manager'], badge: '3' },
-    { id: 'payroll', label: 'Payroll', icon: DollarSign, roles: ['admin', 'hr'] },
-    { id: 'performance', label: 'Performance', icon: TrendingUp, roles: ['admin', 'hr', 'manager'] },
-    { id: 'recruitment', label: 'Recruitment', icon: UserPlus, roles: ['admin', 'hr'] },
-    { id: 'documents', label: 'Documents', icon: FileText, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'handover', label: 'Handover', icon: HandHeart, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'handover-approval', label: 'Handover Approval', icon: Briefcase, roles: ['admin', 'hr', 'manager'], badge: '2' },
-    { id: 'time-tracking', label: 'Time Tracking', icon: Timer, roles: ['admin', 'hr', 'manager', 'employee'] },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['admin', 'hr', 'manager'] },
-    { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['admin', 'hr', 'manager'] },
+    { id: 'dashboard', label: 'Dashboard', icon: Home, roles: ['admin', 'hr', 'md', 'employee'] },
+    { id: 'employees', label: 'Employees', icon: Users, roles: ['admin', 'hr', 'md'] },
+    { id: 'attendance', label: 'Attendance', icon: Clock, roles: ['admin', 'hr', 'md', 'employee'] },
+    { id: 'leave', label: 'Leave Management', icon: Calendar, roles: ['admin', 'hr', 'md', 'employee'] },
+    // { id: 'loan', label: 'Loan Management', icon: CreditCard, roles: ['admin', 'hr', 'employee'] },
+    { id: 'appraisal', label: 'Appraisal', icon: Star, roles: ['admin', 'hr', 'md', 'employee'] },
+    // { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardList, roles: ['admin', 'hr', 'md'], badge: '3' },
+    { id: 'payroll', label: 'Payroll', icon: NairaSign, roles: ['admin', 'hr'] },
+    // { id: 'performance', label: 'Performance', icon: TrendingUp, roles: ['admin', 'hr', 'md'] },
+    // { id: 'recruitment', label: 'Recruitment', icon: UserPlus, roles: ['admin', 'hr'] },
+    // { id: 'documents', label: 'Documents', icon: FileText, roles: ['admin', 'hr', 'md', 'employee'] },
+    { id: 'handover', label: 'Handover', icon: HandHeart, roles: ['admin', 'hr', 'md', 'employee'] },
+    { id: 'handover-approval', label: 'Handover Approval', icon: Briefcase, roles: ['admin', 'hr', 'md'], badge: '2' },
+    // { id: 'time-tracking', label: 'Time Tracking', icon: Timer, roles: ['admin', 'hr', 'md', 'employee'] },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, roles: ['admin', 'hr', 'md'] },
+    { id: 'reports', label: 'Reports', icon: FileBarChart, roles: ['admin', 'hr', 'md'] },
     { id: 'settings', label: 'Settings', icon: Settings, roles: ['admin', 'hr'] },
   ];
 
@@ -65,8 +61,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeItem, onItemClick }) => {
             <Briefcase className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">BTM HRIS</h1>
-            <p className="text-sm text-gray-300">Business Management</p>
+            <h1 className="text-xl font-bold text-white">{user?.company.name}</h1>
+            <p className="text-sm text-gray-300">{user?.company.description}</p>
           </div>
         </div>
       </div>

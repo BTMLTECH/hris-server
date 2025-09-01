@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { AttendanceRecord } from "@/types/attendance";
-import { LeaveRequest } from "@/types/leave";
+import { LeaveActivityFeedItem, LeaveActivityFeedResponse, LeaveBalanceItem, LeaveRequest, RelieverItem, ReviewTrailItem } from "@/types/leave";
+import { IPayroll } from '@/types/payroll'; // Adjust the path as needed
+import { ITaxInfo, PensionFundState } from '@/types/payroll'; // Adjust the path if types are split
+
 
 export const normalizeAttendanceRecord = (record: any): AttendanceRecord => ({
   id: record._id,
@@ -15,72 +18,150 @@ export const normalizeAttendanceRecord = (record: any): AttendanceRecord => ({
   biometricId: record.biometryId,
 });
 
-// utils/normalizeLeaveRequest.ts
 
-
-// export const normalizeLeaveRequest = (item: any): LeaveRequest => {
-
-//   return {
-//     id: item._id,
-//     employeeId: item.user?._id ?? '',
-//     employeeName: `${item.user?.firstName ?? ''} ${item.user?.lastName ?? ''}`.trim(),
-//     type: item.type,
-//     startDate: item.startDate,
-//     endDate: item.endDate,
-//     days: item.daysCount,
-//     reason: item.reason,
-//     status: item.status.toLowerCase() as 'pending' | 'approved' | 'rejected',
-//     teamLead: item.teamLead,
-//     appliedDate: item.createdAt,
-//     teamLeadId: item.teamLead,
-//     teamLeadName: '', // You can populate this later if needed
-//   };
-// };
-
-
-
-
-export const normalizeLeaveRequest = (item: any): LeaveRequest => {
-  const latestReview = item.reviewTrail?.[item.reviewTrail.length - 1] ?? null;
-
-  
-  const getDate = (val: any) => {
+export const normalizeLeaveRequest = (raw: any): LeaveActivityFeedResponse => {
+  const getDate = (val: any): string => {
     if (!val) return '';
-    const d = val?.$date ?? val;
-    const parsed = new Date(d);
-    return isNaN(parsed.getTime()) ? '' : parsed.toISOString();
+    const d = val instanceof Date ? val : new Date(val);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
   };
-  return {
-    id: item._id?.$oid ?? item._id ?? item.id ?? '',
-    employeeId: item.user?._id?.$oid ?? item.user?._id ?? item.employeeId ?? '',
-    employeeName:
-      item.user?.firstName || item.user?.lastName
-        ? `${item.user?.firstName ?? ''} ${item.user?.lastName ?? ''}`.trim()
-        : item.employeeName ?? '',
-    type: item.type,
-    startDate: getDate(item.startDate),
-    endDate: getDate(item.endDate),
-    days: item.days ?? item.daysCount ?? 0,
-    reason: item.reason,
-    status: (item.status ?? 'pending').toLowerCase(),
-    teamLead: item.teamLead?._id ?? item.teamLead ?? '',
-    teamLeadId: item.teamLead?._id ?? item.teamLead ?? item.teamLeadId ?? '',
-    teamLeadName:
-      item.teamLead?.firstName || item.teamLead?.lastName
-        ? `${item.teamLead?.firstName ?? ''} ${item.teamLead?.lastName ?? ''}`.trim()
-        : item.teamLeadName ?? '',
-    appliedDate: getDate(item.createdAt ?? item.appliedDate),
 
-    approvedBy: latestReview?.reviewer ?? item.approvedBy ?? '',
-    approvedDate: getDate(latestReview?.date ?? item.approvedDate),
-    comments: latestReview?.note ?? item.comments ?? '',
-    reviewTrail:
-      item.reviewTrail?.map((r: any) => ({
-        reviewer: r.reviewer?.$oid ?? r.reviewer,
-        role: r.role,
-        action: r.action?.toLowerCase(),
-        date: getDate(r.date),
-        note: r.note,
-      })) ?? [],
+  const normalizeFeedItem = (item: any): LeaveActivityFeedItem => {
+    // Determine current reviewer: next pending reliever → teamlead → hr
+    let currentReviewerRole: 'reliever' | 'teamlead' | 'hr' | null = null;
+    const nextReliever = item.relievers?.find((r: any) => r.status?.toLowerCase() === 'pending');
+    if (nextReliever) {
+      currentReviewerRole = 'reliever';
+    } else {
+      const teamleadApproved = item.reviewTrail?.some(
+        (r: any) => r.role === 'teamlead' && r.action.toLowerCase() === 'approved'
+      );
+      if (!teamleadApproved) {
+        currentReviewerRole = 'teamlead';
+      } else {
+        const hrApproved = item.reviewTrail?.some(
+          (r: any) => r.role === 'hr' && r.action.toLowerCase() === 'approved'
+        );
+        if (!hrApproved) currentReviewerRole = 'hr';
+      }
+    }
+
+    return {
+      id: String(item.id || item._id || ''),
+      employeeId: String(item.employeeId || ''),
+      employeeName: String(item.employeeName || ''),
+      type: (item.type as 'annual' | 'maternity' | 'compassionate') ?? 'annual',
+      startDate: getDate(item.startDate),
+      endDate: getDate(item.endDate),
+      appliedDate: getDate(item.appliedDate),
+      days: Number(item.days ?? 0),
+      reason: String(item.reason || ''),
+      status: (item.status as 'pending' | 'approved' | 'rejected' | 'expired') ?? 'pending',
+      teamleadId: item.teamleadId ? String(item.teamleadId) : undefined,
+      teamlead: item.teamleadName ? String(item.teamleadName) : undefined,
+      teamleadName: item.teamleadName ? String(item.teamleadName) : undefined,
+
+      relievers: Array.isArray(item.relievers)
+        ? item.relievers.map((r: any): RelieverItem & { status?: string } => ({
+            user: String(r.user || ''),
+            firstName: String(r.firstName || ''),
+            lastName: String(r.lastName || ''),
+            status: r.status?.toLowerCase() ?? 'pending',
+          }))
+        : [],
+
+      reviewTrail: Array.isArray(item.reviewTrail)
+        ? item.reviewTrail.map((t: any): ReviewTrailItem => ({
+            reviewer: String(t.reviewer || ''),
+            role: String(t.role || ''),
+            action: (t.action as 'approved' | 'rejected' | 'pending' | 'expired') ?? 'pending',
+            date: getDate(t.date),
+            note: t.note ? String(t.note) : undefined,
+          }))
+        : [],
+
+      currentReviewerRole,
+      allowance: item.allowance,
+      url: item.url,
+    };
+  };
+
+  return {
+    // 🔹 now we have two feeds: myRequests & approvals
+    myRequests: Array.isArray(raw.myRequests) ? raw.myRequests.map(normalizeFeedItem) : [],
+    approvals: Array.isArray(raw.approvals) ? raw.approvals.map(normalizeFeedItem) : [],
+
+    summary: {
+      pending: Number(raw.summary?.pending ?? 0),
+      approved: Number(raw.summary?.approved ?? 0),
+      rejected: Number(raw.summary?.rejected ?? 0),
+      expired: Number(raw.summary?.expired ?? 0),
+    },
+
+    balance: Array.isArray(raw.balance)
+      ? raw.balance.map((b: any): LeaveBalanceItem => ({
+          type: (b.type as 'annual' | 'maternity' | 'compassionate') ?? 'annual',
+          remaining: Number(b.remaining ?? 0),
+        }))
+      : [],
+  };
+};
+
+
+
+
+
+export const normalizePayrollRecord = (record: any): IPayroll => {
+  return {
+    _id: record._id,
+    email: record.email,
+    employeeName: record.employeeName,
+    employee: {
+      _id: record.employee?._id ?? '',
+      firstName: record.employee?.firstName ?? '',
+      lastName: record.employee?.lastName ?? '',
+      email: record.employee?.email ?? '',
+    },
+    company: record.company,
+    month: record.month,
+    year: record.year?.toString() ?? '',
+    basicSalary: Number(record.basicSalary),
+    housingAllowance: Number(record.housingAllowance),
+    transportAllowance: Number(record.transportAllowance),
+    lasgAllowance: Number(record.lasgAllowance),
+    twentyFourHoursAllowance: Number(record.twentyFourHoursAllowance),
+    healthAllowance: Number(record.healthAllowance),
+    totalAllowances: Number(record.totalAllowances),
+    grossSalary: Number(record.grossSalary),
+    pension:
+      typeof record.pension === 'object' && record.pension !== null
+        ? Number((record.pension as PensionFundState).fundRate) || 0
+        : 0,
+
+    CRA: Number(record.CRA),
+    taxableIncome: Number(record.taxableIncome),
+    tax: Number(record.tax),
+    deductions: Number(record.deductions),
+    netSalary: Number(record.netSalary),
+    status: record.status ?? 'Pending',
+    paidDate: record.paidDate ? new Date(record.paidDate) : undefined,
+    createdAt: record.createdAt ? new Date(record.createdAt) : undefined,
+    taxInfo: record.taxInfo
+      ? {
+          payrollId: record.taxInfo.payrollId,
+          employeeId: record.taxInfo.employeeId,
+          companyId: record.taxInfo.companyId,
+          CRA: Number(record.taxInfo.CRA),
+          pension: Number(record.taxInfo.pension),
+          taxableIncome: Number(record.taxInfo.taxableIncome),
+          tax: Number(record.taxInfo.tax),
+          bands: record.taxInfo.bands?.map((band: any) => ({
+            band: Number(band.band),
+            amount: Number(band.amount),
+          })) ?? [],
+          createdAt: new Date(record.taxInfo.createdAt),
+        }
+      : null,
+  
   };
 };

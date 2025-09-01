@@ -4,15 +4,16 @@ import { useCombinedContext } from '@/contexts/AuthContext';
 import StickyHeader from './StickyHeader';
 import CollapsibleSidebar from './CollapsibleSidebar';
 import DashboardContent from './DashboardContent';
+import { useAppSelector } from '@/store/hooks';
 
 const Dashboard: React.FC = () => {
-  const {user: userDashboard,  profile } = useCombinedContext();
-  const { user} = userDashboard
+  const { user } = useAppSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
   if (!user) return null;
+
+
 
   const handleMobileMenuToggle = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);

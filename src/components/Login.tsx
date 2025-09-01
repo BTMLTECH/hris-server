@@ -12,6 +12,10 @@ import RequestPassword from './Auth/RequestPassword';
 import TwoFactorModal from './Auth/TwoFactorModal';
 import { useAppSelector } from '@/store/hooks';
 
+
+
+
+
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,9 +23,8 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showRequestPassword, setShowRequestPassword] = useState(false);
   const [pendingLogin, setPendingLogin] = useState<{email: string, password: string} | null>(null);
-   const { isLoading, error } = useAppSelector((state) => state.auth);
+  const { isLoading, error } = useAppSelector((state) => state.auth);
   
-  // const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login, verify2fa } = useReduxAuth();
 
@@ -36,21 +39,22 @@ const handleSubmit = async (e: React.FormEvent) => {
  
 };
 
-  const handle2FAVerification = async (code: string) => {
+
+const handle2FAVerification = async (code: string) => {
   try {
     const success = await verify2fa(email, code);
+
     if (success) {
       setShow2FA(false);
     } else {
       toast({
         title: 'Invalid verification code',
       });
-         }
+    }
   } catch (error) {
-
-          toast({
-        title: 'Verification failed. Please try again.',
-      });
+    toast({
+      title: 'Verification failed. Please try again.',
+    });
   }
 };
 
@@ -63,7 +67,6 @@ const handleSubmit = async (e: React.FormEvent) => {
   return (
     <>
 <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col-reverse md:flex-row">
-  {/* Left Side - Login Form (bottom on mobile, left on desktop) */}
   <div className="w-full md:w-1/2 flex items-center justify-center p-8">
     <div className="w-full max-w-md space-y-6">
       {/* Logo & Welcome Text */}

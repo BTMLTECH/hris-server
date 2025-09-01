@@ -6,14 +6,17 @@ import { apiSlice } from "@/store/slices/auth/apiSlice";
 
 export const leaveApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Submit leave request
     createLeaveRequest: builder.mutation({
       query: (data) => ({
         url: 'leaves/request',
         method: 'POST',
         body: data,
         credentials: 'include' as const,
+           headers: {
+        },
       }),
+      invalidatesTags: ['LeaveActivityFeed', 'LeaveApprovalQueue'],
+
     }),
 
     // Approve leave request
@@ -23,6 +26,8 @@ export const leaveApi = apiSlice.injectEndpoints({
         method: 'POST',
         credentials: 'include' as const,
       }),
+      invalidatesTags: ['LeaveActivityFeed', 'LeaveApprovalQueue'],
+
     }),
 
     // Reject leave request
@@ -33,6 +38,8 @@ export const leaveApi = apiSlice.injectEndpoints({
         body: {note},
         credentials: 'include' as const,
       }),
+      invalidatesTags: ['LeaveActivityFeed', 'LeaveApprovalQueue'],
+
     }),
 
     // Get approval queue
@@ -42,6 +49,10 @@ export const leaveApi = apiSlice.injectEndpoints({
         method: 'GET',
         credentials: 'include' as const,
       }),
+      providesTags: (result) =>
+          result
+            ? [{ type: 'LeaveApprovalQueue' }]
+            : [],
     }),
 
     // Get leave activity feed
@@ -51,6 +62,10 @@ export const leaveApi = apiSlice.injectEndpoints({
         method: 'GET',
         credentials: 'include' as const,
       }),
+       providesTags: (result) =>
+          result
+            ? [{ type: 'LeaveActivityFeed' }]
+            : [],
     }),
 
     getTeamLead: builder.query({

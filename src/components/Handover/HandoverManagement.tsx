@@ -19,14 +19,13 @@ import { useReduxHandover } from '@/hooks/handover/useReduxHandover';
 import { DeleteConfirmationDialog } from '../ui/deleteDialog';
 
 
-
+  
 
 const HandoverManagement: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const { user: userHandoverManagement, handover } = useCombinedContext();
-  const { user } = userHandoverManagement;
+  const { user } = useAppSelector((state) => state.auth);
   const {  reports, ui , isLoading} = useAppSelector((state) => state.handover);
   
     const formData = ui.formData;
@@ -34,8 +33,11 @@ const HandoverManagement: React.FC = () => {
       teamLead 
     } = useAppSelector(state => state.leave);
 
+    const {teamReports} = useReduxHandover()
+
+
+
     const {createHandover, deleteHandover} = useReduxHandover()
-  // const canReviewHandovers = user?.role === 'admin' || user?.role === 'hr' || user?.role === 'md' || user?.role === 'teamlead';
   const canReviewHandovers =  user?.role === 'teamlead';
 
 
@@ -98,21 +100,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
 
 
-// const handleApprove = async (handoverId: string) => {
-//   const success = await approveHandover(handoverId);
-//   if (success) {
-//     dispatch(setSelectedReport(null));
-//   }
-// };
-
-// const handleReject = async (handoverId: string, note: string) => {
-//   const success = await rejectHandover(handoverId, note);
-//   if (success) {
-//     dispatch(setSelectedReport(null));
-//     dispatch(setRejectionNote(''));
-//     dispatch(setIsRejectDialogOpen(false));
-//   }
-// };
 
 
 const openRejectDialog = (handover: HandoverReport) => {
@@ -174,10 +161,8 @@ const downloadPDF = async (report: HandoverReport) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
-    // Automatically close the toast after download completes
     dismiss();
   } catch (error) {
-    // If download failed, close the "Downloading..." toast and show an error toast
     dismiss();
     toast({
       title: "Download Failed",
@@ -207,162 +192,132 @@ const handleDelete = async (id: string) => {
           )}
 
 
-   <Dialog open={ui.isDialogOpen} onOpenChange={(open) => dispatch(setIsDialogOpen(open))}>
-      {user?.role === "employee" && (
-        <DialogTrigger asChild>
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Submit Handover
-          </Button>
-        </DialogTrigger>
-      )}
+          <Dialog open={ui.isDialogOpen} onOpenChange={(open) => dispatch(setIsDialogOpen(open))}>
+              {user?.role === "employee" && (
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Submit Handover
+                  </Button>
+                </DialogTrigger>
+              )}
 
 
-  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-    <DialogHeader>
-      <DialogTitle>Submit Daily Handover Report</DialogTitle>
-      <DialogDescription>
-        Upload your daily handover report in PDF format along with a summary
-      </DialogDescription>
-    </DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Submit Daily Handover Report</DialogTitle>
+              <DialogDescription>
+                Upload your daily handover report in PDF format along with a summary
+              </DialogDescription>
+            </DialogHeader>
 
-    <form onSubmit={(e) => {  handleSubmit(e); }}>
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={(e) => {  handleSubmit(e); }}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="date">Date</Label>
+                    <Input
+                      id="date"
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => dispatch(setFormData({ date: e.target.value }))}
+                      min={new Date().toISOString().split('T')[0]} // disables past dates
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="shift">Shift</Label>
+                    <Select
+                      value={formData.shift}
+                      onValueChange={(value: 'day' | 'night') => dispatch(setFormData({ shift: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="day">Day Shift (8:30 AM - 5:00 PM)</SelectItem>
+                        <SelectItem value="night">After Hours (5:00 PM - 5:00 AM)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="teamLead">Team Lead</Label>
+                  <Select
+                    value={formData.teamleadId}
+                    onValueChange={(value) => dispatch(setFormData({ teamleadId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team lead" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teamLead?.data.map((lead) => (
+                        <SelectItem key={lead.id} value={lead.id}>
+                          {lead.name} - {lead.department}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
           <div>
-            <Label htmlFor="date">Date</Label>
+          <Label htmlFor="pdfFile">Upload PDF Report</Label>
+          <div className="mt-2">
             <Input
-              id="date"
-              type="date"
-              value={formData.date}
-              onChange={(e) => dispatch(setFormData({ date: e.target.value }))}
-              min={new Date().toISOString().split('T')[0]} // disables past dates
+              id="pdfFile"
+              type="file"
+              accept=".pdf"
+              onChange={handleFileChange}
+              className="cursor-pointer"
               required
             />
-          </div>
-          <div>
-            <Label htmlFor="shift">Shift</Label>
-            <Select
-              value={formData.shift}
-              onValueChange={(value: 'day' | 'night') => dispatch(setFormData({ shift: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day">Day Shift (8:30 AM - 5:00 PM)</SelectItem>
-                <SelectItem value="night">Night Shift (4:00 PM - 5:00 AM)</SelectItem>
-              </SelectContent>
-            </Select>
+            <p className="text-sm text-gray-500 mt-1">
+              Upload PDF file (max 5MB)
+            </p>
+
+            {selectedFile && (
+              <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded flex items-center gap-2">
+                <FileUp className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-700">
+                  {selectedFile.name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="teamLead">Team Lead</Label>
-          <Select
-            value={formData.teamleadId}
-            onValueChange={(value) => dispatch(setFormData({ teamleadId: value }))}
+                <div>
+                  <Label htmlFor="summary">Summary</Label>
+                  <Textarea
+                    id="summary"
+                    value={formData.summary}
+                    onChange={(e) => dispatch(setFormData({ summary: e.target.value }))}
+                    placeholder="Brief summary of the day's work"
+                    required
+                  />
+                </div>
+              </div>
+
+            <DialogFooter className="mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => dispatch(setIsDialogOpen(false))}
+            disabled={isLoading}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Select team lead" />
-            </SelectTrigger>
-            <SelectContent>
-              {teamLead?.data.map((lead) => (
-                <SelectItem key={lead.id} value={lead.id}>
-                  {lead.name} - {lead.department}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+            Cancel
+          </Button>
 
-   <div>
-  <Label htmlFor="pdfFile">Upload PDF Report</Label>
-  <div className="mt-2">
-    <Input
-      id="pdfFile"
-      type="file"
-      accept=".pdf"
-      onChange={handleFileChange}
-      className="cursor-pointer"
-      required
-    />
-    <p className="text-sm text-gray-500 mt-1">
-      Upload PDF file (max 5MB)
-    </p>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Submit Report
+          </Button>
+            </DialogFooter>
 
-    {selectedFile && (
-      <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded flex items-center gap-2">
-        <FileUp className="h-4 w-4 text-green-600" />
-        <span className="text-sm text-green-700">
-          {selectedFile.name}
-        </span>
-      </div>
-    )}
-  </div>
-</div>
-
-        <div>
-          <Label htmlFor="summary">Summary</Label>
-          <Textarea
-            id="summary"
-            value={formData.summary}
-            onChange={(e) => dispatch(setFormData({ summary: e.target.value }))}
-            placeholder="Brief summary of the day's work"
-            required
-          />
-        </div>
-
-        {/* <div>
-          <Label htmlFor="achievements">Key Achievements</Label>
-          <Textarea
-            id="achievements"
-            value={formData.achievements}
-            onChange={(e) => dispatch(setFormData({ achievements: e.target.value }))}
-            placeholder="What did you accomplish today?"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="challenges">Challenges Faced</Label>
-          <Textarea
-            id="challenges"
-            value={formData.challenges}
-            onChange={(e) => dispatch(setFormData({ challenges: e.target.value }))}
-            placeholder="Any challenges or issues encountered"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="nextDayPlan">Next Day Plan</Label>
-          <Textarea
-            id="nextDayPlan"
-            value={formData.nextDayPlan}
-            onChange={(e) => dispatch(setFormData({ nextDayPlan: e.target.value }))}
-            placeholder="Plans and priorities for tomorrow"
-          />
-        </div> */}
-      </div>
-
-     <DialogFooter className="mt-6">
-  <Button
-    type="button"
-    variant="outline"
-    onClick={() => dispatch(setIsDialogOpen(false))}
-    disabled={isLoading} // Optional: disable Cancel button too
-  >
-    Cancel
-  </Button>
-
-  <Button type="submit" disabled={isLoading}>
-    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-    Submit Report
-  </Button>
-    </DialogFooter>
-
-    </form>
-  </DialogContent>
-  </Dialog>
+            </form>
+          </DialogContent>
+          </Dialog>
 
         </div>
       </div>
@@ -399,7 +354,7 @@ const handleDelete = async (id: string) => {
 
 
               <TableBody>
-                {reports.map((report: HandoverReport) => (
+                 {Array.isArray(reports) && reports.map((report: HandoverReport) => (
                   <TableRow key={report._id}>
                     <TableCell>
                       {new Date(report.date).toLocaleDateString()}
@@ -583,128 +538,3 @@ const handleDelete = async (id: string) => {
 };
 
 export default HandoverManagement;
-
-
-      // {canReviewHandovers && (
-      //     <TabsContent value="approval-queue">
-      //       <Card>
-      //         <CardHeader>
-      //           <CardTitle className="flex items-center gap-2">
-      //             <FileText className="h-5 w-5" />
-      //             Pending Handover Reports
-      //           </CardTitle>
-      //           <CardDescription>Review handover reports submitted by team members</CardDescription>
-      //         </CardHeader>
-      //         <CardContent>
-      //           <Table>
-      //             <TableHeader>
-      //               <TableRow>
-      //                 <TableHead>Employee</TableHead>
-      //                 <TableHead>Date</TableHead>
-      //                 <TableHead>Shift</TableHead>
-      //                 <TableHead>Summary</TableHead>
-      //                 <TableHead>Status</TableHead>
-      //                 <TableHead>Actions</TableHead>
-      //               </TableRow>
-      //             </TableHeader>
-      //             <TableBody>
-      //               {reports
-      //                 .filter(report => report.status === 'pending' || report.status === 'approved')
-      //                 .map((report) => (
-      //                 <TableRow key={report._id}>
-      //                   <TableCell>
-      //                     <div className="flex items-center gap-2">
-      //                       <User className="h-4 w-4 text-gray-500" />
-      //                       <span className="font-medium">{report.user}</span>
-      //                     </div>
-      //                   </TableCell>
-      //                   <TableCell>
-      //                     <div className="flex items-center gap-2">
-      //                       <Calendar className="h-4 w-4 text-gray-500" />
-      //                       {new Date(report.date).toLocaleDateString()}
-      //                     </div>
-      //                   </TableCell>
-      //                   <TableCell>
-      //                     <Badge variant="outline" className={report.shift === 'day' ? 'text-orange-700' : 'text-blue-700'}>
-      //                       {report.shift === 'day' ? 'Day' : 'Night'}
-      //                     </Badge>
-      //                   </TableCell>
-      //                   <TableCell>
-      //                     <div className="max-w-xs truncate" title={report.summary}>
-      //                       {report.summary}
-      //                     </div>
-      //                   </TableCell>
-      //                   <TableCell>{getStatusBadge(report.status)}</TableCell>
-      //                   {/* <TableCell>
-      //                     <div className="flex gap-2">
-      //                       <Button
-      //                         size="sm"
-      //                         onClick={() => handleApprove(report._id)}
-      //                         className="bg-green-600 hover:bg-green-700"
-      //                       >
-      //                         <CheckCircle className="h-4 w-4 mr-1" />
-      //                         Approve
-      //                       </Button>
-      //                       <Button
-      //                         size="sm"
-      //                         variant="destructive"
-      //                         onClick={() => openRejectDialog(report)}
-      //                       >
-      //                         <XCircle className="h-4 w-4 mr-1" />
-      //                         Reject
-      //                       </Button>
-      //                     </div>
-      //                   </TableCell> */}
-      //                 </TableRow>
-      //               ))}
-      //             </TableBody>
-      //           </Table>
-      //         </CardContent>
-      //       </Card>
-      //     </TabsContent>
-      //   )}
-
-          // <Dialog
-          //   open={ui.isRejectDialogOpen}
-          //   onOpenChange={(open) => dispatch(setIsRejectDialogOpen(open))}
-          // >
-          //   <DialogContent>
-          //     <DialogHeader>
-          //       <DialogTitle>Reject Handover Report</DialogTitle>
-          //       <DialogDescription>
-          //         You are about to reject{' '}
-          //         {selectedReport?.user ?? 'this user'}'s handover report.
-          //         You can optionally provide a reason for rejection.
-          //       </DialogDescription>
-          //     </DialogHeader>
-
-          //     <div className="space-y-4">
-          //       <div>
-          //         <Label htmlFor="rejectionNote">Reason for Rejection (Optional)</Label>
-          //         <Textarea
-          //           id="rejectionNote"
-          //           value={ui.rejectionNote}
-          //           onChange={(e) => dispatch(setRejectionNote(e.target.value))}
-          //           placeholder="Provide feedback or reason for rejection..."
-          //           className="mt-2"
-          //         />
-          //       </div>
-          //     </div>
-
-          //     {/* <DialogFooter>
-          //       <Button variant="outline" onClick={() => dispatch(setIsRejectDialogOpen(false))}>
-          //         Cancel
-          //       </Button>
-          //       <Button
-          //         variant="destructive"
-          //         onClick={() => {
-          //           if (selectedReport?._id) {
-          //             handleReject(selectedReport._id, ui.rejectionNote);
-          //           }
-          //         }}
-          //       >
-          //         Reject Report
-          //       </Button>
-          //     </DialogFooter> */}
-          //   </DialogContent>
-          // </Dialog>

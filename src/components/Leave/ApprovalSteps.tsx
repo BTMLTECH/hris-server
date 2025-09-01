@@ -1,35 +1,48 @@
 import React from "react";
 import { Eye } from "lucide-react";
-;
-import { LeaveRequest } from "@/types/leave";
+import { LeaveActivityFeedItem, LeaveRequest } from "@/types/leave";
 import { useAppSelector } from "@/store/hooks";
+import { Appraisal } from "@/types/appraisal";
+
+type ApprovalRequest = LeaveActivityFeedItem | Appraisal;
 
 interface ApprovalStepsProps {
-  request: LeaveRequest;
+  request: ApprovalRequest;
 }
 
 const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
-  const { reviewTrail: trail = [] } = request;
-  const { user: currentUser } = useAppSelector((state) => state.auth);
 
-  const approvalFlow: ("teamlead" | "hr" | "md")[] = ["teamlead", "hr", "md"];
-  const currentRole = currentUser?.role.toLowerCase() as "teamlead" | "hr" | "md" | "employee";
 
-  // Find index of current role in flow, and start visibility from the next
-  const currentRoleIndex = approvalFlow.indexOf(currentRole as any);
-  const stepsToRender =
-    currentRoleIndex !== -1 ? approvalFlow.slice(currentRoleIndex + 1) : approvalFlow;
+  if (!request?.typeIdentify || !["appraisal", "leave"].includes(request.typeIdentify)) {
+    return null;
+  }
+
+  // 🔹 Build review trail and relievers
+  const trail = request.reviewTrail || [];
+  const relievers = request.typeIdentify === "leave" ? request.relievers || [] : [];
+
+  // 🔹 Approval flow: list relievers as individuals, then roles
+  const approvalFlow: { label: string; reviewerId?: string; role?: string }[] = [
+    ...relievers.map((r, idx) => ({
+      label: `${r.firstName} ${r.lastName}`,
+      reviewerId: r.user,
+    })),
+    { label: "Team Lead", role: "teamlead" },
+    { label: "HR", role: "hr" }
+  ];
 
   let stopAt: number | null = null;
 
-  const elements = stepsToRender.map((role, index) => {
-    const review = trail.find((r) => r.role.toLowerCase() === role);
+  const elements = approvalFlow.map((step, index) => {
+    // Determine if step is approved or rejected
+    const review = step.reviewerId
+      ? trail.find((r) => r.reviewer === step.reviewerId)
+      : trail.find((r) => r.role.toLowerCase() === step.role);
+
     const isApproved = review?.action === "approved";
     const isRejected = review?.action === "rejected";
 
-    if (isRejected && stopAt === null) {
-      stopAt = index;
-    }
+    if (isRejected && stopAt === null) stopAt = index;
 
     const statusIcon = isApproved ? "✔" : isRejected ? "✖" : "⏳";
     const statusColor = isRejected
@@ -39,17 +52,17 @@ const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
       : "text-gray-400";
 
     return (
-      <React.Fragment key={role}>
+      <React.Fragment key={step.reviewerId || step.role}>
         <div className={`flex items-center space-x-1 ${statusColor}`}>
           <span>{statusIcon}</span>
-          <span>{role.charAt(0).toUpperCase() + role.slice(1)}</span>
+          <span>{step.label}</span>
           {isRejected && review?.note && (
             <span title={review.note}>
               <Eye className="w-3.5 h-3.5 ml-1 text-muted-foreground hover:text-black cursor-pointer" />
             </span>
           )}
         </div>
-        {index < stepsToRender.length - 1 && (!stopAt || index < stopAt) && (
+        {index < approvalFlow.length - 1 && (!stopAt || index < stopAt) && (
           <span className="text-gray-300">—</span>
         )}
       </React.Fragment>
@@ -66,3 +79,5 @@ const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
 };
 
 export default ApprovalSteps;
+
+

@@ -11,6 +11,21 @@ import { useReduxLeave } from '@/hooks/leave/useReduxLeave';
 import { UseReduxLeaveReturnType } from '@/types/leave';
 import { HandoverContextType } from '@/types/handover';
 import { useReduxHandover } from '@/hooks/handover/useReduxHandover';
+import { useReduxAppraisal } from '@/hooks/appraisal/useReduxAppraisal';
+import { UseReduxAppraisalReturnType } from '@/types/appraisal';
+import { PayrollContextType } from '@/types/payroll';
+import { useReduxPayroll } from '@/hooks/payroll/useReduxPayroll';
+import { useReduxNotificationContext } from '@/hooks/notification/useReduxNotification';
+import { NotificationContextType } from '@/types/notification';
+import { useReduxReportContext } from '@/hooks/report/useReduxReport';
+import { ReportContextType } from '@/types/report';
+import { ClassContextType } from '@/types/class';
+import { useReduxClass } from '@/hooks/class/useReduxClass';
+import { TrainingContextType } from '@/types/training';
+import { useReduxTraining } from '@/hooks/training/useReduxTraining';
+import { useReduxContribution } from '@/hooks/cooperative/useReduxCooperative';
+import { ContributionContextType } from '@/types/cooperation';
+
 
 
 const CombinedContext = createContext<{
@@ -18,7 +33,14 @@ const CombinedContext = createContext<{
   profile: ProfileContextType;
   attendance: AttendanceContextType
   leave: UseReduxLeaveReturnType
-  handover: HandoverContextType
+  handover: HandoverContextType,
+  appraisal: UseReduxAppraisalReturnType
+  payroll: PayrollContextType
+  notification: NotificationContextType
+  report: ReportContextType
+  classlevel: ClassContextType
+  training: TrainingContextType
+  cooperative: ContributionContextType
 } | undefined>(undefined);
 
 export const CombinedProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -27,21 +49,27 @@ export const CombinedProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const attendance = useReduxAttendance()
   const leave = useReduxLeave()
   const handover = useReduxHandover()
+  const appraisal = useReduxAppraisal()
+  const payroll = useReduxPayroll()
+  const notification = useReduxNotificationContext()
+  const report = useReduxReportContext()
+  const classlevel = useReduxClass()
+  const training = useReduxTraining()
+  const cooperative = useReduxContribution()
 
   // Check if auth and profile are undefined
-  if (!user || !profile || !attendance || !leave ||!handover) {
+  if (!user || !profile || !attendance || !leave ||!handover || !appraisal || !payroll || !notification || !report || !classlevel || !training  || !cooperative) {
     return <div>Loading...</div>;
   }
 
   return (
-    <CombinedContext.Provider value={{ user, profile , attendance, leave, handover}}>
+    <CombinedContext.Provider value={{ user, profile , attendance, leave, handover, appraisal, payroll, notification, report, classlevel, training, cooperative }}>
       {children}
     </CombinedContext.Provider>
   );
 };
+  
 
-// Custom hook to access the combined context
-// eslint-disable-next-line react-refresh/only-export-components
 export const useCombinedContext = () => {
   const context = useContext(CombinedContext);
   if (!context) {

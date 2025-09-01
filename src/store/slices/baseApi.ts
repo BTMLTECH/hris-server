@@ -5,7 +5,7 @@ import { logout } from './auth/authSlice';
 
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://staging-hris.btmlimited.net/api/',
+  baseUrl: 'http://localhost:8080/api/',
   credentials: 'include',
 });
 
@@ -40,6 +40,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const baseApi = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-//   tagTypes: ['Profiles'],
-  endpoints: () => ({}), // Inject later
+  tagTypes: ['Profiles', 'AttendanceHistory', 'CompanySummary', 'LeaveActivityFeed', 'LeaveApprovalQueue', 'getAppraisalActivity', 'getAllPayrolls', 'Notifications', 'Trainings', 'Contribution'],
+  endpoints: () => ({}), 
 });

@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useCombinedContext } from '@/contexts/AuthContext';
+import { useReduxNotificationContext } from '@/hooks/notification/useReduxNotification';
 
 interface StickyHeaderProps {
   onMobileMenuToggle?: () => void;
@@ -34,6 +35,7 @@ const StickyHeader: React.FC<StickyHeaderProps> = ({ onMobileMenuToggle, onNavig
   const {user} = userStickyHeader
   const isMobile = useIsMobile();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { notifications } = useReduxNotificationContext();
 
   if (!user) return null;
 
@@ -75,6 +77,8 @@ const StickyHeader: React.FC<StickyHeaderProps> = ({ onMobileMenuToggle, onNavig
 
   // Check if user can see settings (only admin and hr)
   const canAccessSettings = user.role === 'admin' || user.role === 'hr';
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
 
   return (
     <header className="sticky top-0 z-30 bg-white border-b border-gray-200 px-3 lg:px-6 py-3 lg:py-4">
@@ -110,14 +114,20 @@ const StickyHeader: React.FC<StickyHeaderProps> = ({ onMobileMenuToggle, onNavig
               className="relative"
             >
               <Bell className="h-5 w-5" />
+               {unreadCount > 0 && (
               <Badge className="absolute -top-1 -right-1 px-1 py-0 text-xs bg-red-500 text-white border-white">
-                5
-              </Badge>
-            </Button>
+                {unreadCount}
+                  </Badge>
+                )}
+              </Button>
             
             {isNotificationOpen && (
               <div className="absolute right-0 top-12 z-50">
-                <NotificationCenter onClose={() => setIsNotificationOpen(false)} />
+                {/* <NotificationCenter onClose={() => setIsNotificationOpen(false)} /> */}
+                <NotificationCenter 
+                  notifications={notifications}
+                  onClose={() => setIsNotificationOpen(false)} 
+                />
               </div>
             )}
           </div>

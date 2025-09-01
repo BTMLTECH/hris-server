@@ -10,132 +10,161 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Eye, Plus } from 'lucide-react';
+import { CalendarIcon, Eye, Loader2, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Appraisal } from '@/types/appraisal';
-import { availableTargets, AppraisalTarget } from '@/data/appraisalTargets';
+import {  AppraisalTarget, groupedTargets } from '@/data/appraisalTargets';
+import { useReduxAppraisal } from '@/hooks/appraisal/useReduxAppraisal';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { setAvailableTargets, setFormData, setSelectedTargets, setStep, toggleTarget } from '@/store/slices/appraisal/appraisalSlice';
+import { toast } from '@/hooks/use-toast';
 
 interface AppraisalTargetSelectionProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateAppraisal: (appraisal: Appraisal) => void;
-  currentUser: any;
-  employees: Array<{ id: string; name: string; email: string; department: string; }>;
+  dispatch: any
+  // onCreateAppraisal: (appraisal: Appraisal) => void;
+  // employees: Array<{ id: string; name: string; email: string; department: string; }>;
 }
 
 const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
   isOpen,
   onClose,
-  onCreateAppraisal,
-  currentUser,
-  employees
+  dispatch,
 }) => {
-  const [step, setStep] = useState<'basic' | 'targets' | 'preview'>('basic');
-  const [formData, setFormData] = useState({
-    title: '',
-    employeeId: '',
-    period: 'monthly',
-    dueDate: null as Date | null,
-  });
-  const [selectedTargets, setSelectedTargets] = useState<AppraisalTarget[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
+  const { formData,selectedTargets, availableTargets, step, isLoading, error } = useAppSelector((state) => state.appraisal);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const handleTargetToggle = (target: AppraisalTarget) => {
-    setSelectedTargets(prev => {
-      const exists = prev.find(t => t.id === target.id);
-      if (exists) {
-        return prev.filter(t => t.id !== target.id);
-      } else {
-        return [...prev, target];
-      }
-    });
-  };
+  const {getEmployeeUnderTeamlead, handleCreateAppraisalRequest} = useReduxAppraisal()
+ 
+   const {user } = useAppSelector((state) => state.auth);  
 
+ const handleTargetToggle = (target: AppraisalTarget) => {
+  const isSelected = selectedTargets.some(t => t.id === target.id);
+  const newTotal = isSelected
+    ? getTotalScore() - target.marks
+    : getTotalScore() + target.marks;
+
+  if (!isSelected && newTotal > 100) {
+    toast({title: "Total score cannot exceed 100 marks.", variant:'destructive'});
+    return;
+  }
+
+  dispatch(toggleTarget(target));
+};
+
+  
   const getTotalScore = () => {
     return selectedTargets.reduce((sum, target) => sum + target.marks, 0);
   };
 
   const getTargetsByCategory = () => {
-    const categories = ['OBJECTIVES', 'FINANCIAL', 'CUSTOMER_SERVICE', 'INTERNAL_PROCESS', 'LEARNING_AND_GROWTH'] as const;
+    const categories = ['OBJECTIVES', 'FINANCIAL', 'CUSTOMER', 'INTERNAL_PROCESS', 'LEARNING_AND_GROWTH'] as const;
     return categories.map(category => ({
       category,
       targets: availableTargets.filter(t => t.category === category)
     }));
   };
 
+  // const handleNextStep = () => {
+  //   if (step === 'basic') {
+  //     setStep('targets');
+  //   } else if (step === 'targets') {
+  //     setStep('preview');
+  //   }
+  // };
+
   const handleNextStep = () => {
     if (step === 'basic') {
-      setStep('targets');
+      // const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
+      const department = user?.department;
+      const departmentTargets = groupedTargets[department]; 
+
+      // Flatten targets
+      const allTargets = [
+        ...(departmentTargets.financial || []),
+        ...(departmentTargets.customer || []),
+        ...(departmentTargets.internal_processes || []),
+        ...(departmentTargets.learning_and_growth || [])
+      ];
+
+      dispatch(setAvailableTargets(allTargets));
+      dispatch(setStep('targets'));
     } else if (step === 'targets') {
-      setStep('preview');
+      dispatch(setStep('preview'));
     }
   };
-
   const handlePreviousStep = () => {
     if (step === 'targets') {
-      setStep('basic');
+      dispatch(setStep('basic'));
     } else if (step === 'preview') {
-      setStep('targets');
+      dispatch(setStep('targets'));
     }
   };
 
-  const handleSubmit = () => {
-    if (!formData.title || !formData.employeeId || !formData.dueDate || selectedTargets.length === 0) {
-      return;
+const resetForm = () => {
+  dispatch(setStep('basic'));
+  dispatch(setFormData({
+    title: '',
+    employeeId: '',
+    period: 'monthly',
+    dueDate: null,
+  }));
+  dispatch(setSelectedTargets([]));
+};
+
+const handleSubmit = async () => {
+  if (!formData.title || !formData.dueDate || selectedTargets.length === 0) return;
+
+  const newAppraisal: Appraisal = {
+    // id: `appr_${Date.now()}`,
+    teamLeadId: user?._id || '',
+    teamLeadName: user?.firstName || '',
+    title: formData.title,
+    period: formData.period,
+    dueDate: new Date(formData.dueDate!).toISOString(), 
+    status: 'pending',
+    objectives: selectedTargets.map((target, index) => ({
+      id: `obj_${target.id}_${index}`,
+      category: target.category,
+      name: target.name,
+      marks: target.marks,
+      kpi: target.kpi,
+      measurementTracker: target.measurementTracker,
+      employeeScore: 0,
+      teamLeadScore: 0,
+      finalScore: 0,
+      employeeComments: '',
+      teamLeadComments: '',
+      evidence: ''
+    })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    totalScore: {
+      employee: 0,
+      teamLead: 0,
+      final: 0
     }
-
-    const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
-    if (!selectedEmployee) return;
-
-    const newAppraisal: Appraisal = {
-      id: `appr_${Date.now()}`,
-      employeeId: formData.employeeId,
-      employeeName: selectedEmployee.name,
-      teamLeadId: currentUser?.id || '',
-      teamLeadName: currentUser?.name || '',
-      title: formData.title,
-      period: formData.period,
-      dueDate: formData.dueDate.toISOString(),
-      status: 'sent_to_employee',
-      objectives: selectedTargets.map((target, index) => ({
-        id: `obj_${target.id}_${index}`,
-        category: target.category,
-        name: target.name,
-        marks: target.marks,
-        kpi: target.kpi,
-        measurementTracker: target.measurementTracker,
-        employeeScore: 0,
-        teamLeadScore: 0,
-        finalScore: 0,
-        employeeComments: '',
-        teamLeadComments: '',
-        evidence: ''
-      })),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      totalScore: {
-        employee: 0,
-        teamLead: 0,
-        final: 0
-      }
-    };
-
-    onCreateAppraisal(newAppraisal);
-    handleClose();
   };
 
-  const handleClose = () => {
-    setStep('basic');
-    setFormData({
-      title: '',
-      employeeId: '',
-      period: 'monthly',
-      dueDate: null,
-    });
-    setSelectedTargets([]);
-    onClose();
-  };
+  const success = await handleCreateAppraisalRequest(newAppraisal)
+  if(success){
+
+    // onCreateAppraisal(newAppraisal);
+    resetForm();
+    onClose(); // Close dialog
+  }
+};
+
+const handleClose = (open: boolean) => {
+  if (!open) {
+    resetForm();
+    onClose(); 
+  }
+};
+
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -160,31 +189,17 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
               <Input
                 id="title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => dispatch(setFormData({ ...formData, title: e.target.value }))}
                 placeholder="Q4 2024 Performance Review"
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="employee">Select Employee</Label>
-              <Select value={formData.employeeId} onValueChange={(value) => setFormData({ ...formData, employeeId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose an employee" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee) => (
-                    <SelectItem key={employee.id} value={employee.id}>
-                      {employee.name} - {employee.department}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    
 
             <div className="space-y-2">
               <Label htmlFor="period">Review Period</Label>
-              <Select value={formData.period} onValueChange={(value) => setFormData({ ...formData, period: value })}>
+              <Select value={formData.period} onValueChange={(value) => dispatch(setFormData({ ...formData, period: value }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -198,7 +213,7 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
 
             <div className="space-y-2">
               <Label>Due Date</Label>
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -214,8 +229,16 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
                 <PopoverContent className="w-auto p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.dueDate || undefined}
-                    onSelect={(date) => setFormData({ ...formData, dueDate: date || null })}
+                    selected={formData.dueDate ? new Date(formData.dueDate) : undefined}
+                    onSelect={(date) => {
+                      dispatch(
+                        setFormData({
+                          ...formData,
+                          dueDate: date ? date.toISOString() : null,
+                        })
+                      );
+                      setIsCalendarOpen(false); 
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -268,7 +291,7 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
               </CardHeader>
               <CardContent className="space-y-2">
                 <div><strong>Title:</strong> {formData.title}</div>
-                <div><strong>Employee:</strong> {employees.find(e => e.id === formData.employeeId)?.name}</div>
+                {/* <div><strong>Employee:</strong> {employees.find(e => e.id === formData.employeeId)?.name}</div> */}
                 <div><strong>Period:</strong> {formData.period}</div>
                 <div><strong>Due Date:</strong> {formData.dueDate ? format(formData.dueDate, "PPP") : 'Not set'}</div>
                 <div><strong>Total Score:</strong> {getTotalScore()}/100 marks</div>
@@ -303,23 +326,25 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
             )}
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
-            </Button>
+          <Button type="button" variant="outline" onClick={() => handleClose(false)}>
+            Cancel
+          </Button>
+
             {step !== 'preview' ? (
               <Button 
                 type="button" 
                 onClick={handleNextStep}
                 disabled={
-                  (step === 'basic' && (!formData.title || !formData.employeeId || !formData.dueDate)) ||
+                  (step === 'basic' && (!formData.title  || !formData.dueDate)) ||
                   (step === 'targets' && selectedTargets.length === 0)
                 }
               >
                 Next
               </Button>
             ) : (
-              <Button type="button" onClick={handleSubmit}>
-                Send to Employee
+              <Button type="button" onClick={handleSubmit} disabled={isLoading}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? 'Sending...' : 'Send to Employee'}
               </Button>
             )}
           </div>

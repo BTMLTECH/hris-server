@@ -1,33 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { LeaveRequest, LeaveBalance, TeamLeadResponse } from '@/types/leave'; // Update path if needed
+import { LeaveRequest, LeaveBalance, TeamLeadResponse, LeaveActivityFeedItem, LeaveBalanceItem } from '@/types/leave'; // Update path if needed
 import { leaveApi } from './leaveApi';
 import { normalizeLeaveRequest } from '@/utils/normalize';
 
-
+export type LeaveType = 'compassionate' | 'annual' | 'maternity';
 
 
 export interface LeaveFormData {
-  type: LeaveRequest['type'];
+  type: LeaveType;
   startDate: string;
   endDate: string;
   reason: string;
   teamleadId: string;
-  days: number
+  days: number,
+  typeIdentify: string,
+  allowance: 'yes' | 'no';
+  relievers: string[];
 }
+
+
 
 
 interface LeaveState {
   isLoading: boolean;
   error: string | null;
   requests: LeaveRequest[];
-  balance: LeaveBalance | null;
+  balance: LeaveBalanceItem[] | null;
   approvalQueue: LeaveRequest[];
-  activityFeed: LeaveRequest[];
+  activityFeed: LeaveActivityFeedItem[];
+  approvals: LeaveActivityFeedItem[];
   isDialogOpen: boolean;
   createIsDialogOpen: boolean;
-  selectedRequest: LeaveRequest | null;
+  selectedRequest: LeaveActivityFeedItem | null;
   selectedDates: string[];  
   formData: LeaveFormData;
   rejectionNote: string;
@@ -37,11 +43,14 @@ interface LeaveState {
     holidays: any[];
   } | null;
    teamLead: TeamLeadResponse | null;
+
    statusOverview: {
     pending: number;
     approved: number;
     rejected: number;
+    expired: number;
   };
+
 }
 
 
@@ -49,9 +58,10 @@ const initialState: LeaveState = {
   isLoading: false,
   error: null,
   requests: [],
-  balance: null,
+  balance: [],
   approvalQueue: [],
   activityFeed: [],
+  approvals: [],
   isDialogOpen: false,
   createIsDialogOpen: false,
   selectedDates: [],
@@ -61,7 +71,10 @@ const initialState: LeaveState = {
     endDate: '',
     reason: '',
     teamleadId: '',
-    days: null
+    days: null,
+    typeIdentify: 'leave',
+    allowance: 'yes',
+    relievers: []
   },
   teamLead: null,
   dateCalculation: null,
@@ -72,6 +85,7 @@ const initialState: LeaveState = {
     pending: 0,
     approved: 0,
     rejected: 0,
+    expired: 0
   },
 };
 
@@ -101,7 +115,7 @@ const leaveSlice = createSlice({
       state.createIsDialogOpen = action.payload;
     },
 
-     setSelectedRequest(state, action: PayloadAction<LeaveRequest | null>) {
+     setSelectedRequest(state, action: PayloadAction<LeaveActivityFeedItem | null>) {
       state.selectedRequest = action.payload;
     },
      setRejectionNote(state, action: PayloadAction<string>) {
@@ -135,6 +149,10 @@ const leaveSlice = createSlice({
         state.statusOverview.rejected += 1;
         state.statusOverview.pending -= 1;
       }
+    },
+    resetFormData(state) {
+      state.formData = initialState.formData;
+      state.dateCalculation = null; // optional
     },
      resetLeaveState: () => initialState, 
   },
@@ -174,19 +192,30 @@ extraReducers: (builder) => {
 builder.addMatcher(
   leaveApi.endpoints.getLeaveActivityFeed.matchFulfilled,
   (state, action) => {
+
+
     state.isLoading = false;
 
-    const { feed, summary } = action.payload.data;
+    // ✅ Normalize the full response
+    const { myRequests, approvals,  summary, balance } = normalizeLeaveRequest(
+      action.payload.data
+    );
 
-    state.activityFeed = feed.map(normalizeLeaveRequest);
+    // Feed is already normalized → no need to re-map
+    state.activityFeed = myRequests;
+    state.approvals = approvals;
 
     state.statusOverview = {
-      pending: summary?.pending ?? 0,
-      approved: summary?.approved ?? 0,
-      rejected: summary?.rejected ?? 0,
+      pending: summary.pending,
+      approved: summary.approved,
+      rejected: summary.rejected,
+      expired: summary.expired,
     };
+
+    state.balance = balance;
   }
 );
+
 
   builder.addMatcher(
     leaveApi.endpoints.getLeaveActivityFeed.matchRejected,
@@ -204,6 +233,7 @@ builder.addMatcher(
       state.error = null;
     }
   );
+  
 builder.addMatcher(
   leaveApi.endpoints.createLeaveRequest.matchFulfilled,
   (state, action) => {
@@ -237,15 +267,12 @@ builder.addMatcher(
   (state, action) => {
     state.isLoading = false;
 
-    // Remove the approved request from the queue
+    
     state.approvalQueue = state.approvalQueue.filter(
-      (req) => req.id !== action.meta.arg.originalArgs // Assuming originalArgs is request ID
+      (req) => req.id !== action.meta.arg.originalArgs 
     );
 
-    // Optionally update the activity feed if needed
-    // state.activityFeed.unshift(...)
-
-    // Update status overview
+   
     state.statusOverview.approved += 1;
     state.statusOverview.pending -= 1;
   }
@@ -301,7 +328,7 @@ builder.addMatcher(
     leaveApi.endpoints.getTeamLead.matchFulfilled,
     (state, action) => {
       state.isLoading = false;
-      state.teamLead = action.payload; // assuming the response is a single TeamLeadResponse
+      state.teamLead = action.payload; 
     }
   );
   builder.addMatcher(
@@ -329,6 +356,7 @@ builder.addMatcher(
       pending: action.payload.data.pending,
       approved: action.payload.data.approved,
       rejected: action.payload.data.rejected,
+      expired: action.payload.data.expired
     };
   }
 );
@@ -357,6 +385,7 @@ export const {
   updateStatusOverview,
   setSelectedRequest,
   setRejectionNote,
+  resetFormData,
   setCreateIsDialogOpen
 } = leaveSlice.actions;
 

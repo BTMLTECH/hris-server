@@ -10,6 +10,15 @@ import attendanceReducer from './slices/attendance/attendanceSlice'
 import profileReducer from './slices/profile/profileSlice'
 import handoverReducer from './slices/handover/handoverSlice'
 import { baseApi } from './slices/baseApi';
+import appraisalReducer from './slices/appraisal/appraisalSlice';
+import payrollReducer from './slices/payroll/payrollSlice';
+import notificationReducer from './slices/notification/notificationSlice';
+import reportReducer from './slices/report/reportSlice';
+import classlevelReducer from './slices/class/classSlice';
+import trainingReducer from './slices/training/trainingSlice';
+import cooperativeReducer from './slices/cooperative/cooperativeSlice';
+
+
 
 // 1. Combine all reducers
 const rootReducer = combineReducers({
@@ -18,6 +27,13 @@ const rootReducer = combineReducers({
   attendance: attendanceReducer,
   leave: leaveReducer,
   handover: handoverReducer,
+  appraisal: appraisalReducer,
+  payroll: payrollReducer,
+  notification: notificationReducer,
+  report: reportReducer, 
+  classlevel: classlevelReducer, 
+  training: trainingReducer, 
+  cooperative: cooperativeReducer, 
   [baseApi.reducerPath]: baseApi.reducer,
 });
 
@@ -28,7 +44,7 @@ const persistConfig = {
   key: 'root',
   version: 1,
   storage,
-  whitelist: ['auth', 'leave', 'handover'],
+  whitelist: ['auth', 'leave', 'handover','attendance','payroll', 'notification', 'report', 'classlevel', 'training'],
 };
 
 const persistedReducer = persistReducer<RootReducerType>(persistConfig, rootReducer);

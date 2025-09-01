@@ -17,6 +17,17 @@ interface TwoFactorModalProps {
   email: string;
 }
 
+
+const testEmails = [
+  'hrtest@gmail.com',
+  'managertest@gmail.com',
+  'teamleadtest@gmail.com',
+  'admintest@gmail.com',
+  'employeetest1@gmail.com',
+  'employeetest2@gmail.com',
+  'employeetest3@gmail.com'
+];
+
 const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose, onVerify, email }) => {
   const [code, setCode] = useState('');
   // const [isLoading, setIsLoading] = useState(false);
@@ -26,6 +37,8 @@ const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose, onVeri
   const [countdown, setCountdown] = useState(0);
   const { toast } = useToast();
   const {resend2fa} =  useReduxAuth()
+    const isTestEmail =
+    process.env.NODE_ENV !== 'production' && testEmails.includes(email);
 
   // Start countdown when modal opens
   useEffect(() => {
@@ -50,6 +63,14 @@ const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose, onVeri
       setCountdown(0);
     }
   }, [isOpen]);
+
+
+    // Prefill code for test accounts
+  useEffect(() => {
+    if (isOpen && isTestEmail) {
+      setCode('123456');
+    }
+  }, [isOpen, isTestEmail]);
 
   const maskEmail = (email: string) => {
     const [username, domain] = email.split('@');
@@ -160,3 +181,8 @@ const TwoFactorModal: React.FC<TwoFactorModalProps> = ({ isOpen, onClose, onVeri
 };
 
 export default TwoFactorModal;
+
+
+
+
+

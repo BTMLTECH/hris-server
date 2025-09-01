@@ -28,10 +28,25 @@ export interface CompanySummaryData {
   totalEmployees: number;
   dayShiftPresent: number;
   nightShiftPresent: number;
-  attendanceRate: number; // e.g., 0.94 for 94%
+  attendanceRate: number; 
+}
+
+export interface PaginatedAttendanceResponse {
+  success: boolean;
+  data: {
+    data: AttendanceRecord[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    };
+    count: number;
+  };
 }
 export interface AttendanceContextType {
-  attendanceRecords: AttendanceRecord[];  
+  attendanceRecords: PaginatedAttendanceResponse;  
+  cachedRecords: AttendanceRecord[];
   // attendanceStats: AttendanceStats | null;  
   companyAttendanceSummary: any | null;  
   adminAttendanceReport: any | null;  

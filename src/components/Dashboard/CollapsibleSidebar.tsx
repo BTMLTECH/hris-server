@@ -24,9 +24,13 @@ import {
   Award,
   ClipboardCheck,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BookOpen,
+  PiggyBank
 } from 'lucide-react';
 import { useCombinedContext } from '@/contexts/AuthContext';
+import { useAppSelector } from '@/store/hooks';
+import { NairaSign } from '../ui/NairaSign';
 
 interface CollapsibleSidebarProps {
   activeTab: string;
@@ -45,8 +49,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   isCollapsed,
   onToggleCollapse
 }) => {
-  const {user:userCollapsibleSidebar,  profile } = useCombinedContext();
-  const {user}= userCollapsibleSidebar
+  const { user } = useAppSelector((state) => state.auth);
 
   if (!user) return null;
 
@@ -66,66 +69,55 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           { id: 'employees', label: 'Employee Management', icon: Users },
           { id: 'attendance', label: 'Attendance', icon: Clock },
           { id: 'leave', label: 'Leave Management', icon: Calendar },
-          { id: 'loan', label: 'Loan Management', icon: CreditCard },
+          // { id: 'loan', label: 'Loan Management', icon: CreditCard },
           { id: 'appraisal', label: 'Appraisal Management', icon: Award },
-          { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardCheck },
-          { id: 'payroll', label: 'Payroll Management', icon: DollarSign },
-          { id: 'performance', label: 'Performance Management', icon: TrendingUp },
-          { id: 'recruitment', label: 'Recruitment', icon: UserCheck },
-          { id: 'documents', label: 'Document Management', icon: FolderOpen },
+          // { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardCheck },
+          { id: 'payroll', label: 'Payroll Management', icon: NairaSign },
+          // { id: 'performance', label: 'Performance Management', icon: TrendingUp },
+          // { id: 'recruitment', label: 'Recruitment', icon: UserCheck },
+          // { id: 'documents', label: 'Document Management', icon: FolderOpen },
           { id: 'handover', label: 'Handover Management', icon: ArrowRightLeft },
-          { id: 'time-tracking', label: 'Time Tracking', icon: MapPin },
+          // { id: 'time-tracking', label: 'Time Tracking', icon: MapPin },
+          { id: 'training', label: 'Training Management', icon: BookOpen },
+          { id: 'cooperative', label: 'Cooperative Management', icon: PiggyBank },
+
           { id: 'analytics', label: 'Analytics', icon: BarChart },
           { id: 'reports', label: 'Reports', icon: FileText },
-          { id: 'settings', label: 'System Settings', icon: Settings },
+          // { id: 'settings', label: 'System Settings', icon: Settings },
         ];
-
-      // case 'hr':
-      //   return [
-      //     ...baseItems,
-      //     { id: 'profile', label: 'My Profile', icon: User },
-      //     { id: 'employees', label: 'Employees', icon: Users },
-      //     { id: 'attendance', label: 'Attendance', icon: Clock },
-      //     { id: 'leave', label: 'Leave Management', icon: Calendar },
-      //     { id: 'loan', label: 'Loan Management', icon: CreditCard },
-      //     { id: 'appraisal', label: 'Appraisal Management', icon: Award },
-      //     { id: 'payroll', label: 'Payroll Management', icon: DollarSign },
-      //     { id: 'performance', label: 'Performance Management', icon: TrendingUp },
-      //     { id: 'recruitment', label: 'Recruitment', icon: UserCheck },
-      //     { id: 'documents', label: 'Document Management', icon: FolderOpen },
-      //     { id: 'handover', label: 'Handover Management', icon: ArrowRightLeft },
-      //     { id: 'time-tracking', label: 'Time Tracking', icon: MapPin },
-      //     { id: 'reports', label: 'HR Reports', icon: FileText },
-      //   ];
-
-      case 'md':
-      case 'teamlead':
-        return [
-          ...baseItems,
-          { id: 'profile', label: 'My Profile', icon: User },
-          { id: 'employees', label: 'My Team', icon: Users },
-          { id: 'attendance', label: 'Team Attendance', icon: Clock },
-          { id: 'leave', label: 'Leave Requests', icon: Calendar },
-          { id: 'loan', label: 'Loan Requests', icon: CreditCard },
-          { id: 'appraisal', label: 'Appraisal Management', icon: Award },
-          { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardCheck },
-          { id: 'handover', label: 'Handover Management', icon: ArrowRightLeft },
-          { id: 'time-tracking', label: 'Team Time Tracking', icon: MapPin },
-          { id: 'reports', label: 'Team Reports', icon: FileText },
-        ];
-
-      case 'employee':
-        return [
-          ...baseItems,
-          { id: 'profile', label: 'My Profile', icon: User },
-          { id: 'attendance', label: 'My Attendance', icon: Clock },
-          { id: 'leave', label: 'Leave Balance', icon: Calendar },
-          { id: 'loan', label: 'My Loans', icon: CreditCard },
-          { id: 'appraisal', label: 'My Appraisals', icon: Award },
-          { id: 'payroll', label: 'Payroll', icon: DollarSign },
-          { id: 'documents', label: 'My Documents', icon: FolderOpen },
-          { id: 'handover', label: 'Handover Tasks', icon: ArrowRightLeft },
-          { id: 'time-tracking', label: 'Time Tracking', icon: MapPin },
+        
+        case 'md':
+          case 'teamlead':
+            return [
+              ...baseItems,
+              { id: 'profile', label: 'My Profile', icon: User },
+              // { id: 'employees', label: 'My Team', icon: Users },
+              { id: 'attendance', label: 'Team Attendance', icon: Clock },
+              { id: 'leave', label: 'Leave Requests', icon: Calendar },
+              // { id: 'loan', label: 'Loan Requests', icon: CreditCard },
+              { id: 'appraisal', label: 'Appraisal Management', icon: Award },
+              // { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardCheck },
+              { id: 'handover', label: 'Handover Management', icon: ArrowRightLeft },
+              { id: 'training', label: 'Training Management', icon: BookOpen },
+               { id: 'cooperative', label: 'Cooperative Management', icon: PiggyBank },
+              // { id: 'time-tracking', label: 'Team Time Tracking', icon: MapPin },
+              //  { id: 'reports', label: 'Team Reports', icon: FileText },
+            ];
+            
+            case 'employee':
+              return [
+                ...baseItems,
+                { id: 'profile', label: 'My Profile', icon: User },
+                { id: 'attendance', label: 'My Attendance', icon: Clock },
+                { id: 'leave', label: 'My Leave', icon: Calendar },
+                // { id: 'loan', label: 'My Loans', icon: CreditCard },
+                { id: 'appraisal', label: 'My Appraisals', icon: Award },
+                { id: 'payroll', label: 'Payroll', icon: DollarSign },
+                // { id: 'documents', label: 'My Documents', icon: FolderOpen },
+                { id: 'handover', label: 'Handover Tasks', icon: ArrowRightLeft },
+                { id: 'training', label: 'Training Management', icon: BookOpen },
+                { id: 'cooperative', label: 'Cooperative Management', icon: PiggyBank },
+          // { id: 'time-tracking', label: 'Time Tracking', icon: MapPin },
         ];
 
       default:

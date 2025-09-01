@@ -12,7 +12,6 @@ import {
   useRequestPasswordMutation, 
   useResendIviteLinkMutation, 
   useResendPasswordMutation, 
-  // useRegisterMutation, 
   useResetPasswordMutation,
   useVerify2faMutation,
 } from '@/store/slices/auth/authApi';
@@ -20,22 +19,22 @@ import {
   logout as logoutAction, 
   clearError, 
   setCredentials,
-  // initializeFromStorage, 
   setIsLoading
 } from '@/store/slices/auth/authSlice';
 import { toast } from '@/hooks/use-toast';
 import { AuthContextType, PasswordConfig, User } from '@/types/auth';
-import { setBulkEmployees, setFormData, setLoading } from '@/store/slices/profile/profileSlice';
+import { clearEmployeeCache, setBulkEmployees, setFormData, setLoading, setProfileCache, setProfilePagination } from '@/store/slices/profile/profileSlice';
 import { set } from 'date-fns';
-// import { apiSlice } from '@/store/slices/auth/apiSlice';
-import { useGetAllProfileQuery, useGetProfileQuery } from '@/store/slices/profile/profileApi';
+import { useGetAllProfileQuery, useGetClassLevelQuery, useGetDepartmentsQuery, useGetLastStaffIdQuery, useGetProfileQuery } from '@/store/slices/profile/profileApi';
 import { extractErrorMessage } from '@/utils/errorHandler';
+import { clearActivityCache } from '@/store/slices/appraisal/appraisalSlice';
+import { clearAttenadanceCache } from '@/store/slices/attendance/attendanceSlice';
 
 export const useReduxAuth = (): AuthContextType => {
   const dispatch = useAppDispatch();
   const { user, isLoading, error , isAuthenticated} = useAppSelector((state) => state.auth);  
+  const { profilePagination,classlevelPagination, departmentsPagination, profileCache,departmentsCache,classlevelCache} = useAppSelector((state) => state.profile);  
   const [loginMutation] = useLoginMutation();
-  // const [registerMutation] = useRegisterMutation();
   const [resetPasswordMutation] = useResetPasswordMutation();
   const [verify2FA] = useVerify2faMutation()
   const [logoutUser] = useLogoutUserMutation();
@@ -45,126 +44,161 @@ export const useReduxAuth = (): AuthContextType => {
   const [resendIviteLink] = useResendIviteLinkMutation();
   const [newSetPassword] = useNewSetPasswordMutation();
   const [requestPassword] = useRequestPasswordMutation();
+  const currentProfilePage = profilePagination?.page;
+  const cachedEmployees = profileCache[currentProfilePage] ?? [];
 
-      
-    const shouldSkipProfile = !isAuthenticated || !user;
+  const currentDepartmentPage = departmentsPagination?.page;
+  const cachedDepartments = departmentsCache[currentDepartmentPage] ?? [];
 
+  const currentClasslevelPage = classlevelPagination?.page;
+  const cachedClasslevel = classlevelCache[currentClasslevelPage] ?? [];
+  
+  const shouldAllUsers = !isAuthenticated || !user;
+  const shouldSkipAll = isAuthenticated
+
+
+
+    const {} = useGetLastStaffIdQuery(undefined, {
+      skip: shouldAllUsers,
+    });
     const {
       data: profileRecord,
-      isLoading: profileIsLoading,
       error: profileError,
-      refetch: refetchProfile,
     } = useGetProfileQuery(undefined, {
-      skip: shouldSkipProfile,
+      skip: shouldAllUsers,
     });
 
-      const {
+    const {
         data: profilesRecord,
         isLoading: profilesIsLoading,
         error: profilesError,
-        refetch: refetchAllProfile,
-      } = useGetAllProfileQuery(undefined, {
-        skip: !user || (user.role !== "hr" && user.role !== "admin") ,
+      
+      } = useGetAllProfileQuery( { page: currentProfilePage, limit: profilePagination.limit },
+        { skip: !shouldSkipAll, refetchOnMountOrArgChange: true });
+
+      const {} = useGetDepartmentsQuery( { page: cachedDepartments, limit: departmentsPagination.limit },
+         { skip: shouldAllUsers});
+
+      const {} = useGetClassLevelQuery( { page: cachedClasslevel, limit: classlevelPagination.limit },
+         { skip: shouldAllUsers });
+
+
+      
+
+
+
+    useEffect(() => {
+      if (profilesRecord?.data) {
+        const { pagination, data: users } = profilesRecord.data;
+
+        if (pagination) {
+          dispatch(setProfilePagination(pagination));
+        }
+
+        if (users && !profileCache[pagination.page]) {
+          dispatch(setProfileCache({ page: pagination.page, data: users }));
+        }
+      }
+    }, [profilesRecord, dispatch, profileCache]);
+
+ 
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+    try {
+      await loginMutation({ email, password }).unwrap();
+      toast({
+        title: '2FA code sent to your email',
       });
-
-
-
-const login = async (email: string, password: string): Promise<boolean> => {
-  dispatch(setIsLoading(true));
-  try {
-    await loginMutation({ email, password }).unwrap();
+      return true;
+    } catch (error) {
+    const errorMessage = extractErrorMessage(error, 'Login failed');
     toast({
-      title: '2FA code sent to your email',
+      title: 'Login Error',
+      description: errorMessage,
+      variant: 'destructive',
     });
-    return true;
-  } catch (error) {
-  const errorMessage = extractErrorMessage(error, 'Login failed');
-  toast({
-    title: 'Login Error',
-    description: errorMessage,
-    variant: 'destructive',
-  });
-  return false;
-} finally {
-    dispatch(setIsLoading(false));
-  }
-};
-
-
-const verify2fa = async (email: string, code: string): Promise<boolean> => {
-  dispatch(setIsLoading(true));
-
-  try {
-    const result = await verify2FA({ email, code }).unwrap();
-
-    dispatch(setCredentials({ user: result.data.user }));
-    dispatch(setFormData(result.data.user));
-
-    toast({
-      title: 'Login Successful',
-      description: `Welcome, ${result.data.user.firstName}!`,
-    });
-
-    return true;
-  } catch (error: any) {
-
-      const errorMessage = extractErrorMessage(error, 'Login failed');
-  toast({
-    title: 'Login Error',
-    description: errorMessage,
-    variant: 'destructive',
-  });
-  return false;
+    return false;
   } finally {
-    dispatch(setIsLoading(false));
-  }
-};
-
-  const setNewPassword = async (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string): Promise<boolean> => {
-   dispatch(setIsLoading(true));
-   
-    try {
-      await newSetPassword({ newPassword, passwordConfig, temporaryPassword , token}).unwrap();
-      toast({
-        title: 'Password set successfully',
-        description: 'You can now log in.',
-      });
-      return true;
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error, 'Set new password failed');
-  toast({
-    title: 'Password Set Error',
-    description: errorMessage,
-    variant: 'destructive',
-  });
-  return false;
-    }finally {
-    dispatch(setIsLoading(false));
-  }
-};
-
-const reqestNewPassword = async (email: string): Promise<boolean> => {  
-  dispatch(setIsLoading(true));
-    try {
-      await requestPassword({ email }).unwrap();
-      toast({
-        title: 'Password Reset Initiated',
-        description: 'Check your email for further instructions',
-      });
-      return true;
-    } catch (error) {
-      const errorMessage = extractErrorMessage(error, 'Password request failed');
-
-      toast({
-        title: 'Password Request Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      return false;
-    }finally{
-      dispatch(setIsLoading(false))
+      dispatch(setIsLoading(false));
     }
   };
+
+
+  const verify2fa = async (email: string, code: string): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+
+    try {
+      const result = await verify2FA({ email, code }).unwrap();
+
+      dispatch(setCredentials({ user: result.data.user }));
+      dispatch(setFormData(result.data.user));
+
+      toast({
+        title: 'Login Successful',
+        description: `Welcome, ${result.data.user.firstName}!`,
+      });
+
+      return true;
+    } catch (error: any) {
+
+        const errorMessage = extractErrorMessage(error, 'Login failed');
+    toast({
+      title: 'Login Error',
+      description: errorMessage,
+      variant: 'destructive',
+    });
+    return false;
+    } finally {
+      dispatch(setIsLoading(false));
+    }
+  };
+
+  const setNewPassword = async (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+    
+      try {
+        await newSetPassword({ newPassword, passwordConfig, temporaryPassword , token}).unwrap();
+        toast({
+          title: 'Password set successfully',
+          description: 'You can now log in.',
+        });
+        return true;
+      } catch (error) {
+        const errorMessage = extractErrorMessage(error, 'Set new password failed');
+    toast({
+      title: 'Password Set Error',
+      description: errorMessage,
+      variant: 'destructive',
+    });
+    return false;
+      }finally {
+      dispatch(setIsLoading(false));
+    }
+  };
+
+  const reqestNewPassword = async (email: string): Promise<boolean> => {  
+    dispatch(setIsLoading(true));
+      try {
+        await requestPassword({ email }).unwrap();
+        toast({
+          title: 'Password Reset Initiated',
+          description: 'Check your email for further instructions',
+        });
+        return true;
+      } catch (error) {
+        const errorMessage = extractErrorMessage(error, 'Password request failed');
+
+        toast({
+          title: 'Password Request Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+        return false;
+      }finally{
+        dispatch(setIsLoading(false))
+      }
+    };
   
   const resetPassword = async (email: string): Promise<boolean> => {
     dispatch(setIsLoading(true))
@@ -218,7 +252,6 @@ const reqestNewPassword = async (email: string): Promise<boolean> => {
     dispatch(setLoading(true))
     try {
      const success =  await resendIviteLink({email}).unwrap();
-      dispatch(setBulkEmployees(success.data.user))
       toast({
         title: 'User Invited',
         description: `${email} has been invited.`,
@@ -266,13 +299,12 @@ const reqestNewPassword = async (email: string): Promise<boolean> => {
     try {
       const bulkResponse = await bulkInviteUsersMutation(formData).unwrap();
       if(bulkResponse){
-        refetchAllProfile();
+        toast({
+          title: 'Bulk Invite Sent',
+          description: 'Multiple users invited successfully.',
+        });
       }
 
-      toast({
-        title: 'Bulk Invite Sent',
-        description: 'Multiple users invited successfully.',
-      });
       return true;
     } catch (error: any) {
     const errorMessage = extractErrorMessage(error, 'Bulk invite failed');
@@ -289,26 +321,29 @@ const reqestNewPassword = async (email: string): Promise<boolean> => {
   };
 
 
-const logout = async () => {
-  dispatch(setIsLoading(true))
-  try {
-    const response = await logoutUser({}).unwrap();
-    dispatch(logoutAction());
-    toast({
-      title: 'Logged Out',
-      description: response?.message || 'You have been successfully logged out.',
-    });
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, 'Logout failed');
-    toast({
-      title: 'Logout Error',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-  }finally{
-      dispatch(setIsLoading(false))
-    }
-};
+  const logout = async () => {
+    dispatch(setIsLoading(true))
+    try {
+      const response = await logoutUser({}).unwrap();
+      dispatch(logoutAction());
+      dispatch(clearActivityCache()),
+      dispatch(clearEmployeeCache()),
+      dispatch(clearAttenadanceCache()),
+      toast({
+        title: 'Logged Out',
+        description: response?.message || 'You have been successfully logged out.',
+      });
+    } catch (error) {
+      const errorMessage = extractErrorMessage(error, 'Logout failed');
+      toast({
+        title: 'Logout Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    }finally{
+        dispatch(setIsLoading(false))
+      }
+  };
 
 
   const hasRole = (requiredRoles: string[]) => {
@@ -319,14 +354,13 @@ const logout = async () => {
   return {
     user,
     profileRecord,
-    // token: user?.token,
+    cachedEmployees,
     isLoading,
     error: error || '',
     profileError,
     isAuthenticated,
     profilesIsLoading,
     login,
-    // register,
     resetPassword,
     reqestNewPassword,
     resend2fa,

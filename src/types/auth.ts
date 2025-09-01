@@ -1,41 +1,106 @@
+import { ProfileFormData } from "./user";
+
+
+export interface EmergencyContact {
+  name: string;
+  phone: string;
+  email: string;
+  relationship: string;
+}
+
+
+export interface AccountInfo {
+  classLevel: string; 
+  basicPay: number;
+  allowances: number;
+  bankAccountNumber: string;
+  bankName: string;
+  taxNumber?: string;
+  pensionCompany?: string;
+  pensionNumber?: string;
+}
+
+export interface CooperativeInfo {
+  monthlyContribution: number;
+  totalContributed: number;
+  lastContributionDate?: string; 
+}
+
+export interface IOnboardingTask {
+  name: string;
+  category: 'training' | 'services' | 'device';
+  completed: boolean;
+  completedAt?: string; 
+}
+
+export interface IOnboardingRequirement {
+  _id?: string;
+  employee: string; 
+  department: string;
+  tasks: IOnboardingTask[];
+  createdAt: string;
+}
+
+export interface ICompany {
+  name: string;
+  description?: string;
+  roles: string; 
+  department: string; 
+  status: string;
+  createdAt?: Date;
+  branding?: {
+      displayName?: string;
+      logoUrl?: string;
+      primaryColor?: string;
+    }
+}
+
 export interface User {
   _id: string;
+  staffId: string;
+  title: string;
   firstName: string;
   middleName?: string;
   lastName: string;
-  email: string;
-  phoneNumber?:string;
+  gender?: string;
   dateOfBirth?: string;
+  stateOfOrigin?: string;
   address?: string;
-  profileImage?: string; 
-  position?: string;
-  createdAt?: string;
-  skills?: string[];
-  education?: string;
-  workExperience?: string;
-  emergencyContact?: {
-    name: string;
-    relationship: string;
-    phone: string;
-  };
-  role: 
-  | 'hr'
-  | 'md'
-  | 'teamlead'
-  | 'employee'
-  | 'admin';
-  biometryId?: string;
+  city?: string;
+  mobile?: string;
+  email: string;
+  password?: string; 
   department: string;
-  experience?: string;
-  companyId: string; // flattened from mongoose ObjectId
+  biometryId?: string;
+  profileImage?: string;
+  position: string;
+  officeBranch?: string;
+  employmentDate?: string;
+  accountInfo: AccountInfo;
+  role: 'md' | 'teamlead' | 'employee' | 'admin' | 'hr';
+  company: ICompany; 
   status: 'active' | 'inactive' | 'terminated';
-  token: string,
-  hireDate?: string;
-  salary?: number;
-  sendInvite: false
+  terminationDate?: string;
+  isActive: boolean;
+  failedLoginAttempts: number;
+  lockUntil?: string;
+  resetRequested: boolean;
+  resetRequestedAt?: string;
+  twoFactorEnabled: boolean;
+  twoFactorCode?: string;
+  twoFactorExpiry?: string;
+  resetToken?: string;
+  resetTokenExpiry?: string;
+  cooperative?: CooperativeInfo;
+  createdAt: string;
+  nextOfKin: EmergencyContact;
+  sendInvite?: boolean;
+  token?: string; 
+  onboardingRequirements?: IOnboardingRequirement[];
+  basicSalary: number;
+  totalAllowance: number;
 }
 
-// The wrapper interface that contains the user property
 export interface UserState {
   user: User | null;
   token: string | null;
@@ -71,7 +136,7 @@ export interface AuthContextType {
   user: User | null;
   profileRecord: User | null;
   profileError: any
-  // token: string | null;
+  cachedEmployees: ProfileFormData[];
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
