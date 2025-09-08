@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Dispatch, useEffect } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -14,10 +15,11 @@ import {
   setSelectedDepartment,
   toggleTask
 } from "@/store/slices/profile/profileSlice";
+import { ProfileFormData } from "@/types/user";
 
 
 interface RequirementsSectionProps {
-  formData:any;
+  formData:ProfileFormData;
   dispatch: Dispatch<any>;
 }
 

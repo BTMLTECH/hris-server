@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { IPayroll } from "@/types/payroll";
 import { jsPDF } from "jspdf";
@@ -32,7 +33,7 @@ async function loadImage(url: string): Promise<string | null> {
 export async function generatePayslip(payroll: IPayroll): Promise<void> {
   if (!payroll) return;
 
-  console.log("Generating Payslip for:", payroll);
+  
 
   const brandColor = payroll.company?.branding?.primaryColor || "#030577";
   const doc = new jsPDF();

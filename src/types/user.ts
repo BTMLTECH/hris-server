@@ -1,13 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+ 
+
 import { ICompany, IOnboardingRequirement, User } from "./auth";
-import { SerializedError } from "@reduxjs/toolkit";
-import { Department } from "./department";
+
 
 type DepartmentCache = Record<number, IDepartment[]>;
 type ClassLevelCache = Record<number, IClassLevel[]>;
 
-
+export interface CompanyBranding {
+  displayName?: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}
+export interface AdminUserInput {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email: string;
+  title: "Mr" | "Mrs" | "Ms" | "Dr" | "Prof";
+  gender: "male" | "female";
+  staffId: string
+}
+export interface CreateCompanyDTO {
+  companyName: string;
+  companyDescription?: string;
+  adminData: AdminUserInput;
+  branding?: CompanyBranding;
+}
 
 export interface IDepartment {
   name?: string;
@@ -156,6 +174,20 @@ export interface Pagination {
   pages: number;
 }
 
+
+export interface ILeaveBalanceResponse {
+  _id: string;
+  user: string;
+  company: string;
+  year: number;
+  balances: {
+    annual: number;
+    compassionate: number;
+    maternity: number;
+  };
+}
+
+
 export interface ProfileFormData {
   _id?: string;
   staffId: string;
@@ -213,12 +245,13 @@ export interface ProfileFormData {
     relationship: string;
   };
   sendInvite?: boolean;
-  selectedDepartment: string,
+  selectedDepartment: string;
   department: string;
   departmentName: string;
   departments: IDepartment[];
   classlevels: IClassLevel[];
   requirements: IOnboardingRequirement[];  
+  leaveBalance?: ILeaveBalanceResponse;
 }
 
 export interface EmployeeCache {
@@ -234,6 +267,7 @@ export interface ProfileState {
   formData: ProfileFormData;  
   isBulkImportOpen: boolean;
   isDialogOpen:boolean;
+  isCompanyDialogOpen:boolean;
   selectedEmployee: ProfileFormData | null;
   showDetailView: boolean;
   searchTerm: string;
@@ -253,7 +287,7 @@ export interface ProfileState {
   selectedActionType: 'delete' | 'terminate' | 'activate' | 'training-feedback' | 'cooperative-staff' | 'resend-invite' | 'toggle-status' | null,
   isActionDialogOpen: boolean,
   isManageDialogOpen: boolean,
-
+  companyFormData: CreateCompanyDTO
 }
 
 export interface ProfileResponse {

@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { apiSlice } from "@/store/slices/auth/apiSlice";
+import { LeaveActivityFeedResponse, UpdateLeaveBalanceBody } from "@/types/leave";
 
 
 
@@ -30,6 +30,17 @@ export const leaveApi = apiSlice.injectEndpoints({
 
     }),
 
+    updateLeaveBalance: builder.mutation({
+      query: ({id, body}: {id: string,  body: UpdateLeaveBalanceBody}) => ({
+        url: `leaves/${id}/balance`,
+        method: 'PUT',
+        body,
+        credentials: 'include' as const,
+      }),
+      invalidatesTags: ['Profiles'],
+
+    }),
+
     // Reject leave request
     rejectLeaveRequest: builder.mutation({
       query: ({id, note}) => ({
@@ -55,18 +66,21 @@ export const leaveApi = apiSlice.injectEndpoints({
             : [],
     }),
 
-    // Get leave activity feed
-    getLeaveActivityFeed: builder.query({
-      query: () => ({
-        url: 'leaves/activity-feed',
-        method: 'GET',
-        credentials: 'include' as const,
-      }),
-       providesTags: (result) =>
-          result
-            ? [{ type: 'LeaveActivityFeed' }]
-            : [],
-    }),
+
+    getLeaveActivityFeed: builder.query<
+  LeaveActivityFeedResponse,
+  { page: number; limit: number }>({ 
+    query: ({ page = 1, limit = 20 }) => ({
+    url: `leaves/activity-feed?page=${page}&limit=${limit}`,
+    method: "GET",
+  }),
+  providesTags: (result) =>
+    result
+      ? [{ type: "LeaveActivityFeed", id: "LIST" }]
+      : [{ type: "LeaveActivityFeed", id: "LIST" }],
+      
+}),
+
 
     getTeamLead: builder.query({
       query: () => ({
@@ -93,5 +107,6 @@ export const {
   useGetLeaveApprovalQueueQuery,
   useGetLeaveActivityFeedQuery,
   useGetTeamLeadQuery,
-  useGetStatOverviewQuery
+  useGetStatOverviewQuery,
+  useUpdateLeaveBalanceMutation,
 } = leaveApi;

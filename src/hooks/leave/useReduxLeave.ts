@@ -1,3 +1,4 @@
+/* eslint-disable no-empty-pattern */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
@@ -8,12 +9,14 @@ import {
   useGetLeaveActivityFeedQuery,
   useGetTeamLeadQuery,
   useGetStatOverviewQuery,
+  useUpdateLeaveBalanceMutation,
 } from "@/store/slices/leave/leaveApi";
  
 import { toast } from "../use-toast";
-import { setLoading } from "@/store/slices/leave/leaveSlice";
-import { UseReduxLeaveReturnType } from "@/types/leave";
+import { setActivityCache, setActivityFeedPagination, setAllApprovedCache, setAllLeavePagination, setLoading } from "@/store/slices/leave/leaveSlice";
+import { LeaveActivityFeedItem, UpdateLeaveBalanceBody, UseReduxLeaveReturnType } from "@/types/leave";
 import { extractErrorMessage } from "@/utils/errorHandler";
+import { useEffect } from "react";
 
 
 
@@ -22,6 +25,17 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
 
   const {user }= useAppSelector((state) => state.auth); 
   const isAuthorized =  !user || (user.role !== "teamlead" && user.role !== "hr" && user.role !== "employee");
+  const { allApprovedPagination, allApprovedCache, activityFeedPagination, activityFeedCache } = useAppSelector(
+    (state) => state.leave
+  );
+  
+  const currentLeavePage = allApprovedPagination?.page ?? 1; 
+    const cachedApprovedLeave = allApprovedCache[currentLeavePage] ?? [];
+
+  const [createLeaveRequest, { isLoading: creatingLeave }] = useCreateLeaveRequestMutation();
+  const [approveLeaveRequest, { isLoading: approvingLeave }] = useApproveLeaveRequestMutation();
+  const [rejectLeaveRequest, { isLoading: rejectingLeave }] = useRejectLeaveRequestMutation();
+  const [updateLeaveBalance, { isLoading: updatingLeaveBalance }] = useUpdateLeaveBalanceMutation()
   const {
     data: leaveApprovalQueue = [],
     isLoading: approvalQueueLoading,
@@ -32,11 +46,12 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
   });
 
   const {
-    data: leaveActivityFeed = [],
+    data: leaveActivityFeedResponse,
     isLoading: activityFeedLoading,
     error: activityFeedError,
-    refetch: refetchActivityFeed,
-  } = useGetLeaveActivityFeedQuery(undefined, {
+  } = useGetLeaveActivityFeedQuery(
+    { page: currentLeavePage, limit: allApprovedPagination?.limit ?? 20 },
+     {
      skip: !user,
   });
 
@@ -53,9 +68,47 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
      skip: !user,
   });
 
-  const [createLeaveRequest, { isLoading: creatingLeave }] = useCreateLeaveRequestMutation();
-  const [approveLeaveRequest, { isLoading: approvingLeave }] = useApproveLeaveRequestMutation();
-  const [rejectLeaveRequest, { isLoading: rejectingLeave }] = useRejectLeaveRequestMutation();
+ useEffect(() => {
+  if (!leaveActivityFeedResponse) return;
+
+
+  if (leaveActivityFeedResponse.allApproved) {
+    const pagination = leaveActivityFeedResponse.pagination.allApproved;
+
+    dispatch(setAllLeavePagination(pagination));
+
+    if (!allApprovedCache[pagination.page]) {
+      dispatch(
+        setAllApprovedCache({
+          page: pagination.page,
+          data: leaveActivityFeedResponse.allApproved,
+        })
+      );
+    }
+  }
+
+ 
+  if (leaveActivityFeedResponse.myRequests) {
+    const pagination = leaveActivityFeedResponse.pagination.myRequests;
+
+    dispatch(setActivityFeedPagination(pagination));
+
+    if (!activityFeedCache[pagination.page]) {
+      dispatch(
+        setActivityCache({
+          page: pagination.page,
+          data: leaveActivityFeedResponse.myRequests,
+        })
+      );
+    }
+  }
+}, [
+  leaveActivityFeedResponse,
+  dispatch,
+  allApprovedCache,
+  activityFeedCache,
+]);
+
 
   const handleCreateLeaveRequest = async (data: any): Promise<boolean> => {
     dispatch(setLoading(true));
@@ -101,6 +154,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     }
   };
 
+
   const handleRejectLeaveRequest = async (id: string, note: string): Promise<boolean> => {
     dispatch(setLoading(true));
     try {
@@ -123,9 +177,33 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     }
   };
 
+    const handleUpdateLeaveBalance = async (id: string, body: UpdateLeaveBalanceBody): Promise<boolean> => {
+    dispatch(setLoading(true));
+
+    try {
+      await updateLeaveBalance({id, body}).unwrap();
+      toast({ title: "Leave Approved" });
+   
+
+      return true;
+    } catch (error: any) {
+          const errorMessage = extractErrorMessage(error, 'Approval Failed');
+
+      toast({
+        title: "Approval Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    }finally {
+      dispatch(setLoading(false));
+    }
+  };
+
   return {
     leaveApprovalQueue,
-    leaveActivityFeed,
+    // leaveActivityFeed,
+    cachedApprovedLeave,
     teamlead,
     isLoading: {
       approvalQueueLoading,
@@ -144,7 +222,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     handleApproveLeaveRequest,
     handleRejectLeaveRequest,
     refetchApprovalQueue,
-    refetchActivityFeed,
+    handleUpdateLeaveBalance,
     refetchTeamlead
   };
 };

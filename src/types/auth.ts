@@ -1,4 +1,5 @@
-import { ProfileFormData } from "./user";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { CreateCompanyDTO, ProfileFormData } from "./user";
 
 
 export interface EmergencyContact {
@@ -151,6 +152,7 @@ export interface AuthContextType {
   logout: () => void;
   inviteUser: (userData: Partial<User>) => Promise<boolean>;
   bulkInviteUsers: (formData: FormData) => Promise<boolean>;  
+  createCompanyWithAdim: (data: CreateCompanyDTO) => Promise<boolean>;  
   hasRole: (roles: string[]) => boolean;
   clearError: () => void;
 }

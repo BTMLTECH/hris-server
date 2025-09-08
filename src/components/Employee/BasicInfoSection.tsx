@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
 import { setFormData } from "@/store/slices/profile/profileSlice";
@@ -6,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { NIGERIAN_STATES } from "@/data/constRaw";
 import { useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
+import { ProfileFormData } from "@/types/user";
 
 interface BasicInfoSectionProps {
-  formData: any;
+  formData: ProfileFormData;
   dispatch: Dispatch<any>;
 }
 

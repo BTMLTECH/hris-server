@@ -1,4 +1,4 @@
-import { ProfileFormData } from "@/types/user";
+import { CreateCompanyDTO, ProfileFormData } from "@/types/user";
 
 
 
@@ -83,5 +83,24 @@ export const blankProfileFormData: ProfileFormData = {
   requirements: [],
   selectedDepartment: "",
   classlevels: []
+};
+
+export const blankCompanyFormData: CreateCompanyDTO = {
+  companyName: "",
+  companyDescription: "",
+  adminData: {
+    firstName: "",
+    lastName: "",
+    email: "",
+    title: "Mr",
+    gender: "male",
+    staffId: ""
+  },
+  branding: {
+    displayName: "",
+    logoUrl: "",
+    primaryColor: "#000000",
+  },
+
 };
 

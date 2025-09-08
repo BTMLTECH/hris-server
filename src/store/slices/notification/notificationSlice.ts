@@ -75,6 +75,7 @@ const notificationSlice = createSlice({
     builder.addMatcher(
       notificationApi.endpoints.getNotifications.matchFulfilled,
       (state, action) => {
+    
         const { data, total, unreadCount, currentPage, totalPages } =
           action.payload as NotificationResponse;
 

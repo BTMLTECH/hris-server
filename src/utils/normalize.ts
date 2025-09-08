@@ -4,6 +4,13 @@ import { LeaveActivityFeedItem, LeaveActivityFeedResponse, LeaveBalanceItem, Lea
 import { IPayroll } from '@/types/payroll'; // Adjust the path as needed
 import { ITaxInfo, PensionFundState } from '@/types/payroll'; // Adjust the path if types are split
 
+type PaginationMeta = {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+};
+
 
 export const normalizeAttendanceRecord = (record: any): AttendanceRecord => ({
   id: record._id,
@@ -19,7 +26,8 @@ export const normalizeAttendanceRecord = (record: any): AttendanceRecord => ({
 });
 
 
-export const normalizeLeaveRequest = (raw: any): LeaveActivityFeedResponse => {
+export const normalizeLeaveRequest = (rawLeave: any): LeaveActivityFeedResponse => {
+  const raw = rawLeave?.data ?? rawLeave;
   const getDate = (val: any): string => {
     if (!val) return '';
     const d = val instanceof Date ? val : new Date(val);
@@ -27,7 +35,6 @@ export const normalizeLeaveRequest = (raw: any): LeaveActivityFeedResponse => {
   };
 
   const normalizeFeedItem = (item: any): LeaveActivityFeedItem => {
-    // Determine current reviewer: next pending reliever → teamlead → hr
     let currentReviewerRole: 'reliever' | 'teamlead' | 'hr' | null = null;
     const nextReliever = item.relievers?.find((r: any) => r.status?.toLowerCase() === 'pending');
     if (nextReliever) {
@@ -86,10 +93,22 @@ export const normalizeLeaveRequest = (raw: any): LeaveActivityFeedResponse => {
     };
   };
 
+  const safePagination = (p: any): PaginationMeta | undefined => {
+    if (!p) return undefined;
+    const total = Number(p.total ?? 0);
+    const page = Number(p.page ?? 1);
+    const limit = Number(p.limit ?? 20);
+    const pages =
+      p.pages !== undefined ? Number(p.pages) : Math.ceil(limit > 0 ? total / limit : 0);
+    return { total, page, limit, pages };
+  };
+
   return {
     // 🔹 now we have two feeds: myRequests & approvals
     myRequests: Array.isArray(raw.myRequests) ? raw.myRequests.map(normalizeFeedItem) : [],
     approvals: Array.isArray(raw.approvals) ? raw.approvals.map(normalizeFeedItem) : [],
+    allApproved: Array.isArray(raw.allApproved) ? raw.allApproved.map(normalizeFeedItem) : [],
+
 
     summary: {
       pending: Number(raw.summary?.pending ?? 0),
@@ -104,7 +123,19 @@ export const normalizeLeaveRequest = (raw: any): LeaveActivityFeedResponse => {
           remaining: Number(b.remaining ?? 0),
         }))
       : [],
+
+
+      pagination: raw.pagination
+      ? {
+          myRequests: safePagination(raw.pagination.myRequests),
+          approvals: safePagination(raw.pagination.approvals),
+          allApproved: safePagination(raw.pagination.allApproved),
+        }
+      : undefined,
+  
   };
+
+  
 };
 
 

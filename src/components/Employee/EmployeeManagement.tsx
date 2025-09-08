@@ -1,26 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Edit, Trash2, Upload, FileText, Search, Eye, Download, Mail, Loader2, UserX, UserCheck, MoreHorizontal, Filter } from 'lucide-react';
-import { Employee } from '@/types/employee';
-import { useCombinedContext } from '@/contexts/AuthContext';
+
 import { toast } from '@/hooks/use-toast';
-import RoleBadge from '@/components/RoleBadge';
-import StatusBadge from '@/components/StatusBadge';
 import EmployeeDetailView from './EmployeeDetailView';
 import { useReduxAuth } from '@/hooks/auth/useReduxAuth';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { IDepartment, ProfileFormData } from '@/types/user';
-import { resetFormData, setFilterDepartment, setFormData, setIsEditMode, setIsBulkImportOpen, setIsDialogOpen, setIsProcessingBulk, setSearchTerm, setSelectedEmployee, setShowDetailView, removeEmployee, setSelectedDeleteId, setIsDeleteDialogOpen, setProfilePagination, setIsActionDialogOpen, setSelectedActionType, setSelectedActionId , setLoading, setSelectedDepartment} from '@/store/slices/profile/profileSlice';
+import { resetFormData, setFilterDepartment, setFormData, setIsEditMode, setIsBulkImportOpen, setIsDialogOpen, setIsProcessingBulk, setSearchTerm, setSelectedEmployee, setShowDetailView, removeEmployee, setSelectedDeleteId, setIsDeleteDialogOpen, setProfilePagination, setIsActionDialogOpen, setSelectedActionType, setSelectedActionId , setLoading, setSelectedDepartment, setIsCompanyDialogOpen, resetCompanyFormData} from '@/store/slices/profile/profileSlice';
 import { useReduxProfile } from '@/hooks/user/useReduxProfile';
 import { DeleteConfirmationDialog } from '../ui/deleteDialog';
 import { useLoadingState } from '@/hooks/useLoadingState';
@@ -34,23 +31,27 @@ import RequirementsSection from './RequirementsSection';
 import { departmentMap, reverseDepartmentMap } from '@/types/report';
 import { requiredFields } from '@/data/constRaw';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { CreateCompanyDialog } from '../CreateCompany/CreateCompanyDialog';
 
 
 const EmployeeManagement: React.FC = () => {
   const dispatch = useAppDispatch()
    const {user } = useAppSelector((state) => state.auth);   
-  const { formData, isEditMode, profilePagination,departmentsCache, isActionDialogOpen,selectedActionType,
+  const { formData, isEditMode, profilePagination, isActionDialogOpen,selectedActionType,
   isLoading, isBulkImportOpen, filterDepartment, bulkEmployees, isProcessingBulk,isDialogOpen, 
-  showDetailView,searchTerm, selectedEmployee,selectedActionId, isLoading:profileIsLoading} = useAppSelector((state) => state.profile);
+  showDetailView,searchTerm, selectedEmployee,selectedActionId, isCompanyDialogOpen, companyFormData } = useAppSelector((state) => state.profile);
   const {editProfile, deleteProfile, profileTerminate, profileActivate}  = useReduxProfile()
   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);  
   const canManageEmployees = user?.role === 'admin' || user?.role === 'hr';
-  const {cachedEmployees, inviteUser, bulkInviteUsers, resendInvite, profilesIsLoading} = useReduxAuth()
+  const {cachedEmployees, inviteUser, createCompanyWithAdim, bulkInviteUsers, resendInvite, profilesIsLoading} = useReduxAuth()
   const shouldShowSkeleton = !user || (['hr', 'admin'].includes(user.role) && profilesIsLoading  );
   const mappedDepartment = departmentMap[formData?.department] || "all";
   const [statusFilter, setStatusFilter] = useState<'active' | 'inactive'>('active');
  
+  const isParentCompany = cachedEmployees?.some(
+    (employee: ProfileFormData) => employee.company?.name === "BTM"
+  );
 
 const filteredEmployees = cachedEmployees?.filter((employee: any) => {
   const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
@@ -83,7 +84,7 @@ const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     return;
   }
 
-  setUploadedFile(file); // store file for later upload
+  setUploadedFile(file); 
   toast({
     title: "File Uploaded",
     description: `${file.name} is ready for import.`,
@@ -155,17 +156,13 @@ const handleBulkImport = async () => {
   });
 };
 
-  const handleResendInvite = async (email: string, employeeId: string, action: string) => {
- 
+  const handleResendInvite = async (email: string, employeeId: string, action: string) => { 
   setLocalLoading(employeeId, action);
-  //  setLocalLoadingStates(prev => ({ ...prev, [employeeId]: 'resend' }));
   const uscess = await resendInvite(email);
-  // setLocalLoadingStates(prev => ({ ...prev, [employeeId]: null }));
   if(uscess){ 
     clearLocalLoading(employeeId, action);
   }
   }
-
 
 
 const handleEdit = (employee: ProfileFormData, action: string) => {
@@ -177,86 +174,98 @@ const handleEdit = (employee: ProfileFormData, action: string) => {
 };
 
 
+
+
 const handleSubmit = async (event: React.FormEvent) => {
   event.preventDefault();
+  setLocalLoading('editemployee', 'editemployee');
 
-  // 1️⃣ Basic required fields check
-  for (const field of requiredFields) {
-    const value = formData[field];
-    if (!value || value.toString().trim() === '') {
+  try {
+    // 1️⃣ Basic required fields check
+    for (const field of requiredFields) {
+      const value = formData[field];
+      if (!value || value.toString().trim() === '') {
+        toast({
+          title: `Please fill the "${field}" field`,
+          variant: 'destructive',
+        });
+        return; // exit early
+      }
+    }
+
+    const { nextOfKin, accountInfo } = formData;
+
+    // 2️⃣ Next of Kin validation
+    if (!nextOfKin?.name?.trim() ||
+        !nextOfKin?.phone?.trim() ||
+        !nextOfKin?.email?.trim() ||
+        !nextOfKin?.relationship?.trim()) {
       toast({
-        title: `Please fill the "${field}" field`,
+        title: 'Please fill all Next of Kin fields',
         variant: 'destructive',
       });
       return;
     }
-  }
 
-  const { nextOfKin, accountInfo, requirements } = formData;
+    // 3️⃣ Account info validation
+    if (!accountInfo?.classLevel?.trim() ||
+        accountInfo?.basicPay === undefined ||
+        accountInfo?.allowances === undefined ||
+        !accountInfo?.bankAccountNumber?.trim() ||
+        !accountInfo?.bankName?.trim()) {
+      toast({
+        title: 'Please fill all Account Information fields',
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  // 2️⃣ Next of Kin validation
-  if (!nextOfKin?.name?.trim() ||
-      !nextOfKin?.phone?.trim() ||
-      !nextOfKin?.email?.trim() ||
-      !nextOfKin?.relationship?.trim()) {
-    toast({
-      title: 'Please fill all Next of Kin fields',
-      variant: 'destructive',
-    });
-    return;
-  }
+    let payload: any = {
+      ...formData,
+      firstName: formData.firstName.trim(),
+      lastName: formData.lastName.trim(),
+      middleName: formData.middleName?.trim(),
+      email: formData.email.toLowerCase().trim(),
+    };
 
-  // 3️⃣ Account info validation
-  if (!accountInfo?.classLevel?.trim() ||
-      accountInfo?.basicPay === undefined ||
-      accountInfo?.allowances === undefined ||
-      !accountInfo?.bankAccountNumber?.trim() ||
-      !accountInfo?.bankName?.trim()) {
-    toast({
-      title: 'Please fill all Account Information fields',
-      variant: 'destructive',
-    });
-    return;
-  }
-
-  // 4️⃣ Onboarding tasks validation
-  if (!requirements?.length || !requirements.some((req: any) => req.tasks?.length > 0)) {
-    toast({
-      title: 'Please select at least one onboarding task for the department',
-      variant: 'destructive',
-    });
-    return;
-  }
-  let payload = {
-    ...formData,
-    requirements,
-    firstName: formData.firstName.trim(),
-    lastName: formData.lastName.trim(),
-    middleName: formData.middleName?.trim(),
-    email: formData.email.toLowerCase().trim(),
-    // department: mappedDepartment,
-  };
-
-  let success = false;
-  if (isEditMode) {
-    success = await editProfile(payload);
-  } else {
-
+    if (!isEditMode) {
+      // Only include department and requirements when inviting a new user
       payload = {
         ...payload,
         department: mappedDepartment,
+        requirements: formData.requirements,
       };
-    success = await inviteUser(payload);
-  }
+    }
 
-  // 7️⃣ Close dialog and reset form if successful
-  if (success) {
-    dispatch(setIsDialogOpen(false));
-    dispatch(setIsEditMode(false));
-    dispatch(resetFormData());
+    let success = false;
+    if (isEditMode) {
+      success = await editProfile(payload);
+    } else {
+      success = await inviteUser(payload);
+    }
+
+    // 4️⃣ Close dialog and reset form if successful
+    if (success) {
+      dispatch(setIsDialogOpen(false));
+      
+      if (!isEditMode) {
+        dispatch(resetFormData());
+      }
+      
+      dispatch(setIsEditMode(false));
+    }
+  } catch (error) {
+    console.error("Error submitting form:", error);
+    toast({
+      title: 'An unexpected error occurred',
+      description: (error as Error).message,
+      variant: 'destructive',
+    });
+  } finally {
+    // ✅ Always clear loading
+    clearLocalLoading('editemployee', 'editemployee');
   }
 };
-
 
 
 
@@ -272,7 +281,7 @@ const handleAction = async (
   } else if (action === 'terminate') {
     success = await profileTerminate(employeeId);
   } else if (action === 'activate') {
-    success = await profileActivate(employeeId); // new API call
+    success = await profileActivate(employeeId); 
   }
 
   if (success) {
@@ -285,24 +294,10 @@ const handleAction = async (
 };
 
 
-// const handleDelete = async (employeeId: string, action: string) => {
-//   setLocalLoading(employeeId, action);
-//   const success = await deleteProfile(employeeId);
-//   if (success) {
-//     dispatch(removeEmployee(employeeId));
-//     dispatch(setIsDeleteDialogOpen(false));
-//     dispatch(setSelectedDeleteId(null));
-//   }
-//   clearLocalLoading(employeeId, action)
-// };
-
-
 
  const handleViewDetails = (employee: ProfileFormData, action:string) => {
- setLocalLoading(employee._id, action);
   dispatch(setSelectedEmployee(employee));
   dispatch(setShowDetailView(true));
-  clearLocalLoading(employee._id, action)
 };
 
 
@@ -311,6 +306,25 @@ const handleAction = async (
     dispatch(setSelectedEmployee(null));
   };
 
+
+ const handleCancel = () => {
+    clearLocalLoading("company", "company")
+    dispatch(setIsCompanyDialogOpen(false));
+    dispatch(resetCompanyFormData());
+  };
+
+const handleCompany = async () => {
+  setLocalLoading("company", "company");
+  try {
+    const success = await createCompanyWithAdim(companyFormData);
+    if (success) {
+      dispatch(setIsCompanyDialogOpen(false));
+      dispatch(resetCompanyFormData());
+    }
+  } finally {
+    clearLocalLoading("company", "company");
+  }
+};
 
 
   if (showDetailView && selectedEmployee) {
@@ -324,208 +338,225 @@ const handleAction = async (
           <h2 className="text-2xl font-bold">Employee Management</h2>
           <p className="text-gray-600">Manage employee records and information</p>
         </div>
-{canManageEmployees && (
-  <>
-    {/* MAIN ACTIONS BUTTON */}
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="flex items-center gap-2">
-          <MoreHorizontal className="h-4 w-4" />
-          Manage Employee
-        </Button>
-      </DropdownMenuTrigger>
+          {canManageEmployees && (
+            <>
 
-      <DropdownMenuContent align="end" className="w-48">
-        {/* Filter */}
-        <DropdownMenuItem
-          onClick={() => setStatusFilter("active")}
-          className={statusFilter === "active" ? "bg-blue-100 text-blue-600" : ""}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Show Active
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setStatusFilter("inactive")}
-          className={statusFilter === "inactive" ? "bg-blue-100 text-blue-600" : ""}
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Show Inactive
-        </DropdownMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <MoreHorizontal className="h-4 w-4" />
+                    Manage Employee
+                  </Button>
+                </DropdownMenuTrigger>
 
-        {/* Bulk Import Trigger */}
-        <DropdownMenuItem
-          onClick={() => dispatch(setIsBulkImportOpen(true))}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          Bulk Import
-        </DropdownMenuItem>
+                <DropdownMenuContent align="end" className="w-48">
+                  {/* Filter */}
+                  <DropdownMenuItem
+                    onClick={() => setStatusFilter("active")}
+                    className={statusFilter === "active" ? "bg-blue-100 text-blue-600" : ""}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Show Active
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setStatusFilter("inactive")}
+                    className={statusFilter === "inactive" ? "bg-blue-100 text-blue-600" : ""}
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Show Inactive
+                  </DropdownMenuItem>
 
-        {/* Add Employee Trigger */}
-        <DropdownMenuItem
-          onClick={() => {
-            dispatch(setIsDialogOpen(true));
-            dispatch(setIsEditMode(false));
-            dispatch(resetFormData());
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Employee
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-
-    {/* BULK IMPORT DIALOG */}
-    <Dialog
-      open={isBulkImportOpen}
-      onOpenChange={(open) => dispatch(setIsBulkImportOpen(open))}
-    >
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Bulk Import Employee</DialogTitle>
-          <DialogDescription>
-            Upload an Excel or CSV file to import multiple employees at once
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Button onClick={downloadTemplate} variant="outline" className="flex-1">
-              <Download className="h-4 w-4 mr-2" />
-              Download Template
-            </Button>
-            <div className="flex-1 space-y-1">
-              <input
-                type="file"
-                accept=".xlsx,.xls,.csv"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="bulk-upload"
-              />
-              <label htmlFor="bulk-upload">
-                <Button variant="outline" className="w-full cursor-pointer" asChild>
-                  <span>
+                  {/* Bulk Import Trigger */}
+                  <DropdownMenuItem
+                    onClick={() => dispatch(setIsBulkImportOpen(true))}
+                  >
                     <Upload className="h-4 w-4 mr-2" />
-                    Upload File
-                  </span>
-                </Button>
-              </label>
-              {uploadedFile && (
-                <div className="text-sm text-muted-foreground">
-                  Selected file: <span className="font-medium">{uploadedFile.name}</span>
-                </div>
-              )}
+                    Bulk Import
+                  </DropdownMenuItem>
+
+                  {/* Add Employee Trigger */}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      dispatch(setIsDialogOpen(true));
+                      dispatch(setIsEditMode(false));
+                      dispatch(resetFormData());
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Employee
+                  </DropdownMenuItem>
+                  
+              {isParentCompany && (
+                    <DropdownMenuItem onClick={() => dispatch(setIsCompanyDialogOpen(true))}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Company
+                    </DropdownMenuItem>
+                  )}
+                              
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+          
+              <Dialog
+                open={isBulkImportOpen}
+                onOpenChange={(open) => dispatch(setIsBulkImportOpen(open))}
+              >
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Bulk Import Employee</DialogTitle>
+                    <DialogDescription>
+                      Upload an Excel or CSV file to import multiple employees at once
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <Button onClick={downloadTemplate} variant="outline" className="flex-1">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download Template
+                      </Button>
+                      <div className="flex-1 space-y-1">
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls,.csv"
+                          onChange={handleFileUpload}
+                          className="hidden"
+                          id="bulk-upload"
+                        />
+                        <label htmlFor="bulk-upload">
+                          <Button variant="outline" className="w-full cursor-pointer" asChild>
+                            <span>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload File
+                            </span>
+                          </Button>
+                        </label>
+                        {uploadedFile && (
+                          <div className="text-sm text-muted-foreground">
+                            Selected file: <span className="font-medium">{uploadedFile.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        dispatch(setIsBulkImportOpen(false));
+                        dispatch(setIsEditMode(false));
+                        // dispatch(resetFormData());
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleBulkImport}
+                      disabled={isProcessingBulk || bulkEmployees.length === 0}
+                    >
+                      {isProcessingBulk ? "Processing..." : "Import Employees"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog
+                open={isDialogOpen}
+                onOpenChange={(open) => dispatch(setIsDialogOpen(open))}
+              >
+                <DialogContent className="w-full max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[90vh] p-0 flex flex-col">
+                  <DialogHeader className="p-4 sm:p-6 lg:p-8 border-b">
+                    <DialogTitle>
+                      {isEditMode ? "Edit Employee" : "Add New Employee"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {isEditMode
+                        ? "Update employee information"
+                        : "Add a new employee to your organization"}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  {/* Tabs */}
+              <Tabs defaultValue="basic" className="flex-1 flex flex-col h-full overflow-hidden">
+            {/* Tab Headers */}
+            <div className="sticky top-0 bg-white z-10 border-b">
+              <TabsList className="flex flex-wrap sm:flex-nowrap gap-1 w-full overflow-x-auto px-2 sm:px-4 py-2">
+                <TabsTrigger value="basic" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
+                  Basic Info
+                </TabsTrigger>
+                <TabsTrigger value="kin" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
+                  Next of Kin
+                </TabsTrigger>
+                <TabsTrigger value="office" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
+                  Office Info
+                </TabsTrigger>
+                <TabsTrigger value="account" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
+                  Account Info
+                </TabsTrigger>
+                <TabsTrigger value="requirements" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
+                  Requirements
+                </TabsTrigger>
+              </TabsList>
             </div>
-          </div>
-        </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              dispatch(setIsBulkImportOpen(false));
-              dispatch(setIsEditMode(false));
-              dispatch(resetFormData());
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleBulkImport}
-            disabled={isProcessingBulk || bulkEmployees.length === 0}
-          >
-            {isProcessingBulk ? "Processing..." : "Import Employees"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-8 py-4">
+              <TabsContent value="basic">
+                <BasicInfoSection formData={formData} dispatch={dispatch} />
+              </TabsContent>
+              <TabsContent value="kin">
+                <NextOfKinSection formData={formData} dispatch={dispatch} />
+              </TabsContent>
+              <TabsContent value="office">
+                <OfficeInfoSection formData={formData} dispatch={dispatch} />
+              </TabsContent>
+              <TabsContent value="account">
+                <AccountInfoSection formData={formData} dispatch={dispatch} />
+              </TabsContent>
+              <TabsContent value="requirements">
+                <RequirementsSection formData={formData} dispatch={dispatch} />
+              </TabsContent>
+            </div>
+          </Tabs>
 
-    {/* ADD EMPLOYEE DIALOG */}
-    <Dialog
-      open={isDialogOpen}
-      onOpenChange={(open) => dispatch(setIsDialogOpen(open))}
-    >
-      <DialogContent className="w-full max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[90vh] p-0 flex flex-col">
-        <DialogHeader className="p-4 sm:p-6 lg:p-8 border-b">
-          <DialogTitle>
-            {isEditMode ? "Edit Employee" : "Add New Employee"}
-          </DialogTitle>
-          <DialogDescription>
-            {isEditMode
-              ? "Update employee information"
-              : "Add a new employee to your organization"}
-          </DialogDescription>
-        </DialogHeader>
+                  <DialogFooter className="p-4 sm:p-6 lg:p-8 border-t flex flex-col sm:flex-row justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                         onClick={() => {
+                          dispatch(setIsDialogOpen(false));
+                          if (!isEditMode) {
+                            dispatch(resetFormData());
+                          }
+                          dispatch(setIsEditMode(false));
+                        }}
+                      >
+                      Cancel
+                    </Button>
+                    <Button type="submit" onClick={handleSubmit} disabled={isLocalLoading('editemployee', 'editemployee')}>
+                      {isLocalLoading('editemployee', 'editemployee') ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
+                          {isEditMode ? "Updating..." : "Creating..."}
+                        </>
+                      ) : isEditMode ? "Update Employee" : "Create Employee"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-        {/* Tabs */}
-     <Tabs defaultValue="basic" className="flex-1 flex flex-col h-full overflow-hidden">
-  {/* Tab Headers */}
-  <div className="sticky top-0 bg-white z-10 border-b">
-    <TabsList className="flex flex-wrap sm:flex-nowrap gap-1 w-full overflow-x-auto px-2 sm:px-4 py-2">
-      <TabsTrigger value="basic" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
-        Basic Info
-      </TabsTrigger>
-      <TabsTrigger value="kin" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
-        Next of Kin
-      </TabsTrigger>
-      <TabsTrigger value="office" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
-        Office Info
-      </TabsTrigger>
-      <TabsTrigger value="account" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
-        Account Info
-      </TabsTrigger>
-      <TabsTrigger value="requirements" className="flex-1 min-w-[100px] sm:min-w-[120px] text-center whitespace-nowrap">
-        Requirements
-      </TabsTrigger>
-    </TabsList>
-  </div>
-
-  {/* Tab Content */}
-  <div className="flex-1 overflow-y-auto px-2 sm:px-4 lg:px-8 py-4">
-    <TabsContent value="basic">
-      <BasicInfoSection formData={formData} dispatch={dispatch} />
-    </TabsContent>
-    <TabsContent value="kin">
-      <NextOfKinSection formData={formData} dispatch={dispatch} />
-    </TabsContent>
-    <TabsContent value="office">
-      <OfficeInfoSection formData={formData} dispatch={dispatch} />
-    </TabsContent>
-    <TabsContent value="account">
-      <AccountInfoSection formData={formData} dispatch={dispatch} />
-    </TabsContent>
-    <TabsContent value="requirements">
-      <RequirementsSection formData={formData} dispatch={dispatch} />
-    </TabsContent>
-  </div>
-</Tabs>
-
-        <DialogFooter className="p-4 sm:p-6 lg:p-8 border-t flex flex-col sm:flex-row justify-end gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              dispatch(setIsDialogOpen(false));
-              if (!isEditMode) {
-                dispatch(resetFormData());
-                dispatch(setIsEditMode(false));
-              }
-            }}
-          >
-            Cancel
-          </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
-                {isEditMode ? "Updating..." : "Creating..."}
-              </>
-            ) : isEditMode ? "Update Employee" : "Create Employee"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  </>
-)}
+            <CreateCompanyDialog
+              onSubmit={handleCompany}
+              submitting={isLocalLoading}
+              companyFormData={companyFormData}
+              dispatch={dispatch}
+              isCompanyDialogOpen={isCompanyDialogOpen}
+              handleCancel={handleCancel}
+              
+              />
+            </>
+          )}
       </div>
 
       {/* Search and Filters */}
@@ -754,21 +785,7 @@ const handleAction = async (
                             )}
                           </Button>
 
-                          {/* <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              dispatch(setSelectedDeleteId(employee._id));
-                              dispatch(setIsDeleteDialogOpen(true));
-                            }}
-                            disabled={isLocalLoading(employee._id, 'delete')}
-                          >
-                            {isLocalLoading(employee._id, 'delete') ? (
-                              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button> */}
+                          
                           <Button
                 variant="outline"
                 size="sm"
@@ -870,41 +887,7 @@ const handleAction = async (
     ) }
       </Card>
 
-      {/* <Dialog
-                              open={isDeleteDialogOpen}
-                              onOpenChange={(open) => dispatch(setIsDeleteDialogOpen(open))}
-                            >
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Confirm Delete</DialogTitle>
-                                  <DialogDescription>
-                                    Are you sure you want to delete this employee?
-                                  </DialogDescription>
-                                </DialogHeader>
-
-                                <DialogFooter>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => dispatch(setIsDeleteDialogOpen(false))}
-                                    disabled={isLoading}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => handleDelete(selectedDeleteId, 'delete')}
-                                    disabled={isLoading}
-                                  >
-                                    {isLoading && (
-                                      <Loader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />
-                                    )}
-                                    Confirm
-                                  </Button>
-                                </DialogFooter>
-                              </DialogContent>
-      </Dialog> */}
-
-
+     
 <Dialog
   open={isActionDialogOpen}
   onOpenChange={(open) => dispatch(setIsActionDialogOpen(open))}
@@ -943,9 +926,9 @@ const handleAction = async (
         onClick={() =>
           handleAction(selectedActionId, selectedActionType as 'delete' | 'terminate')
         }
-        disabled={isLoading}
+        disabled={isLocalLoading('deleteemployee', 'deleteemployee')}
       >
-        {isLoading && (
+        {isLocalLoading('deleteemployee', 'deleteemployee') && (
           <Loader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />
         )}
         Confirm

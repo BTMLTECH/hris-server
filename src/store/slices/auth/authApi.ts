@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
 
 import { baseApi } from "../baseApi";
-import { apiSlice } from "./apiSlice";
 
 
 // Define explicit types for request and response payloads
@@ -114,6 +113,15 @@ export const authApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
     }),
 
+    createCompany: builder.mutation({
+      query: (data) => ({
+        url: 'auth/owner-create',
+        method: 'POST',
+        body: data,
+        credentials: 'include' as const,
+      }),
+    }),
+
     bulkInviteUsers: builder.mutation({
       query: (formData) => ({
         url: 'auth/bulk-invite',
@@ -147,5 +155,7 @@ export const {
   useInviteUserMutation,
   useBulkInviteUsersMutation,
   useResendIviteLinkMutation,
-  useNewSetPasswordMutation
+  useNewSetPasswordMutation,
+  useCreateCompanyMutation
+
 } = authApi;

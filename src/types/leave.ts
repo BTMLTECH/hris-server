@@ -62,10 +62,14 @@ export interface TeamLeadResponse {
   cached: boolean;
 }
 
-
+export interface UpdateLeaveBalanceBody {
+  leaveType: "annual" | "compassionate" | "maternity";
+  balance: number;
+  year?: number;
+}
 export interface UseReduxLeaveReturnType {
-  leaveApprovalQueue: LeaveRequest[];
-  leaveActivityFeed: LeaveRequest[];
+  leaveApprovalQueue: LeaveActivityFeedItem[];
+  cachedApprovedLeave: LeaveActivityFeedItem[]
   teamlead: TeamLeadResponse;
   isLoading: {
     approvalQueueLoading: boolean;
@@ -85,8 +89,8 @@ export interface UseReduxLeaveReturnType {
   handleCreateLeaveRequest: (data: any) => Promise<boolean>;
   handleApproveLeaveRequest: (id: string) => Promise<boolean>;
   handleRejectLeaveRequest: (id: string, note:string) => Promise<boolean>;
+  handleUpdateLeaveBalance: (id: string, body: UpdateLeaveBalanceBody) => Promise<boolean>;
   refetchApprovalQueue: () => void;
-  refetchActivityFeed: () => void;
   refetchTeamlead: () => void;
 }
 
@@ -145,6 +149,14 @@ export interface LeaveBalanceItem {
 export interface LeaveActivityFeedResponse {
   myRequests: LeaveActivityFeedItem[];
   approvals: LeaveActivityFeedItem[];
+  allApproved: LeaveActivityFeedItem[]; 
   summary: LeaveActivitySummary;
   balance: LeaveBalanceItem[];  
+  pagination: {
+      myRequests: { total: number; page: number; limit: number;  pages: number };
+      approvals: { total: number; page: number; limit: number;  pages: number };
+      allApproved?: { total: number; page: number; limit: number;  pages: number };
+  };
 }
+
+

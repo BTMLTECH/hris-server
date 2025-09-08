@@ -141,10 +141,7 @@ export interface UseReduxAppraisalReturnType {
     updatingAppraisal: boolean;
     appraisaActivityLoading: boolean;    
   };
-  error: {
-    // approvalQueueError: any;
-    activityError: any;
-  };
+
   handleCreateAppraisalRequest: (data: Partial<Appraisal>) => Promise<boolean>;
   handleUpdateAppraisalRequest: (id: string, data: Partial<Appraisal>) => Promise<boolean>;
   handleApproveAppraisalRequest: (id: string) => Promise<boolean>;

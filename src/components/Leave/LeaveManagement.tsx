@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,14 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { LeaveBalance, LeaveRequest } from '@/types/leave';
-import { Check, Eye, Info, Loader2, Plus, Upload, X } from 'lucide-react';
+import { LeaveActivityFeedItem, LeaveBalance, LeaveRequest } from '@/types/leave';
+import { Check, Eye, Filter, Info, Loader2, MoreHorizontal, Plus, Upload, X } from 'lucide-react';
 import React, { useState } from 'react';
 import { motion } from "framer-motion";
 import { useCombinedContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { LeaveFormData, setDateCalculation,updateStatusOverview, setFormData, setIsDialogOpen, setRequests, setSelectedRequest, setRejectionNote, setCreateIsDialogOpen, resetLeaveState, resetFormData, LeaveType, setLoading } from '@/store/slices/leave/leaveSlice';
+import { LeaveFormData, setDateCalculation,updateStatusOverview, setFormData, setIsDialogOpen, setRequests, setSelectedRequest, setRejectionNote, setCreateIsDialogOpen, resetLeaveState, resetFormData, LeaveType, setLoading, AllApprovedFeedCache, setAllLeavePagination, setActivityFeedPagination, setSelectedRequestId, setLeaveDialog } from '@/store/slices/leave/leaveSlice';
 import { calculateWorkingDays, getHolidaysInRange } from '@/utils/holidays';
 import ApprovalSteps from './ApprovalSteps';
 import { useReduxAuth } from '@/hooks/auth/useReduxAuth';
@@ -24,6 +24,11 @@ import { ProfileFormData } from '@/types/user';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Checkbox } from '../ui/checkbox';
 import { useLoadingState } from '@/hooks/useLoadingState';
+import { useReduxLeave } from '@/hooks/leave/useReduxLeave';
+import { PaginationNav } from '../ui/paginationNav';
+import { LeaveCalendar } from './LeaveCalendar';
+import { LeaveBalanceDialog } from './LeaveBalanceDialog';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@radix-ui/react-dropdown-menu';
 
 
 const  LeaveManagement: React.FC = () => {
@@ -32,32 +37,55 @@ const {user: userLeaveManagement, leave } = useCombinedContext();
   const { user:currentUser} = useAppSelector((state) => state.auth); 
     const {cachedEmployees} = useReduxAuth()
   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();
-  
-  
-  const {  handleCreateLeaveRequest, handleApproveLeaveRequest, handleRejectLeaveRequest } = leave
+  const [leaveBalanceOpen, setLeaveBalanceOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<ProfileFormData | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("annual");
+  const [newBalance, setNewBalance] = useState<number>(0);
+
+  const {  handleCreateLeaveRequest, handleApproveLeaveRequest, handleRejectLeaveRequest, handleUpdateLeaveBalance } = leave
   const {
   isDialogOpen,
-  selectedDates,
   formData,
-  requests,
   dateCalculation,
-  teamLead,
-  isLoading,
-  activityFeed,
-  approvals,
-  error,
+  isLoading, 
   statusOverview,
   selectedRequest,
   rejectionNote,
-  createIsDialogOpen
+  createIsDialogOpen,
+  activityFeedCache,
+  activityFeedPagination,
+  approvalsCache,
+  approvalsPagination,
+  allApprovedPagination,
+  leaveDialog,
+  selectedRequestId
 } = useAppSelector(state => state.leave);
 const dispatch = useAppDispatch();
-const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 const canApproveLeave = user?.role === 'teamlead' ||  user?.role === 'admin' || user?.role === 'hr' || user?.role === 'employee';
+const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const { profilePagination, } = useAppSelector((state) => state.profile);
+const {cachedApprovedLeave} =  useReduxLeave()
+
+const currentLeavePage = activityFeedPagination?.page ?? 1; 
+const cachedMyApproved = activityFeedCache[currentLeavePage] ?? [];
+
+const currentApprovalPage = approvalsPagination?.page ?? 1; 
+const cachedApproval = approvalsCache[currentApprovalPage] ?? [];
+
+
+
+const rowsToRender: LeaveActivityFeedItem[] = ["hr", "admin"].includes(user?.role ?? "")
+  ? cachedApprovedLeave
+  : cachedMyApproved;
+
+
 const calculateDays = (start: string, end: string) => {
   if (!start || !end) return null;
   const calculation = calculateWorkingDays(start, end);
   const holidays = getHolidaysInRange(start, end);
+
+  
 
   return {
     totalDays: calculation.totalDays,
@@ -205,313 +233,450 @@ const calculateDays = (start: string, end: string) => {
 
     return colors[type ?? ''] || 'bg-gray-100 text-gray-800';
   };
+
+
+  const handleViewRequest = (request: LeaveActivityFeedItem) => {
+      dispatch(setLeaveDialog(true))
+      dispatch(setSelectedRequestId(request));
+  };
+
+
+
+  const handleEditClick = (emp: ProfileFormData) => {
+  setSelectedEmployee(emp);
+  setSelectedType("annual");
+  setNewBalance(emp.leaveBalance?.balances.annual ?? 0);
+  setEditOpen(true);
+};
+
+const handleEditBalance = async ({
+  employeeId,
+  leaveType,
+  balance,
+}: {
+  employeeId: string;
+  leaveType: "annual" | "compassionate" | "maternity";
+  balance: number;
+}) => { 
+
+  const success = await handleUpdateLeaveBalance(employeeId, { leaveType, balance });
+  if(success){
+    setEditOpen(false);
+  }
+};
+
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Leave Management</h2>
-          <p className="text-gray-600">Manage leave requests and balances</p>
-        </div>
-        <Dialog   open={createIsDialogOpen}
-              onOpenChange={(isOpen) => {
-                dispatch(setCreateIsDialogOpen(isOpen));
-                if (!isOpen) {
-                  dispatch(resetFormData()); // custom reducer that resets only the form
-                }
-              }}
+<div className="flex justify-between items-center">
+  <div>
+    <h2 className="text-2xl font-bold">Leave Management</h2>
+    <p className="text-gray-600">Manage leave requests and balances</p>
+  </div>
+
+  {/* Manage Leave Dropdown */}
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="outline" className="flex items-center gap-2">
+        <MoreHorizontal className="h-4 w-4" />
+        Manage Leave
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent
+      align="end"
+      sideOffset={6}
+      className="w-48 bg-white shadow-lg rounded-md border border-gray-200 cursor-pointer gap-2 p-2"
+    >
+      {/* Edit Leave */}
+      <DropdownMenuItem
+        onClick={() => setLeaveBalanceOpen(true)}
+        className="flex items-center"
+      >
+        <Filter className="h-4 w-4 mr-2" />
+        Edit Balance
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
+
+      {/* Request Leave */}
+      <DropdownMenuItem
+        onClick={() => dispatch(setCreateIsDialogOpen(true))}
+        className="flex items-center"
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Request Leave
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+<LeaveBalanceDialog
+  isOpen={leaveBalanceOpen}
+  onClose={() => setLeaveBalanceOpen(false)}
+  employees={cachedEmployees}
+  profilePagination={profilePagination}
+  editOpen={editOpen}
+  setEditOpen={setEditOpen}
+  selectedEmployee={selectedEmployee}
+  selectedType={selectedType}
+  setSelectedType={setSelectedType}
+  newBalance={newBalance}
+  setNewBalance={setNewBalance}
+  onSubmit={handleEditBalance}
+  onEdit={handleEditClick}     
+  isLoading={isLoading}     
+/>
+
+  {/* Request Leave Dialog */}
+  <Dialog
+    open={createIsDialogOpen}
+    onOpenChange={(isOpen) => {
+      dispatch(setCreateIsDialogOpen(isOpen));
+      if (!isOpen) {
+        dispatch(resetFormData());
+      }
+    }}
+  >
+    <DialogContent
+      className="
+        bg-white
+        rounded-2xl
+        shadow-xl
+        max-w-2xl
+        w-full
+        sm:mx-4
+        mx-2
+        max-h-[90vh]
+        overflow-y-auto
+        p-6
+        animate-slide-in
+      "
+    >
+      <DialogHeader>
+        <DialogTitle className="text-2xl font-semibold text-gray-800">
+          Request Leave
+        </DialogTitle>
+        <DialogDescription className="text-gray-600 text-sm mt-1">
+          Submit a new leave request. Working days are calculated excluding
+          weekends and Nigerian public holidays.
+        </DialogDescription>
+      </DialogHeader>
+
+      {/* === Full Request Leave Form === */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Leave Type & Team Lead */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="type">Leave Type</Label>
+            <Select
+              value={formData.type}
+              onValueChange={(value) =>
+                dispatch(setFormData({ ...formData, type: value as LeaveType }))
+              }
             >
-          {/* <DialogTrigger asChild>
-          </DialogTrigger> */}
-            <Button onClick={() => dispatch(setCreateIsDialogOpen(true))}>
-              <Plus className="h-4 w-4 mr-2" />
-              Request Leave
-            </Button>
-     <DialogContent
-  className="
-    bg-white
-    rounded-2xl
-    shadow-xl
-    max-w-2xl
-    w-full
-    sm:mx-4
-    mx-2
-    max-h-[90vh]
-    overflow-y-auto
-    p-6
-    animate-slide-in
-  "
->
-  <DialogHeader>
-    <DialogTitle className="text-2xl font-semibold text-gray-800">
-      Request Leave
-    </DialogTitle>
-    <DialogDescription className="text-gray-600 text-sm mt-1">
-      Submit a new leave request. Working days are calculated excluding weekends and Nigerian public holidays.
-    </DialogDescription>
-  </DialogHeader>
+              <SelectTrigger>
+                <SelectValue placeholder="Select leave type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="annual">Annual</SelectItem>
+                <SelectItem value="compassionate">Compassionate</SelectItem>
+                <SelectItem value="maternity">Maternity</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-  <form onSubmit={handleSubmit} className="space-y-5">
-    {/* Leave Type & Team Lead */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* Leave Type */}
-      <div>
-        <Label htmlFor="type">Leave Type</Label>
-        <Select
-          value={formData.type}
-          onValueChange={(value) => dispatch(setFormData({ ...formData, type: value as LeaveType }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select leave type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="annual">Annual</SelectItem>
-            <SelectItem value="compassionate">Compassionate</SelectItem>
-            <SelectItem value="maternity">Maternity</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          <div>
+            <Label htmlFor="teamLead">Team Lead</Label>
+            <Select
+              value={formData.teamleadId}
+              onValueChange={(value) =>
+                dispatch(setFormData({ ...formData, teamleadId: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select team lead" />
+              </SelectTrigger>
+              <SelectContent>
+                {cachedEmployees
+                  ?.filter((emp) => emp.role === "teamlead")
+                  .map((lead) => (
+                    <SelectItem key={lead._id} value={lead._id}>
+                      {lead.firstName} {lead.lastName} ({lead.position})
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
-      {/* Team Lead */}
-      <div>
-        <Label htmlFor="teamLead">Team Lead</Label>
-        <Select
-          value={formData.teamleadId}
-          onValueChange={(value) => dispatch(setFormData({ ...formData, teamleadId: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Select team lead" />
-          </SelectTrigger>
-          <SelectContent>
-            {cachedEmployees
-              ?.filter(emp => emp.role === "teamlead")
-              .map((lead) => (
-                <SelectItem key={lead._id} value={lead._id}>
-                  {lead.firstName} {lead.lastName} ({lead.position})
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+        {/* Dates */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="startDate">Start Date</Label>
+            <Input
+              id="startDate"
+              type="date"
+              value={formData.startDate}
+              onChange={(e) => handleDateChange("startDate", e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="endDate">End Date</Label>
+            <Input
+              id="endDate"
+              type="date"
+              value={formData.endDate}
+              onChange={(e) => handleDateChange("endDate", e.target.value)}
+              min={formData.startDate}
+              required
+            />
+          </div>
+        </div>
 
-    {/* Dates */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div>
-        <Label htmlFor="startDate">Start Date</Label>
-        <Input
-          id="startDate"
-          type="date"
-          value={formData.startDate}
-          onChange={(e) => handleDateChange("startDate", e.target.value)}
-          min={new Date().toISOString().split("T")[0]}
-          required
-        />
-      </div>
-      <div>
-        <Label htmlFor="endDate">End Date</Label>
-        <Input
-          id="endDate"
-          type="date"
-          value={formData.endDate}
-          onChange={(e) => handleDateChange("endDate", e.target.value)}
-          min={formData.startDate}
-          required
-        />
-      </div>
-    </div>
-
-    {/* Leave Calculation */}
-    {dateCalculation && (
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-            <div className="space-y-2">
-              <h4 className="font-medium text-blue-900">Leave Duration</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Total Days:</span>
-                  <span className="ml-2 font-medium">{dateCalculation.totalDays}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Working Days:</span>
-                  <span className="ml-2 font-medium text-blue-600">{dateCalculation.workingDays}</span>
+        {/* Leave Calculation */}
+        {dateCalculation && (
+          <Card className="bg-blue-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div className="space-y-2">
+                  <h4 className="font-medium text-blue-900">Leave Duration</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Total Days:</span>
+                      <span className="ml-2 font-medium">
+                        {dateCalculation.totalDays}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Working Days:</span>
+                      <span className="ml-2 font-medium text-blue-600">
+                        {dateCalculation.workingDays}
+                      </span>
+                    </div>
+                  </div>
+                  {dateCalculation.holidays.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        Excluded Days:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {dateCalculation.holidays.map((holiday, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {holiday.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-              {dateCalculation.holidays.length > 0 && (
-                <div className="mt-2">
-                  <p className="text-sm font-medium text-gray-700 mb-1">Excluded Days:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {dateCalculation.holidays.map((holiday, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">{holiday.name}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Relievers */}
+        <div>
+          <Label htmlFor="relievers">Relievers (Select 2 or 3)</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                {formData.relievers?.length
+                  ? `${formData.relievers.length} selected`
+                  : "Select relievers"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-full max-w-sm p-2 max-h-60 overflow-y-auto">
+              <div className="space-y-2">
+                {cachedEmployees
+                  ?.filter(
+                    (emp) =>
+                      emp.role === "employee" &&
+                      emp.email !== currentUser.email
+                  )
+                  .map((emp: ProfileFormData) => {
+                    const isChecked = formData.relievers?.includes(emp.email);
+                    return (
+                      <div key={emp._id} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={(checked) => {
+                            let updated = formData.relievers || [];
+                            if (checked) {
+                              if (updated.length < 3)
+                                updated = [...updated, emp.email];
+                            } else {
+                              updated = updated.filter((e) => e !== emp.email);
+                            }
+                            dispatch(
+                              setFormData({ ...formData, relievers: updated })
+                            );
+                          }}
+                        />
+                        <span>
+                          {emp.firstName} {emp.lastName} ({emp.position})
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </PopoverContent>
+          </Popover>
+          {formData.relievers?.length < 2 && (
+            <p className="text-sm text-red-500 mt-1">
+              Please select at least 2 relievers
+            </p>
+          )}
+        </div>
+
+        {/* Allowance & Reason */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <Label>Allowance</Label>
+            <div className="flex gap-4 mt-1">
+              <Button
+                type="button"
+                variant={formData.allowance === "yes" ? "default" : "outline"}
+                onClick={() =>
+                  dispatch(setFormData({ ...formData, allowance: "yes" }))
+                }
+              >
+                Yes
+              </Button>
+              <Button
+                type="button"
+                variant={formData.allowance === "no" ? "default" : "outline"}
+                onClick={() =>
+                  dispatch(setFormData({ ...formData, allowance: "no" }))
+                }
+              >
+                No
+              </Button>
             </div>
           </div>
-        </CardContent>
-      </Card>
-    )}
-
-    {/* Participant email */}
-    <div>
-      <Label htmlFor="relievers">Relievers (Select 2 or 3)</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-between">
-            {formData.relievers?.length ? `${formData.relievers.length} selected` : "Select relievers"}
-          </Button>
-        </PopoverTrigger>
-     <PopoverContent className="w-full max-w-sm p-2 max-h-60 overflow-y-auto">
-  <div className="space-y-2">
-    {cachedEmployees
-      ?.filter(emp => emp.role === "employee" && emp.email !== currentUser.email)
-      .map((emp: ProfileFormData) => {
-        const isChecked = formData.relievers?.includes(emp.email);
-        return (
-          <div key={emp._id} className="flex items-center space-x-2">
-            <Checkbox
-              checked={isChecked}
-              onCheckedChange={(checked) => {
-                let updated = formData.relievers || [];
-                if (checked) {
-                  if (updated.length < 3) updated = [...updated, emp.email];
-                } else {
-                  updated = updated.filter((e) => e !== emp.email);
-                }
-                dispatch(setFormData({ ...formData, relievers: updated }));
-              }}
+          <div className="flex flex-col">
+            <Label htmlFor="reason">Reason</Label>
+            <Textarea
+              id="reason"
+              value={formData.reason}
+              onChange={(e) =>
+                dispatch(setFormData({ ...formData, reason: e.target.value }))
+              }
+              placeholder="Provide a reason"
+              required
             />
-            <span>{emp.firstName} {emp.lastName} ({emp.position})</span>
           </div>
-        );
-      })}
-  </div>
-</PopoverContent>
-
-      </Popover>
-      {formData.relievers?.length < 2 && (
-        <p className="text-sm text-red-500 mt-1">Please select at least 2 relievers</p>
-      )}
-    </div>
-
-    {/* Allowance & Reason */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div className="flex flex-col">
-        <Label>Allowance</Label>
-        <div className="flex gap-4 mt-1">
-          <Button
-            variant={formData.allowance === "yes" ? "default" : "outline"}
-            onClick={() => dispatch(setFormData({ ...formData, allowance: "yes" }))}
-          >
-            Yes
-          </Button>
-          <Button
-            variant={formData.allowance === "no" ? "default" : "outline"}
-            onClick={() => dispatch(setFormData({ ...formData, allowance: "no" }))}
-          >
-            No
-          </Button>
         </div>
-      </div>
-      <div className="flex flex-col">
-        <Label htmlFor="reason">Reason</Label>
-        <Textarea
-          id="reason"
-          value={formData.reason}
-          onChange={(e) => dispatch(setFormData({ ...formData, reason: e.target.value }))}
-          placeholder="Provide a reason"
-          required
-        />
-      </div>
-    </div>
 
-    {/* File Upload */}
-  {/* File Upload */}
-<div className="flex-1 space-y-1">
-  <input
-    type="file"
-    accept=".pdf"
-    onChange={handleFileUpload}
-    className="hidden"
-    id="handover-upload"
-  />
-  <label htmlFor="handover-upload">
-    <Button variant="outline" className="w-full cursor-pointer" asChild>
-      <span className="flex items-center gap-2">
-        <Upload className="h-4 w-4" />
-        Upload Handover
-      </span>
-    </Button>
-  </label>
-  {uploadedFile && (
-    <div className="text-sm text-muted-foreground">
-      Selected file: <span className="font-medium">{uploadedFile.name}</span>
-    </div>
-  )}
+        {/* File Upload */}
+        <div className="flex-1 space-y-1">
+          <input
+            type="file"
+            accept=".pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="handover-upload"
+          />
+          <label htmlFor="handover-upload">
+            <Button variant="outline" className="w-full cursor-pointer" asChild>
+              <span className="flex items-center gap-2">
+                <Upload className="h-4 w-4" />
+                Upload Handover
+              </span>
+            </Button>
+          </label>
+          {uploadedFile && (
+            <div className="text-sm text-muted-foreground">
+              Selected file:{" "}
+              <span className="font-medium">{uploadedFile.name}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <DialogFooter className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              dispatch(setCreateIsDialogOpen(false));
+              dispatch(
+                setFormData({
+                  type: "annual",
+                  startDate: "",
+                  endDate: "",
+                  reason: "",
+                  teamleadId: "",
+                  days: 0,
+                  typeIdentify: "leave",
+                  allowance: "yes",
+                  relievers: [],
+                })
+              );
+              setUploadedFile(null);
+              dispatch(setDateCalculation(null));
+              dispatch(setLoading(false));
+            }}
+            disabled={isLoading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={
+              isLoading ||
+              !formData.type ||
+              !formData.startDate ||
+              !formData.endDate ||
+              !formData.reason ||
+              !formData.teamleadId ||
+              !formData.relievers ||
+              formData.relievers.length < 2 ||
+              !uploadedFile
+            }
+          >
+            {isLoading ? (
+              <>
+                Submitting{" "}
+                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+              </>
+            ) : (
+              "Submit Request"
+            )}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
 </div>
-
-
-    {/* Footer */}
-    <DialogFooter className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={() => {
-          dispatch(setCreateIsDialogOpen(false));
-          dispatch(setFormData({ type: "annual", startDate: "", endDate: "", reason: "", teamleadId: "", days: 0, typeIdentify: "leave", allowance: "yes", relievers: [] }));
-          setUploadedFile(null);
-          dispatch(setDateCalculation(null));
-          dispatch(setLoading(false))
-        }}
-        disabled={isLoading}
-      >
-        Cancel
-      </Button>
-      <Button
-        type="submit"
-        disabled={
-          isLoading ||
-          !formData.type ||
-          !formData.startDate ||
-          !formData.endDate ||
-          !formData.reason ||
-          !formData.teamleadId ||
-          !formData.relievers ||
-          formData.relievers.length < 2 ||
-          !uploadedFile
-        }
-      >
-        {isLoading ? <>Submitting <Loader2 className="ml-2 h-4 w-4 animate-spin" /></> : "Submit Request"}
-      </Button>
-    </DialogFooter>
-  </form>
-      </DialogContent>
-
-
-        </Dialog>
-      </div>
 
     {/* tab */}
 
     <Tabs defaultValue="requests" className="space-y-8">
-  <TabsList
-    className={`grid w-full ${
-      currentUser.role !== "employee" ? "grid-cols-3" : "grid-cols-3"
-    }`}
-  >
-    <TabsTrigger value="requests">My Requests</TabsTrigger>
-    <TabsTrigger value="status">Status</TabsTrigger>
-    <TabsTrigger value="approval">Approval Queue</TabsTrigger>
+      <TabsList
+        className={`grid w-full ${
+          currentUser.role !== "employee" ? "grid-cols-3" : "grid-cols-3"
+        }`}
+      >
+        <TabsTrigger value="requests">
+          {["hr", "admin"].includes(user?.role ?? "") ? "All Leave" : "My Requests"}
+        </TabsTrigger>
+        <TabsTrigger value="status">Status</TabsTrigger>
+        <TabsTrigger value="approval">Approval Queue</TabsTrigger>
 
-  </TabsList>
+      </TabsList>
 
   {/* --- My Requests Tab --- */}
   <TabsContent value="requests">
     <Card>
       <CardHeader>
-        <CardTitle>My Leave Requests</CardTitle>
+        <CardTitle>{["hr", "admin"].includes(user?.role ?? "") ? "All Leave" : "My Leave Requests"}</CardTitle>
         <CardDescription>View and track your leave requests</CardDescription>
       </CardHeader>
       <CardContent>
@@ -525,31 +690,14 @@ const calculateDays = (start: string, end: string) => {
               <TableHead>Relievers</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Applied Date</TableHead>
+              {["hr", "admin"].includes(user?.role ?? "") && (
+              <TableHead>Action</TableHead>
+            )}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {activityFeed.flat().map((request) => {
-              
-              // const latestReview =
-              //   request.reviewTrail?.[request.reviewTrail.length - 1];
-              // const rejectedReview = request.reviewTrail?.find(
-              //   (r) => r.action === "rejected"
-              // );
-              // const hrApproved = request.reviewTrail?.find(
-              //   (r) => r.role === "hr" && r.action === "approved"
-              // );
-              // const teamLeadApproved = request.reviewTrail?.find(
-              //   (r) => r.role === "teamlead" && r.action === "approved"
-              // );
+            {rowsToRender.map((request) => {
 
-              // const finalStatus = rejectedReview
-              //   ? "rejected"
-              //   : hrApproved && teamLeadApproved
-              //   ? "approved"
-              //   : "pending";
-
-              // const latestFinalReview =
-              //   rejectedReview || hrApproved || teamLeadApproved || latestReview;
           const trail = Array.isArray(request.reviewTrail) ? request.reviewTrail : [];
               const latestReview = trail.at(-1);
               const rejectedReview = trail.find((r) => r.action === 'rejected');
@@ -650,11 +798,58 @@ const calculateDays = (start: string, end: string) => {
                   <TableCell>
                       {new Date(request.appliedDate).toLocaleString()}
                   </TableCell>
+
+                  {["hr", "admin"].includes(user?.role ?? "") && (
+                  <TableCell>
+                    <button
+                      className="p-2 rounded-full hover:bg-gray-100"
+                     onClick={() => handleViewRequest(request)}
+                    >
+                      <Eye className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </TableCell>
+                )}
+
                 </TableRow>
+
+
               );
             })}
           </TableBody>
         </Table>
+        <>
+  {["hr", "admin"].includes(user?.role ?? "") ? (
+    allApprovedPagination.pages > 1 && (
+      <PaginationNav
+        page={allApprovedPagination.page}
+        totalPages={allApprovedPagination.pages}
+        onPageChange={(newPage) =>
+          dispatch(
+            setAllLeavePagination({ ...allApprovedPagination, page: newPage })
+          )
+        }
+        className="mt-6"
+      />
+    )
+  ) : (
+    activityFeedPagination.pages > 1 && (
+      <PaginationNav
+        page={activityFeedPagination.page}
+        totalPages={activityFeedPagination.pages}
+        onPageChange={(newPage) =>
+          dispatch(
+            setActivityFeedPagination({
+              ...activityFeedPagination,
+              page: newPage,
+            })
+          )
+        }
+        className="mt-6"
+      />
+    )
+  )}
+</>
+
       </CardContent>
     </Card>
   </TabsContent>
@@ -717,7 +912,7 @@ const calculateDays = (start: string, end: string) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {approvals?.flat().map((request) => (
+            {cachedApproval?.flat().map((request) => (
               <TableRow key={request.id}>
                 <TableCell className="font-medium">
                   {request.employeeName}
@@ -810,10 +1005,29 @@ const calculateDays = (start: string, end: string) => {
             ))}
           </TableBody>
         </Table>
+  
       </CardContent>
     </Card>
   </TabsContent>
 )}
+
+
+
+<Dialog open={leaveDialog} onOpenChange={(open) => dispatch(setLeaveDialog(open))}>
+  <DialogContent className="max-w-md sm:max-w-lg w-full">
+    <DialogHeader>
+      <DialogTitle>Leave Calendar</DialogTitle>
+      <DialogDescription>
+        Displays leave duration for selected request.
+      </DialogDescription>
+    </DialogHeader>
+    {selectedRequestId ? (
+      <LeaveCalendar request={selectedRequestId} />
+    ) : (
+      <p>No request selected.</p>
+    )}
+  </DialogContent>
+</Dialog>
 
 
   {/* --- Reject Dialog --- */}
@@ -825,7 +1039,7 @@ const calculateDays = (start: string, end: string) => {
       <DialogHeader>
         <DialogTitle>Reject Leave Request</DialogTitle>
         <DialogDescription>
-          You are about to reject {selectedRequest?.employeeName}
+          You are about to reject {selectedRequestId?.employeeName}
           's leave request. Please provide a reason.
         </DialogDescription>
       </DialogHeader>
@@ -873,7 +1087,7 @@ const calculateDays = (start: string, end: string) => {
       </DialogFooter>
     </DialogContent>
   </Dialog>
-</Tabs>
+    </Tabs>
 
 
     </div>

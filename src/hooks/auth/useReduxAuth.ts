@@ -1,3 +1,4 @@
+/* eslint-disable no-empty-pattern */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect } from 'react';
@@ -5,6 +6,7 @@ import { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { 
   useBulkInviteUsersMutation,
+  useCreateCompanyMutation,
   useInviteUserMutation,
   useLoginMutation, 
   useLogoutUserMutation, 
@@ -29,6 +31,7 @@ import { useGetAllProfileQuery, useGetClassLevelQuery, useGetDepartmentsQuery, u
 import { extractErrorMessage } from '@/utils/errorHandler';
 import { clearActivityCache } from '@/store/slices/appraisal/appraisalSlice';
 import { clearAttenadanceCache } from '@/store/slices/attendance/attendanceSlice';
+import { CreateCompanyDTO } from '@/types/user';
 
 export const useReduxAuth = (): AuthContextType => {
   const dispatch = useAppDispatch();
@@ -42,6 +45,7 @@ export const useReduxAuth = (): AuthContextType => {
   const [inviteUserMutation] = useInviteUserMutation();
   const [bulkInviteUsersMutation] = useBulkInviteUsersMutation();  
   const [resendIviteLink] = useResendIviteLinkMutation();
+  const [createCompany] = useCreateCompanyMutation();
   const [newSetPassword] = useNewSetPasswordMutation();
   const [requestPassword] = useRequestPasswordMutation();
   const currentProfilePage = profilePagination?.page;
@@ -71,15 +75,14 @@ export const useReduxAuth = (): AuthContextType => {
     const {
         data: profilesRecord,
         isLoading: profilesIsLoading,
-        error: profilesError,
       
       } = useGetAllProfileQuery( { page: currentProfilePage, limit: profilePagination.limit },
         { skip: !shouldSkipAll, refetchOnMountOrArgChange: true });
 
-      const {} = useGetDepartmentsQuery( { page: cachedDepartments, limit: departmentsPagination.limit },
+      const {} = useGetDepartmentsQuery( { page: currentDepartmentPage, limit: departmentsPagination.limit },
          { skip: shouldAllUsers});
 
-      const {} = useGetClassLevelQuery( { page: cachedClasslevel, limit: classlevelPagination.limit },
+      const {} = useGetClassLevelQuery( { page: currentClasslevelPage, limit: classlevelPagination.limit },
          { skip: shouldAllUsers });
 
 
@@ -251,7 +254,7 @@ export const useReduxAuth = (): AuthContextType => {
   const resendInvite = async (email: string): Promise<boolean> => {
     dispatch(setLoading(true))
     try {
-     const success =  await resendIviteLink({email}).unwrap();
+      await resendIviteLink({email}).unwrap()
       toast({
         title: 'User Invited',
         description: `${email} has been invited.`,
@@ -268,6 +271,26 @@ export const useReduxAuth = (): AuthContextType => {
       return false;
     }finally{
       dispatch(setLoading(false))
+    }
+  };
+
+  const createCompanyWithAdim = async (data: CreateCompanyDTO): Promise<boolean> => {
+    try {
+      await createCompany(data).unwrap()
+      toast({
+        title: 'Company Created',
+        description: `${data.companyName} has been created.`,
+      });
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, 'Company creation failed');
+
+      toast({
+        title: 'Company Creation Failed',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      return false;
     }
   };
   const inviteUser = async (userData: Partial<User>): Promise<boolean> => {
@@ -326,6 +349,7 @@ export const useReduxAuth = (): AuthContextType => {
     try {
       const response = await logoutUser({}).unwrap();
       dispatch(logoutAction());
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       dispatch(clearActivityCache()),
       dispatch(clearEmployeeCache()),
       dispatch(clearAttenadanceCache()),
@@ -368,6 +392,7 @@ export const useReduxAuth = (): AuthContextType => {
     logout, 
     resendInvite,
     setNewPassword,
+    createCompanyWithAdim,
     inviteUser,
     bulkInviteUsers,   
     hasRole,

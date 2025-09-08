@@ -1,19 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
 import { setFormData } from "@/store/slices/profile/profileSlice";
 import { Dispatch } from "@reduxjs/toolkit";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { useAppSelector } from "@/store/hooks";
-import { IClassLevel } from "@/types/user";
+import { IClassLevel, ProfileFormData } from "@/types/user";
 import { NIGERIAN_BANKS, PFA_COMPANIES } from "@/data/constRaw";
 
 
 interface AccountInfoSectionProps {
-  formData: any;
+  formData: ProfileFormData;
   dispatch: Dispatch<any>;
 }
 
 export default function AccountInfoSection({ formData, dispatch }: AccountInfoSectionProps) {
+  console.log("firsformDataACCOUNTt", formData)
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

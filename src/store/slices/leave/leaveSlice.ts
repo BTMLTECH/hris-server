@@ -20,17 +20,27 @@ export interface LeaveFormData {
   relievers: string[];
 }
 
-
-
+export interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+ 
+export type LeaveFeedCache = Record<number, LeaveActivityFeedItem[]>;
+export type ApprovalFeedCache = Record<number, LeaveActivityFeedItem[]>;
+export type AllApprovedFeedCache = Record<number, LeaveActivityFeedItem[]>;
 
 interface LeaveState {
   isLoading: boolean;
+  leaveDialog: boolean;
   error: string | null;
   requests: LeaveRequest[];
   balance: LeaveBalanceItem[] | null;
   approvalQueue: LeaveRequest[];
   activityFeed: LeaveActivityFeedItem[];
   approvals: LeaveActivityFeedItem[];
+  allApproved: LeaveActivityFeedItem[];
   isDialogOpen: boolean;
   createIsDialogOpen: boolean;
   selectedRequest: LeaveActivityFeedItem | null;
@@ -51,16 +61,27 @@ interface LeaveState {
     expired: number;
   };
 
+  selectedRequestId: LeaveActivityFeedItem | null
+  activityFeedCache: LeaveFeedCache;
+  activityFeedPagination: Pagination;
+
+  approvalsCache: ApprovalFeedCache;
+  approvalsPagination: Pagination;
+
+  allApprovedCache: AllApprovedFeedCache;
+  allApprovedPagination: Pagination;
 }
 
 
 const initialState: LeaveState = {
   isLoading: false,
+  leaveDialog: false,
   error: null,
   requests: [],
   balance: [],
   approvalQueue: [],
   activityFeed: [],
+  allApproved: [],
   approvals: [],
   isDialogOpen: false,
   createIsDialogOpen: false,
@@ -79,14 +100,21 @@ const initialState: LeaveState = {
   teamLead: null,
   dateCalculation: null,
   selectedRequest: null,
+  selectedRequestId: null,
 
-  rejectionNote:'',
+  rejectionNote: '',
   statusOverview: {
     pending: 0,
     approved: 0,
     rejected: 0,
     expired: 0
   },
+  activityFeedCache:  {},
+  approvalsCache:  {},
+  allApprovedCache:  {},
+  activityFeedPagination: { total: 0, page: 1, limit: 30, pages: 0 },
+  allApprovedPagination: { total: 0, page: 1, limit: 30, pages: 0 },
+  approvalsPagination: { total: 0, page: 1, limit: 30, pages: 0 },
 };
 
 const leaveSlice = createSlice({
@@ -96,23 +124,40 @@ const leaveSlice = createSlice({
     setLoading(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
     },
+    setLeaveDialog(state, action: PayloadAction<boolean>) {
+      state.leaveDialog = action.payload;
+    },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
     },
-    // resetLeaveState(state) {
-    //   state.isLoading = false;
-    //   state.error = null;
-    //   state.requests = [];
-    //   state.balance = null;
-    //   state.approvalQueue = [];
-    //   state.activityFeed = [];
-    // },
 
      setIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.isDialogOpen = action.payload;
     },
      setCreateIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.createIsDialogOpen = action.payload;
+    },
+
+    setAllLeavePagination: (state, action: PayloadAction<typeof initialState.allApprovedPagination>) => {
+      state.allApprovedPagination = action.payload;
+    },
+
+    setActivityFeedPagination: (state, action: PayloadAction<typeof initialState.activityFeedPagination>) => {
+      state.activityFeedPagination = action.payload;
+    },
+
+    setAllApprovedCache: (
+          state,
+          action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
+    ) => {
+          state.allApprovedCache[action.payload.page] = action.payload.data;
+    },
+
+    setActivityCache: (
+          state,
+          action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
+    ) => {
+          state.activityFeedCache[action.payload.page] = action.payload.data;
     },
 
      setSelectedRequest(state, action: PayloadAction<LeaveActivityFeedItem | null>) {
@@ -130,6 +175,10 @@ const leaveSlice = createSlice({
     },
     setFormData(state, action: PayloadAction<LeaveState['formData']>) {
       state.formData = action.payload;
+    },
+
+    setSelectedRequestId(state, action: PayloadAction<LeaveActivityFeedItem>) {
+      state.selectedRequestId = action.payload;
     },
     setDateCalculation(state, action: PayloadAction<LeaveState['dateCalculation']>) {
       state.dateCalculation = action.payload;
@@ -152,7 +201,7 @@ const leaveSlice = createSlice({
     },
     resetFormData(state) {
       state.formData = initialState.formData;
-      state.dateCalculation = null; // optional
+      state.dateCalculation = null;
     },
      resetLeaveState: () => initialState, 
   },
@@ -189,6 +238,7 @@ extraReducers: (builder) => {
       state.error = null;
     }
   );
+
 builder.addMatcher(
   leaveApi.endpoints.getLeaveActivityFeed.matchFulfilled,
   (state, action) => {
@@ -197,14 +247,39 @@ builder.addMatcher(
     state.isLoading = false;
 
     // ✅ Normalize the full response
-    const { myRequests, approvals,  summary, balance } = normalizeLeaveRequest(
-      action.payload.data
+    const { myRequests, approvals, allApproved,  summary, balance , pagination } = normalizeLeaveRequest(
+      action.payload
     );
 
-    // Feed is already normalized → no need to re-map
-    state.activityFeed = myRequests;
-    state.approvals = approvals;
 
+     if (pagination?.myRequests?.page) {
+      const page = pagination.myRequests.page;
+      state.activityFeedCache[page] = myRequests;
+      state.activityFeedPagination = pagination.myRequests;
+      state.activityFeed = myRequests;
+    }
+
+    if (pagination?.approvals?.page) {
+      const page = pagination.approvals.page;
+      state.approvalsCache[page] = approvals;
+      state.approvalsPagination = pagination.approvals;
+      state.approvals = approvals; 
+    }
+
+    if (allApproved && pagination?.allApproved?.page) {
+      const page = pagination.allApproved.page;
+      state.allApprovedCache[page] = allApproved;
+      state.allApprovedPagination = pagination.allApproved;
+      state.allApproved = allApproved; 
+    }
+
+    state.statusOverview = {
+      pending: summary.pending,
+      approved: summary.approved,
+      rejected: summary.rejected,
+      expired: summary.expired,
+    };
+    state.balance = balance;
     state.statusOverview = {
       pending: summary.pending,
       approved: summary.approved,
@@ -386,7 +461,14 @@ export const {
   setSelectedRequest,
   setRejectionNote,
   resetFormData,
-  setCreateIsDialogOpen
+  setCreateIsDialogOpen,
+  setAllLeavePagination,
+  setActivityFeedPagination,
+  setAllApprovedCache,
+  setActivityCache,
+  setSelectedRequestId,
+  setLeaveDialog
+
 } = leaveSlice.actions;
 
 export default leaveSlice.reducer;

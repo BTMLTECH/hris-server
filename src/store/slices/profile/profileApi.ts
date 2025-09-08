@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-empty-interface */
 
 import { PaginatedProfilesResponse, ProfileFormData } from "@/types/user";
 import { apiSlice } from "../auth/apiSlice";
@@ -118,7 +116,7 @@ export const profileApi = apiSlice.injectEndpoints({
     }),
 
     getAllProfile: builder.query<PaginatedProfilesResponse, { page: number; limit: number }>({
-      query: ({ page = 1, limit = 10 }) => ({
+      query: ({ page = 1, limit = 20 }) => ({
         url: `user/users?page=${page}&limit=${limit}`,
         method: 'GET',
       }),

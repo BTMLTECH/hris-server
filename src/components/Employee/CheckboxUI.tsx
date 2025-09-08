@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAppSelector } from "@/store/hooks";
 import { setFormData } from "@/store/slices/profile/profileSlice";
 
 import { departmentMap } from "@/types/report";
+import { ProfileFormData } from "@/types/user";
 import { requirementsByDepartment } from "@/utils/onboardingRequirements";
 import { Dispatch, useEffect, useState } from "react";
 
@@ -20,7 +22,7 @@ interface Requirement {
 }
 
 interface RequirementsSectionProps {
-  formData: any;
+  formData: ProfileFormData;
   dispatch: Dispatch<any>;
 }
 

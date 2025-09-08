@@ -103,6 +103,9 @@ const classSlice = createSlice({
               state.error = action.error?.message || 'Failed to update profile';
          
             })
+
+
+            
   },
 });
 

@@ -276,9 +276,7 @@ const payrollSlice = createSlice({
             count: data.length,
             timestamp: now,
           };
-        } else {
-        }
-
+        } 
         // Update current view data
         state.payrollRecords = data;
         state.payrollPagination = pagination;

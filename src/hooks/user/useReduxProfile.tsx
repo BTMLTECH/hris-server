@@ -31,6 +31,35 @@ const editProfile = async (profile: any): Promise<boolean> => {
     const result = await editProfileMutation(profile).unwrap();   
     toast({ title: 'Profile updated successfully',
      });
+     const editProfileHandler = async (profile: any): Promise<boolean> => {
+  dispatch(setLoading(true));
+  try {
+    await editProfileMutation(profile).unwrap();
+
+    toast({
+      title: 'Profile updated successfully',
+    });
+
+    // ✅ Merge updated fields into current formData without resetting department/classlevels
+    dispatch(setFormData({
+      ...formData,
+      ...profile, 
+    }));
+
+    return true;
+  } catch (error: any) {
+    const errorMessage = extractErrorMessage(error, 'Profile Update Error');
+    toast({
+      title: 'Profile Update Error',
+      description: errorMessage,
+      variant: 'destructive',
+    });
+    return false;
+  } finally {
+    dispatch(setLoading(false));
+  }
+};
+
     return true;
   } catch (error: any) {
     const errorMessage = extractErrorMessage(error, 'Profile Update Error');

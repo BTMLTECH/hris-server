@@ -1,8 +1,8 @@
 // features/profile/profileSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { IAnalytics, IClassLevel, IDepartment, ProfileFormData, ProfileState } from '@/types/user';
+import { CreateCompanyDTO, IAnalytics, IClassLevel, IDepartment, ProfileFormData, ProfileState } from '@/types/user';
 import { profileApi } from './profileApi';
-import { blankProfileFormData } from '@/constants/blankProfileFormData';
+import { blankCompanyFormData, blankProfileFormData } from '@/constants/blankProfileFormData';
 import { act } from 'react';
 import { IOnboardingTask } from '@/types/auth';
 
@@ -13,6 +13,7 @@ const initialState: ProfileState = {
   isLoading: false,
   error: null,
   isDialogOpen: false,
+  isCompanyDialogOpen: false,
   isBulkImportOpen: false,
   selectedEmployee: null,
   showDetailView: false,
@@ -25,7 +26,7 @@ const initialState: ProfileState = {
   isEditMode: false,
   isDeleteDialogOpen: false,
   selectedDeleteId: "",
-  profilePagination: { total: 0, page: 1, limit: 10, pages: 0 },
+  profilePagination: { total: 0, page: 1, limit: 30, pages: 0 },
   departmentsPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   classlevelPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   profileCache: {},
@@ -36,7 +37,9 @@ const initialState: ProfileState = {
   isActionDialogOpen: false,
   selectedActionType: null,
   isManageDialogOpen: false,
-  analytics: null
+  analytics: null,
+  
+  companyFormData: blankCompanyFormData,
 };
 
 const profileSlice = createSlice({
@@ -51,12 +54,15 @@ const profileSlice = createSlice({
     },
 
     resetFormData(state) {
-  state.formData = {
-    ...blankProfileFormData,
-    staffId: state.formData.staffId,        
-    departments: state.formData.departments,   
-    classlevels: state.formData.classlevels, 
-  };
+  state.formData = blankProfileFormData
+  //   resetFormData(state) {
+  // state.formData = {
+  //   ...blankProfileFormData,
+  //   staffId: state.formData.staffId,        
+  //   departments: state.formData.departments,   
+  //   classlevels: state.formData.classlevels, 
+  //   position: state.formData.position, 
+  // };
 },
 
 
@@ -83,13 +89,15 @@ const profileSlice = createSlice({
     setIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.isDialogOpen = action.payload;
     },
+    
+
     setIsBulkImportOpen: (state, action: PayloadAction<boolean>) => {
       state.isBulkImportOpen = action.payload;
     },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
     },
-    setSelectedEmployee(state, action: PayloadAction<ProfileFormData | null>) {
+    setSelectedEmployee(state, action: PayloadAction<ProfileFormData>) {
     state.selectedEmployee = action.payload;
     },
     setShowDetailView(state, action: PayloadAction<boolean>) {
@@ -113,7 +121,6 @@ const profileSlice = createSlice({
 
     setSelectedDepartment(state, action: PayloadAction<string>) {
       state.formData.selectedDepartment = action.payload;
-      // Ensure department exists in requirements array
       if (!state.formData.requirements.some(r => r.department === action.payload)) {
         state.formData.requirements.push({
           employee: "",
@@ -190,7 +197,30 @@ const profileSlice = createSlice({
     },
     removeEmployee: (state, action: PayloadAction<string>) => {
     state.bulkEmployees = state.bulkEmployees.filter(emp => emp._id !== action.payload);
-  }
+  },
+
+ 
+    setIsCompanyDialogOpen(state, action: PayloadAction<boolean>) {
+      state.isCompanyDialogOpen = action.payload;
+    },
+   setCompanyFormData(state, action: PayloadAction<Partial<CreateCompanyDTO>>) {
+        state.companyFormData = {
+          ...state.companyFormData,
+          ...action.payload,
+          adminData: {
+            ...state.companyFormData.adminData,
+            ...(action.payload.adminData || {}),
+          },
+          branding: {
+            ...state.companyFormData.branding,
+            ...(action.payload.branding || {}),
+          },
+        };
+      },
+
+    resetCompanyFormData(state) {
+      state.companyFormData = blankCompanyFormData;
+    },
 
   },
   extraReducers: (builder) => {  
@@ -211,7 +241,8 @@ const profileSlice = createSlice({
 
       builder.addMatcher(
         profileApi.endpoints.getClassLevel.matchFulfilled,
-        (state, action) => {          
+        (state, action) => {   
+
         
           const classlevels: IClassLevel[] = action.payload.data.data;
           state.company = classlevels.length > 0 ? classlevels[0].company : undefined;
@@ -256,7 +287,7 @@ const profileSlice = createSlice({
 
       builder.addMatcher(
         profileApi.endpoints.getAllProfile.matchFulfilled,
-        (state, action) => {       
+        (state, action) => {   
           const users: ProfileFormData[] = action.payload.data.data;
           const pagination = action.payload.data.pagination;
           const page = pagination.page;
@@ -290,19 +321,20 @@ const profileSlice = createSlice({
       });
 
     // Edit Profile matchers
-    builder
-      .addMatcher(profileApi.endpoints.editProfile.matchPending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addMatcher(profileApi.endpoints.editProfile.matchFulfilled, (state, action) => {
-        state.isLoading = false;    
-        state.formData = { ...state.formData, ...action.payload.data }; 
-      })
-      .addMatcher(profileApi.endpoints.editProfile.matchRejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error?.message || 'Failed to update profile';
-      });
+    // builder
+    //   .addMatcher(profileApi.endpoints.editProfile.matchPending, (state) => {
+    //     state.isLoading = true;
+    //     state.error = null;
+    //   })
+    //   .addMatcher(profileApi.endpoints.editProfile.matchFulfilled, (state, action) => {
+    //     console.log("actio", action.payload)
+    //     state.isLoading = false;    
+    //     state.formData = { ...state.formData, ...action.payload.data }; 
+    //   })
+    //   .addMatcher(profileApi.endpoints.editProfile.matchRejected, (state, action) => {
+    //     state.isLoading = false;
+    //     state.error = action.error?.message || 'Failed to update profile';
+    //   });
 
     builder
       .addMatcher(profileApi.endpoints.uploadProfile.matchPending, (state) => {
@@ -323,6 +355,8 @@ const profileSlice = createSlice({
 export const { setIsEditing, setFormData, resetFormData, setLoading, setError,
    setIsBulkImportOpen,
   setIsDialogOpen,
+  setIsCompanyDialogOpen,
+  
   setSelectedEmployee, setShowDetailView,
   setSearchTerm,
   setFilterDepartment,
@@ -344,6 +378,9 @@ export const { setIsEditing, setFormData, resetFormData, setLoading, setError,
   setIsActionDialogOpen,
   setSelectedActionId,
   setSelectedActionType,
-  setIsManageDialogOpen
+  setIsManageDialogOpen,
+  setCompanyFormData,
+  resetCompanyFormData,
+
  } = profileSlice.actions;
 export default profileSlice.reducer;
