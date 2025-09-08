@@ -5,7 +5,8 @@ import { logout } from './auth/authSlice';
 
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: 'http://localhost:8080/api/',
+  baseUrl: 'http://staging-hris.btmlimited.net/api/',
+  // baseUrl: 'http://localhost:8080/api/',
   credentials: 'include',
 });
 
