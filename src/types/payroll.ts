@@ -1,26 +1,26 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { FundType } from "@/data/pfa";
 import { User } from "./auth";
 import { ProfileFormData } from "./user";
-
 
 export interface Branding {
   displayName: string;
   description?: string;
   logoUrl?: string;
-  primaryColor?: string; 
+  primaryColor?: string;
 }
 
 export interface Employee {
   firstName: string;
   middleName?: string;
   lastName: string;
-  email: string; 
-  department: string; 
+  email: string;
+  department: string;
   _id: string;
 }
 
 export interface Company {
-  branding: Branding
+  branding: Branding;
 }
 
 export interface PensionFundState {
@@ -34,11 +34,10 @@ export interface ITaxBand {
   amount: number;
 }
 
-
 export interface ITaxInfo {
-  payrollId: string;   
-  employeeId: string;  
-  companyId: string;   
+  payrollId: string;
+  employeeId: string;
+  companyId: string;
   CRA: number;
   pension: number;
   taxableIncome: number;
@@ -46,7 +45,6 @@ export interface ITaxInfo {
   bands: ITaxBand[];
   createdAt: Date;
 }
-
 
 export interface IPayroll {
   _id?: string;
@@ -63,38 +61,48 @@ export interface IPayroll {
   healthAllowance: number;
   totalAllowances?: number;
   grossSalary?: number;
-  pension?: number ;
+  pension?: number;
   CRA?: number;
   taxableIncome?: number;
   tax?: number;
   deductions: number;
   netSalary?: number;
-  status?: 'pending' | 'draft' | 'processed' | 'reversed' | 'paid';
+  status?: "pending" | "draft" | "processed" | "reversed" | "paid";
   paidDate?: Date;
   createdAt?: Date;
   taxBands?: ITaxBand[];
   employeeName?: string;
-   employee?: {
+  employee?: {
     _id: string;
     firstName: string;
     lastName: string;
     email: string;
   };
-  taxInfo?: ITaxInfo | null;  
+  taxInfo?: ITaxInfo | null;
 }
 
-
-
+export interface DraftPayrollDialogProps {
+  handleProcessPayroll: (recordId: string) => void;
+  handleBulkReverse: (recordId: string) => void;
+  handleReversePayroll: (recordId: string) => void;
+  handleBulkProcess: () => void;
+  isLocalLoading: (key: string, actionType: string) => boolean;
+  currentMonth: number;
+  currentYear: number;
+  cachedPayrolls: IPayroll[] | any;
+  isDraftDialogOpen: boolean;
+  setIsDraftDialogOpen: (open: boolean) => void;
+  dispatch: any;
+}
 
 export interface TaxBand {
-  band: number;    
-  amount: number;  
+  band: number;
+  amount: number;
 }
-
 
 export interface IPayrollDTO {
   _id?: string;
-  user: User;               
+  user: User;
   classLevel?: string;
   basicSalary: number;
   totalAllowances: number;
@@ -105,12 +113,11 @@ export interface IPayrollDTO {
   tax: number;
   netSalary: number;
   taxBands: TaxBand[];
-  month: number;               
-  year: number;               
+  month: number;
+  year: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 
 export interface PayrollResponse {
   count: number;
@@ -121,14 +128,61 @@ export interface PayrollResponse {
     limit: number;
     pages: number;
     month?: string;
-    year?: string
-    search?: string
+    year?: string;
+    search?: string;
   };
-  timestamp?: number
+  timestamp?: number;
 }
 
+// export function extractPayrollArray(
+//   input: IPayroll[] | cachedInitialType | null | undefined
+// ): IPayroll[] {
+//   if (!input) return [];
+//   if (Array.isArray(input)) return input;
+//   if ("data" in input && Array.isArray(input.data)) return input.data;
+//   return [];
+// }
 
-export type PayrollWrapper = {
+export function extractPayrollArray(raw: any): IPayroll[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.filter((r) => r && r._id && r.user);
+  }
+  if (raw.data && Array.isArray(raw.data)) {
+    return raw.data.filter((r) => r && r._id && r.user);
+  }
+  return [];
+}
+
+// export function extractPayrollArray(
+//   input: IPayroll[] | { data?: IPayroll[] } | null | undefined
+// ): IPayroll[] {
+//   if (!input) return [];
+//   if (Array.isArray(input)) return input;
+//   if ("data" in input && Array.isArray(input.data)) return input.data;
+//   return [];
+// }
+
+export interface PayrollPagination {
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+  month?: string;
+  year?: string;
+  search?: string;
+}
+export interface cachedInitialType {
+  data: {
+    count: number;
+    data: IPayroll[];
+    pagination: PayrollPagination;
+  };
+
+  timestamp: number;
+}
+
+export interface PayrollResponse {
   count: number;
   data: IPayroll[];
   pagination: {
@@ -138,34 +192,17 @@ export type PayrollWrapper = {
     pages: number;
     month?: string;
     year?: string;
-    search?:string
+    search?: string;
   };
-  timestamp?: number
-};
-
-export function extractPayrollArray(
-  input: IPayroll[] | PayrollWrapper | null | undefined
-): IPayroll[] {
-  if (!input) return [];
-  if (Array.isArray(input)) return input;
-  if ('data' in input && Array.isArray(input.data)) return input.data;
-  return [];
-}
-
-
-export interface PayrollPagination {
-  total: number;
-  page: number;
-  limit: number;
-  pages: number;
+  timestamp?: number;
 }
 
 export interface PayrollContextType {
-  cachedPayrolls: IPayroll[];
-  cachedPayrollData: PayrollResponse;
+  cachedPayrolls: IPayroll[] | any;
+  // cachedPayrollData: PayrollResponse;
   payrollPagination: PayrollPagination;
   isLoading: boolean;
-  error: string | null;  
+  error: string | null;
   isDialogOpen: boolean;
   isDeleteDialogOpen: boolean;
   selectedPayroll: IPayroll | null;
@@ -175,10 +212,22 @@ export interface PayrollContextType {
   paidPayroll: (payrollId: string) => Promise<boolean>;
   processSinglePayroll: (payrollId: string) => Promise<boolean>;
   reverseSinglePayroll: (payrollId: string) => Promise<boolean>;
-  processBulkPayroll: (month: string | number, year: string | number) => Promise<boolean>;
-  reverseBulkPayroll: (month: string | number, year: string | number) => Promise<boolean>;
-  payrollsAsDraftBulk: (month: string | number, year: string | number) => Promise<boolean>;
-  payrollAsPayBulk: (month: string | number, year: string | number) => Promise<boolean>;
+  processBulkPayroll: (
+    month: string | number,
+    year: string | number
+  ) => Promise<boolean>;
+  reverseBulkPayroll: (
+    month: string | number,
+    year: string | number
+  ) => Promise<boolean>;
+  payrollsAsDraftBulk: (
+    month: string | number,
+    year: string | number
+  ) => Promise<boolean>;
+  payrollAsPayBulk: (
+    month: string | number,
+    year: string | number
+  ) => Promise<boolean>;
   setIsDialogOpen: (open: boolean) => void;
   setIsDeleteDialogOpen: (open: boolean) => void;
   setSelectedPayroll: (payroll: IPayroll | null) => void;
@@ -186,5 +235,3 @@ export interface PayrollContextType {
   refetchPayrolls: () => void;
   clearPayrollCache: () => void;
 }
-
-

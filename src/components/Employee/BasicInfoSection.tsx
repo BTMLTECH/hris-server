@@ -3,7 +3,13 @@ import { Label } from "@radix-ui/react-label";
 import { Input } from "../ui/input";
 import { setFormData } from "@/store/slices/profile/profileSlice";
 import { Dispatch } from "@reduxjs/toolkit";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { NIGERIAN_STATES } from "@/data/constRaw";
 import { useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
@@ -12,10 +18,16 @@ import { ProfileFormData } from "@/types/user";
 interface BasicInfoSectionProps {
   formData: ProfileFormData;
   dispatch: Dispatch<any>;
+  nextStaffId: string;
+  isEditMode: boolean;
 }
 
-export default function BasicInfoSection({ formData, dispatch }: BasicInfoSectionProps) {
-
+export default function BasicInfoSection({
+  formData,
+  dispatch,
+  nextStaffId,
+  isEditMode,
+}: BasicInfoSectionProps) {
   return (
     <div className="space-y-4">
       {/* Row 1: Staff ID + Title */}
@@ -24,7 +36,7 @@ export default function BasicInfoSection({ formData, dispatch }: BasicInfoSectio
           <Label htmlFor="staffId">STAFF ID</Label>
           <Input
             id="staffId"
-            value={formData.staffId}
+            value={isEditMode ? formData.staffId : nextStaffId}
             readOnly
             className="bg-gray-100 text-gray-600"
           />
@@ -129,7 +141,9 @@ export default function BasicInfoSection({ formData, dispatch }: BasicInfoSectio
             type="date"
             value={formData.dateOfBirth || ""}
             onChange={(e) =>
-              dispatch(setFormData({ ...formData, dateOfBirth: e.target.value }))
+              dispatch(
+                setFormData({ ...formData, dateOfBirth: e.target.value })
+              )
             }
           />
         </div>
@@ -199,7 +213,3 @@ export default function BasicInfoSection({ formData, dispatch }: BasicInfoSectio
     </div>
   );
 }
-
-
-
-

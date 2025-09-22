@@ -4,7 +4,6 @@ import { IClassLevel } from "@/types/user";
 import { classApi } from "./classApi";
 import { ClassResponse, IClassLevelInput } from "@/types/class";
 
-
 interface ClassState {
   isLoading: boolean;
   error: string | null;
@@ -15,8 +14,8 @@ interface ClassState {
   isReversePayrollOpen: boolean;
   isProcessBulkPayrollOpen: boolean;
   isPaygrade: boolean;
-   isResultDialogOpen: boolean;
-   classResponse: ClassResponse | null;
+  isResultDialogOpen: boolean;
+  classResponse: ClassResponse | null;
   classRecord: IClassLevelInput;
 }
 
@@ -33,12 +32,11 @@ const initialState: ClassState = {
   isResultDialogOpen: false,
   classResponse: null,
   classRecord: {
-    year: '',
-    level: '',
-    payGrade: '',
-    band: '',
+    year: "",
+    level: "",
+    payGrade: "",
+    band: "",
   },
-
 };
 
 const classSlice = createSlice({
@@ -79,47 +77,45 @@ const classSlice = createSlice({
     setClassRecord(state, action: PayloadAction<IClassLevelInput>) {
       state.classRecord = action.payload;
     },
-    
-    
   },
   extraReducers(builder) {
-          builder
-            .addMatcher(classApi.endpoints.calculateClass.matchPending, (state) => { 
-              state.isLoading = true;
-              state.error = null;
-            })
-      
-            builder.addMatcher(
-              classApi.endpoints.calculateClass.matchFulfilled,
-              (state, action) => {       
-                const users: ClassResponse = action.payload.data;  
-                state.classResponse = users;  
-              }
-            )
-      
-                  
-            .addMatcher(classApi.endpoints.calculateClass.matchRejected, (state, action) => {
-              state.isLoading = false;
-              state.error = action.error?.message || 'Failed to update profile';
-         
-            })
+    builder.addMatcher(
+      classApi.endpoints.calculateClass.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
 
+    builder
+      .addMatcher(
+        classApi.endpoints.calculateClass.matchFulfilled,
+        (state, action) => {
+          const users: ClassResponse = action.payload.data;
+          state.classResponse = users;
+        }
+      )
 
-            
+      .addMatcher(
+        classApi.endpoints.calculateClass.matchRejected,
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.error?.message || "Failed to update profile";
+        }
+      );
   },
 });
 
 export const {
-    setIsLoading,
-    setIsBand,
+  setIsLoading,
+  setIsBand,
   setIsDialogOpen,
   setIsBulkImportOpen,
   setIsProcessingBulk,
   setIsResultDialogOpen,
   setClassResponse,
   setClassRecord,
-  setIsPaygrade
-  
+  setIsPaygrade,
 } = classSlice.actions;
 
 export default classSlice.reducer;

@@ -1,7 +1,4 @@
- 
-
 import { ICompany, IOnboardingRequirement, User } from "./auth";
-
 
 type DepartmentCache = Record<number, IDepartment[]>;
 type ClassLevelCache = Record<number, IClassLevel[]>;
@@ -18,7 +15,7 @@ export interface AdminUserInput {
   email: string;
   title: "Mr" | "Mrs" | "Ms" | "Dr" | "Prof";
   gender: "male" | "female";
-  staffId: string
+  staffId: string;
 }
 export interface CreateCompanyDTO {
   companyName: string;
@@ -30,9 +27,9 @@ export interface CreateCompanyDTO {
 export interface IDepartment {
   name?: string;
   supervisor?: string;
-  sopDocument?: string; 
+  sopDocument?: string;
   company?: string;
-  _id: string
+  _id: string;
 }
 
 export interface IClassLevel {
@@ -50,7 +47,7 @@ export interface IClassLevel {
   grossSalary?: number;
   createdAt: Date;
   updatedAt: Date;
-  company: string
+  company: string;
 }
 
 export interface ISalaryByDept {
@@ -95,7 +92,6 @@ export interface IChartConfig {
   label: string;
   color: string;
 }
-
 
 export interface IBirthdayAnalytics {
   month: string;
@@ -174,7 +170,6 @@ export interface Pagination {
   pages: number;
 }
 
-
 export interface ILeaveBalanceResponse {
   _id: string;
   user: string;
@@ -186,7 +181,6 @@ export interface ILeaveBalanceResponse {
     maternity: number;
   };
 }
-
 
 export interface ProfileFormData {
   _id?: string;
@@ -205,11 +199,11 @@ export interface ProfileFormData {
   message?: string;
   biometryId?: string;
   profileImage?: string;
-  position: string; 
-  officeBranch: string;
+  position: string;
+  officeBranch?: string;
   employmentDate: string;
   accountInfo: {
-    classLevel: string; 
+    classLevel: string;
     basicPay: number;
     allowances: number;
     bankAccountNumber: string;
@@ -218,9 +212,9 @@ export interface ProfileFormData {
     pensionCompany?: string;
     pensionNumber?: string;
   };
-  role: 'md' | 'teamlead' | 'employee' | 'admin' | 'hr';
+  role: "md" | "teamlead" | "employee" | "admin" | "hr";
   company?: ICompany;
-  status?: 'active' | 'inactive' | 'terminated';
+  status?: "active" | "inactive" | "terminated";
   terminationDate?: string;
   isActive?: boolean;
   failedLoginAttempts?: number;
@@ -250,7 +244,7 @@ export interface ProfileFormData {
   departmentName: string;
   departments: IDepartment[];
   classlevels: IClassLevel[];
-  requirements: IOnboardingRequirement[];  
+  requirements: IOnboardingRequirement[];
   leaveBalance?: ILeaveBalanceResponse;
 }
 
@@ -263,31 +257,40 @@ export interface ProfileState {
   error: string | null;
   bulkEmployees: Partial<ProfileFormData>[];
   classlevel: IClassLevel[];
-  analytics: IAnalytics,
-  formData: ProfileFormData;  
+  analytics: IAnalytics;
+  formData: ProfileFormData;
   isBulkImportOpen: boolean;
-  isDialogOpen:boolean;
-  isCompanyDialogOpen:boolean;
+  isDialogOpen: boolean;
+  isCompanyDialogOpen: boolean;
   selectedEmployee: ProfileFormData | null;
   showDetailView: boolean;
   searchTerm: string;
   filterDepartment: string;
   isProcessingBulk: boolean;
-  isEditMode: boolean
-  selectedDeleteId: string
+  nextStaffId: string;
+  isEditMode: boolean;
+  selectedDeleteId: string;
   isDeleteDialogOpen: boolean;
   profilePagination: Pagination;
-  departmentsPagination: Pagination;
   profileCache: EmployeeCache;
+  departmentsPagination: Pagination;
   departmentsCache: DepartmentCache;
   classlevelPagination: Pagination;
   classlevelCache: ClassLevelCache;
-  company?: string,
-  selectedActionId: string | null,
-  selectedActionType: 'delete' | 'terminate' | 'activate' | 'training-feedback' | 'cooperative-staff' | 'resend-invite' | 'toggle-status' | null,
-  isActionDialogOpen: boolean,
-  isManageDialogOpen: boolean,
-  companyFormData: CreateCompanyDTO
+  company?: string;
+  selectedActionId: string | null;
+  selectedActionType:
+    | "delete"
+    | "terminate"
+    | "activate"
+    | "training-feedback"
+    | "cooperative-staff"
+    | "resend-invite"
+    | "toggle-status"
+    | null;
+  isActionDialogOpen: boolean;
+  isManageDialogOpen: boolean;
+  companyFormData: CreateCompanyDTO;
 }
 
 export interface ProfileResponse {
@@ -295,7 +298,6 @@ export interface ProfileResponse {
   message: string;
   data: {
     data: User;
-
   };
 }
 export interface PaginatedProfilesResponse {
@@ -313,14 +315,13 @@ export interface PaginatedProfilesResponse {
 }
 
 export interface ProfileContextType {
-  profile: ProfileFormData | null;  
-  isProfileLoading: boolean;  
-   profileError: string | null;  
-   uploadIsLoading: boolean; 
-    editProfile: (profile: ProfileFormData) => Promise<boolean>;  
-    uploadProfile: (formData: FormData) => Promise<boolean>;  
-    deleteProfile: (id: string) => Promise<boolean>; 
-    profileTerminate: (id: string) => Promise<boolean>; 
-    profileActivate: (id: string) => Promise<boolean>; 
+  profile: ProfileFormData | null;
+  isProfileLoading: boolean;
+  profileError: string | null;
+  uploadIsLoading: boolean;
+  editProfile: (profile: ProfileFormData) => Promise<boolean>;
+  uploadProfile: (formData: FormData) => Promise<boolean>;
+  deleteProfile: (id: string) => Promise<boolean>;
+  profileTerminate: (id: string) => Promise<boolean>;
+  profileActivate: (id: string) => Promise<boolean>;
 }
-

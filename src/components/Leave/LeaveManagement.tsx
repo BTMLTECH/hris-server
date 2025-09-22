@@ -42,6 +42,7 @@ const {user: userLeaveManagement, leave } = useCombinedContext();
   const [selectedEmployee, setSelectedEmployee] = useState<ProfileFormData | null>(null);
   const [selectedType, setSelectedType] = useState<string>("annual");
   const [newBalance, setNewBalance] = useState<number>(0);
+  const canManageEmployees = user?.role === 'admin' || user?.role === 'hr';
 
   const {  handleCreateLeaveRequest, handleApproveLeaveRequest, handleRejectLeaveRequest, handleUpdateLeaveBalance } = leave
   const {
@@ -68,10 +69,10 @@ const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 const {cachedApprovedLeave} =  useReduxLeave()
 
 const currentLeavePage = activityFeedPagination?.page ?? 1; 
-const cachedMyApproved = activityFeedCache[currentLeavePage] ?? [];
+const cachedMyApproved = activityFeedCache?.[currentLeavePage] ?? [];
 
 const currentApprovalPage = approvalsPagination?.page ?? 1; 
-const cachedApproval = approvalsCache[currentApprovalPage] ?? [];
+const cachedApproval = approvalsCache?.[currentApprovalPage] ?? [];
 
 
 
@@ -283,19 +284,26 @@ const handleEditBalance = async ({
       </Button>
     </DropdownMenuTrigger>
 
+    
+
     <DropdownMenuContent
       align="end"
       sideOffset={6}
       className="w-48 bg-white shadow-lg rounded-md border border-gray-200 cursor-pointer gap-2 p-2"
     >
       {/* Edit Leave */}
-      <DropdownMenuItem
-        onClick={() => setLeaveBalanceOpen(true)}
-        className="flex items-center"
-      >
-        <Filter className="h-4 w-4 mr-2" />
-        Edit Balance
-      </DropdownMenuItem>
+      {
+        canManageEmployees && (
+          <DropdownMenuItem
+            onClick={() => setLeaveBalanceOpen(true)}
+            className="flex items-center"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Edit Balance
+          </DropdownMenuItem>
+        )
+      }
+
 
       <DropdownMenuSeparator />
 
@@ -819,10 +827,10 @@ const handleEditBalance = async ({
         </Table>
         <>
   {["hr", "admin"].includes(user?.role ?? "") ? (
-    allApprovedPagination.pages > 1 && (
+    allApprovedPagination?.pages > 1 && (
       <PaginationNav
-        page={allApprovedPagination.page}
-        totalPages={allApprovedPagination.pages}
+        page={allApprovedPagination?.page}
+        totalPages={allApprovedPagination?.pages}
         onPageChange={(newPage) =>
           dispatch(
             setAllLeavePagination({ ...allApprovedPagination, page: newPage })
@@ -832,10 +840,10 @@ const handleEditBalance = async ({
       />
     )
   ) : (
-    activityFeedPagination.pages > 1 && (
+    activityFeedPagination?.pages > 1 && (
       <PaginationNav
-        page={activityFeedPagination.page}
-        totalPages={activityFeedPagination.pages}
+        page={activityFeedPagination?.page}
+        totalPages={activityFeedPagination?.pages}
         onPageChange={(newPage) =>
           dispatch(
             setActivityFeedPagination({

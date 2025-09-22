@@ -1,37 +1,82 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Mail, Phone, Calendar, Briefcase, MapPin } from 'lucide-react';
-import RoleBadge from '@/components/RoleBadge';
-import { ProfileFormData } from '@/types/user';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
+  Umbrella,
+  Loader2,
+} from "lucide-react";
+import RoleBadge, { RoleBadgeProps } from "@/components/RoleBadge";
+import { IClassLevel, ProfileFormData } from "@/types/user";
+import { Input } from "../ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import AccountInfoSection from "./AccountInfoSection";
+import BasicInfoSection from "./BasicInfoSection";
+import NextOfKinSection from "./NextOfKinSection";
+import OfficeInfoSection from "./OfficeInfoSection";
+import RequirementsSection from "./RequirementsSection";
+import { Dispatch } from "@reduxjs/toolkit";
 
 interface EmployeeDetailViewProps {
   employee: ProfileFormData;
   onBack: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+  formData: ProfileFormData;
+  setFormData: (data: ProfileFormData) => void;
+  isEditMode: boolean;
+  isLocalLoading: (id: string, action: string) => boolean;
+  dispatch: Dispatch<any>;
+  nextStaffId: string;
 }
 
-const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employee, onBack }) => {
+const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({
+  employee,
+  onBack,
+  onSubmit,
+  formData,
+  setFormData,
+  isEditMode,
+  isLocalLoading,
+  dispatch,
+  nextStaffId,
+}) => {
   const getInitials = (name: string) => {
-    if (!name) return '';
+    if (!name) return "";
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase();
   };
 
   return (
-    <div className="space-y-8 p-4 sm:p-6 lg:p-8">
+    <form className="space-y-8 p-4 sm:p-6 lg:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Employee List
-        </Button>
+        <div className="flex gap-2">
+          {" "}
+          <Button
+            variant="outline"
+            onClick={onBack}
+            type="button"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to Employee List{" "}
+          </Button>
+        </div>
         <div>
-          <h1 className="text-3xl font-bold">{employee.firstName} {employee.middleName || ''} {employee.lastName}</h1>
-          <p className="text-gray-600">Detailed profile and employment information</p>
+          <h1 className="text-3xl font-bold">
+            {employee.firstName} {employee.middleName || ""} {employee.lastName}
+          </h1>
+          <p className="text-gray-600">
+            Detailed profile and employment information
+          </p>
         </div>
       </div>
 
@@ -45,82 +90,84 @@ const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employee, onBac
                 {getInitials(employee.firstName)}
               </AvatarFallback>
             </Avatar>
-            <RoleBadge role={employee.role} />
+            <RoleBadge role={employee.role as RoleBadgeProps["role"]} />
           </CardHeader>
+
           <CardContent className="space-y-3 text-sm text-gray-700">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-gray-500" />
-              <span>{employee.email || '-'}</span>
+              <span>{employee.email || "-"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-gray-500" />
-              <span>{employee.mobile || '-'}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4 text-gray-500" />
-              <div>
-                <div className="font-medium">{employee.department || '-'}</div>
-                <div>{employee.position || '-'}</div>
-              </div>
+              <span>{employee.mobile || "-"}</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-gray-500" />
               <div>
                 <div className="font-medium">Hire Date</div>
-                <div>{employee.createdAt ? new Date(employee.createdAt).toLocaleDateString() : '-'}</div>
+                <div>
+                  {employee.employmentDate
+                    ? new Date(employee.employmentDate).toLocaleDateString()
+                    : "-"}
+                </div>
               </div>
             </div>
             {employee.address && (
               <div className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 text-gray-500 mt-1" />
-                <div>{employee.address}</div>
+                <div>
+                  {employee.address}, {employee.city}, {employee.stateOfOrigin}
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Employment & Payroll Info */}
+        {/* Tabs Section */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Employment Details</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-              <div>
-                <span className="font-medium text-gray-500">Employee ID:</span>
-                <p>{employee.staffId}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Department:</span>
-                <p>{employee.department || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Position:</span>
-                <p>{employee.position || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Office Branch:</span>
-                <p>{employee.officeBranch || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Class Level:</span>
-                <p>{employee.accountInfo.classLevel || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Bank Name:</span>
-                <p>{employee.accountInfo.bankName || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Bank Account:</span>
-                <p>{employee.accountInfo.bankAccountNumber || '-'}</p>
-              </div>
-              <div>
-                <span className="font-medium text-gray-500">Basic Pay:</span>
-                <p>₦{employee.accountInfo.basicPay?.toLocaleString() || '0'}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <Tabs defaultValue="basic">
+            <TabsList className="mb-4 w-full flex justify-between">
+              <TabsTrigger value="basic" className="flex-1 text-center">
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="kin" className="flex-1 text-center">
+                Next of Kin
+              </TabsTrigger>
+              <TabsTrigger value="office" className="flex-1 text-center">
+                Office
+              </TabsTrigger>
+              <TabsTrigger value="account" className="flex-1 text-center">
+                Account
+              </TabsTrigger>
+              <TabsTrigger value="requirements" className="flex-1 text-center">
+                Requirements
+              </TabsTrigger>
+            </TabsList>
 
+            <TabsContent value="basic">
+              <BasicInfoSection
+                formData={formData}
+                dispatch={dispatch}
+                nextStaffId={nextStaffId}
+                isEditMode={isEditMode}
+              />
+            </TabsContent>
+            <TabsContent value="kin">
+              <NextOfKinSection formData={formData} dispatch={dispatch} />
+            </TabsContent>
+            <TabsContent value="office">
+              <OfficeInfoSection formData={formData} dispatch={dispatch} />
+            </TabsContent>
+            <TabsContent value="account">
+              <AccountInfoSection formData={formData} dispatch={dispatch} />
+            </TabsContent>
+            <TabsContent value="requirements">
+              <RequirementsSection formData={formData} dispatch={dispatch} />
+            </TabsContent>
+          </Tabs>
+
+          {/* Cooperative Info */}
           {employee.cooperative && (
             <Card>
               <CardHeader>
@@ -128,23 +175,92 @@ const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({ employee, onBac
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
                 <div>
-                  <span className="font-medium text-gray-500">Monthly Contribution:</span>
-                  <p>₦{employee.cooperative.monthlyContribution.toLocaleString()}</p>
+                  <span className="font-medium text-gray-500">
+                    Monthly Contribution:
+                  </span>
+                  <p>
+                    ₦
+                    {employee.cooperative?.monthlyContribution?.toLocaleString() ||
+                      "0"}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-500">Total Contributed:</span>
-                  <p>₦{employee.cooperative.totalContributed.toLocaleString()}</p>
+                  <span className="font-medium text-gray-500">
+                    Total Contributed:
+                  </span>
+                  <p>
+                    ₦
+                    {employee.cooperative?.totalContributed?.toLocaleString() ||
+                      "0"}
+                  </p>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-500">Last Contribution:</span>
-                  <p>{employee.cooperative.lastContributionDate ? new Date(employee.cooperative.lastContributionDate).toLocaleDateString() : '-'}</p>
+                  <span className="font-medium text-gray-500">
+                    Last Contribution:
+                  </span>
+                  <p>
+                    {employee.cooperative?.lastContributionDate
+                      ? new Date(
+                          employee.cooperative.lastContributionDate
+                        ).toLocaleDateString()
+                      : "-"}
+                  </p>
                 </div>
               </CardContent>
             </Card>
           )}
+
+          {/* Leave Balance */}
+          {employee.leaveBalance && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Umbrella className="h-5 w-5 text-gray-600" />
+                  Leave Balance ({employee.leaveBalance.year})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
+                <div>
+                  <span className="font-medium text-gray-500">Annual:</span>
+                  <p>{employee.leaveBalance.balances.annual} days</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-500">
+                    Compassionate:
+                  </span>
+                  <p>{employee.leaveBalance.balances.compassionate} days</p>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-500">Maternity:</span>
+                  <p>{employee.leaveBalance.balances.maternity} days</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Save/Update Button */}
+          {isEditMode && (
+            <div className="flex justify-end mt-4">
+              <Button
+                type="submit"
+                className="px-6"
+                onClick={onSubmit}
+                disabled={isLocalLoading("editemployee", "editemployee")}
+              >
+                {isLocalLoading("editemployee", "editemployee") ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
+                    Saving...
+                  </>
+                ) : (
+                  "Update"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </form>
   );
 };
 

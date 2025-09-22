@@ -1,61 +1,50 @@
-
 import { PaginatedProfilesResponse, ProfileFormData } from "@/types/user";
 import { apiSlice } from "../auth/apiSlice";
 
-
-
 export const profileApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-
-
     editProfile: builder.mutation({
       query: (data) => {
-        const { _id, ...bodyData } = data; 
+        const { _id, ...bodyData } = data;
         return {
           url: `user/${_id}`,
-          method: 'PUT',
-          body: bodyData, 
-          credentials: 'include' as const,
+          method: "PUT",
+          body: bodyData,
+          credentials: "include" as const,
         };
       },
-      invalidatesTags: ['Profiles'],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
     uploadProfile: builder.mutation({
-      query: (file:FormData) => ({
-        url: 'user/upload',
-        method: 'PUT',
+      query: (file: FormData) => ({
+        url: "user/upload",
+        method: "PUT",
         body: file,
-        credentials: 'include' as const,
-         headers: {
-        },
-        invalidatesTags: ['Profiles'],
-
+        credentials: "include" as const,
+        headers: {},
+        invalidatesTags: [{ type: "Profiles", id: "LIST" }],
       }),
     }),
 
     getProfile: builder.query({
       query: () => ({
-        url: 'user/me',
-        method: 'GET',
-        credentials: 'include' as const,
+        url: "user/me",
+        method: "GET",
+        credentials: "include" as const,
       }),
-      providesTags: (result) =>
-        result ? [{ type: 'Profiles' }] : [],
+      providesTags: (result) => (result ? [{ type: "Profiles" }] : []),
     }),
 
-    
     getDepartments: builder.query({
       query: () => ({
-        url: 'departments/get-all',
-        method: 'GET',
-        credentials: 'include' as const,
+        url: "departments/get-all",
+        method: "GET",
+        credentials: "include" as const,
       }),
-      
     }),
 
-
-        // Calculate Class
+    // Calculate Class
     calculateClass: builder.mutation({
       query: (body) => ({
         url: "levels/class",
@@ -73,10 +62,9 @@ export const profileApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-       invalidatesTags: ['Profiles'],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
- 
     bulkCreateClassLevels: builder.mutation({
       query: (body) => ({
         url: "levels/bulk",
@@ -84,7 +72,7 @@ export const profileApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-       invalidatesTags: ['Profiles'],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
     // Update a class level by ID
@@ -95,91 +83,95 @@ export const profileApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-       invalidatesTags: ['Profiles'],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
-
 
     getClassLevel: builder.query({
       query: () => ({
-        url: 'levels/get-all',
-        method: 'GET',
-        credentials: 'include' as const,
-      }),      
+        url: "levels/get-all",
+        method: "GET",
+        credentials: "include" as const,
+      }),
     }),
 
     getAnalytics: builder.query({
       query: () => ({
-        url: 'user/analytics',
-        method: 'GET',
-        credentials: 'include' as const,
-      }),      
+        url: "user/analytics",
+        method: "GET",
+        credentials: "include" as const,
+      }),
     }),
 
-    getAllProfile: builder.query<PaginatedProfilesResponse, { page: number; limit: number }>({
+    getAllProfile: builder.query<
+      PaginatedProfilesResponse,
+      { page: number; limit: number }
+    >({
       query: ({ page = 1, limit = 20 }) => ({
         url: `user/users?page=${page}&limit=${limit}`,
-        method: 'GET',
+        method: "GET",
       }),
       providesTags: (result) =>
         result
           ? [
-              ...result.data.data.map(({ _id }) => ({ type: 'Profiles' as const, _id })),
-              { type: 'Profiles', id: 'LIST' },
+              ...result.data.data.map(({ _id }) => ({
+                type: "Profiles" as const,
+                _id,
+              })),
+              { type: "Profiles", id: "LIST" },
             ]
-          : [{ type: 'Profiles', id: 'LIST' }],
+          : [{ type: "Profiles", id: "LIST" }],
     }),
 
-    
     getLastStaffId: builder.query({
-     query: () => ({
-        url: 'auth/last-staffId',
-        method: 'GET',
-        credentials: 'include' as const,
-        }),
-          
+      query: () => ({
+        url: "auth/last-staffId",
+        method: "GET",
+        credentials: "include" as const,
       }),
-   
+    }),
 
     deleteProfile: builder.mutation({
       query: (id) => ({
         url: `user/${id}`,
-        method: 'DELETE',
-        credentials: 'include' as const,
+        method: "DELETE",
+        credentials: "include" as const,
       }),
-      invalidatesTags: ['Profiles'],
+      invalidatesTags: (result, error, id) => [
+        { type: "Profiles", id },
+        { type: "Profiles", id: "LIST" },
+      ],
     }),
 
     terminateProfile: builder.mutation({
       query: (id) => ({
         url: `user/${id}/terminate`,
-        method: 'DELETE',
-        credentials: 'include' as const,
+        method: "DELETE",
+        credentials: "include" as const,
       }),
-        invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
     activateProfile: builder.mutation({
       query: (id) => ({
         url: `user/${id}/activate`,
-        method: 'DELETE',
-        credentials: 'include' as const,
+        method: "DELETE",
+        credentials: "include" as const,
       }),
-        invalidatesTags: [{ type: 'Profiles', id: 'LIST' }],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
-    
   }),
 });
 
 export const {
-useEditProfileMutation,
-useUploadProfileMutation,
-useGetProfileQuery,
-useDeleteProfileMutation,
-useGetAllProfileQuery,
-useGetDepartmentsQuery,
-useGetClassLevelQuery,
-useGetLastStaffIdQuery,
-useTerminateProfileMutation,
-useActivateProfileMutation,
-useGetAnalyticsQuery
+  useEditProfileMutation,
+  useUploadProfileMutation,
+  useGetProfileQuery,
+  useDeleteProfileMutation,
+  useGetAllProfileQuery,
+  useGetDepartmentsQuery,
+  useGetClassLevelQuery,
+  useGetLastStaffIdQuery,
+  useTerminateProfileMutation,
+  useActivateProfileMutation,
+  useGetAnalyticsQuery,
 } = profileApi;

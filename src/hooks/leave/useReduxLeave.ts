@@ -14,7 +14,7 @@ import {
  
 import { toast } from "../use-toast";
 import { setActivityCache, setActivityFeedPagination, setAllApprovedCache, setAllLeavePagination, setLoading } from "@/store/slices/leave/leaveSlice";
-import { LeaveActivityFeedItem, UpdateLeaveBalanceBody, UseReduxLeaveReturnType } from "@/types/leave";
+import {  UpdateLeaveBalanceBody, UseReduxLeaveReturnType } from "@/types/leave";
 import { extractErrorMessage } from "@/utils/errorHandler";
 import { useEffect } from "react";
 
@@ -25,17 +25,17 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
 
   const {user }= useAppSelector((state) => state.auth); 
   const isAuthorized =  !user || (user.role !== "teamlead" && user.role !== "hr" && user.role !== "employee");
-  const { allApprovedPagination, allApprovedCache, activityFeedPagination, activityFeedCache } = useAppSelector(
+  const { allApprovedPagination, allApprovedCache, activityFeedCache } = useAppSelector(
     (state) => state.leave
   );
   
   const currentLeavePage = allApprovedPagination?.page ?? 1; 
-    const cachedApprovedLeave = allApprovedCache[currentLeavePage] ?? [];
+    const cachedApprovedLeave = allApprovedCache?.[currentLeavePage] ?? [];
 
   const [createLeaveRequest, { isLoading: creatingLeave }] = useCreateLeaveRequestMutation();
   const [approveLeaveRequest, { isLoading: approvingLeave }] = useApproveLeaveRequestMutation();
   const [rejectLeaveRequest, { isLoading: rejectingLeave }] = useRejectLeaveRequestMutation();
-  const [updateLeaveBalance, { isLoading: updatingLeaveBalance }] = useUpdateLeaveBalanceMutation()
+  const [updateLeaveBalance] = useUpdateLeaveBalanceMutation()
   const {
     data: leaveApprovalQueue = [],
     isLoading: approvalQueueLoading,

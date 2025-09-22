@@ -1,30 +1,36 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { IPayroll, PayrollResponse } from "@/types/payroll"; // adjust the import path as needed
+import { cachedInitialType, IPayroll, PayrollResponse } from "@/types/payroll"; // adjust the import path as needed
 import { apiSlice } from "../auth/apiSlice";
 
 export const payrollApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getAllPayrolls: builder.query<PayrollResponse, { page?: number; limit?: number; month?: string; year?: string, search?: string }>(
+    getAllPayrolls: builder.query<
+      cachedInitialType,
       {
-        query: ({ page = 1, limit = 100, month, year, search }) => {
-          const queryParams = new URLSearchParams({
-            page: page.toString(),
-            limit: limit.toString(),
-            ...(month && { month }),
-            ...(year && { year }),
-            ...(search && { search }),
-          });
-
-          return {
-            url: `payroll/get-payslips?${queryParams.toString()}`,
-            method: 'GET',
-            credentials: 'include' as const,
-          };
-        },
-        providesTags: (result) =>
-          result ? [{ type: 'getAllPayrolls' }] : [],
+        page?: number;
+        limit?: number;
+        month?: string;
+        year?: string;
+        search?: string;
       }
-    ),
+    >({
+      query: ({ page = 1, limit = 10, month, year, search }) => {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+          ...(month && { month }),
+          ...(year && { year }),
+          ...(search && { search }),
+        });
+
+        return {
+          url: `payroll/get-payslips?${queryParams.toString()}`,
+          method: "GET",
+          credentials: "include" as const,
+        };
+      },
+      providesTags: (result) => (result ? [{ type: "getAllPayrolls" }] : []),
+    }),
 
     markPayrollAsDraft: builder.mutation({
       query: (payrollId: string) => ({
@@ -64,20 +70,20 @@ export const payrollApi = apiSlice.injectEndpoints({
 
     // ⚙️ Process bulk payrolls
     processBulkPayroll: builder.mutation({
-      query: ({month, year}) => ({
+      query: ({ month, year }) => ({
         url: "payroll/process-bulk",
         method: "POST",
-        body: {month, year},
+        body: { month, year },
         credentials: "include" as const,
       }),
       invalidatesTags: ["getAllPayrolls"],
     }),
 
     markPayrollsAsDraftBulk: builder.mutation({
-      query: ({month, year}) => ({
+      query: ({ month, year }) => ({
         url: "payroll/bulk-draft",
         method: "POST",
-        body: {month, year},
+        body: { month, year },
         credentials: "include" as const,
       }),
       invalidatesTags: ["getAllPayrolls"],
@@ -85,20 +91,20 @@ export const payrollApi = apiSlice.injectEndpoints({
 
     // ♻️ Reverse bulk payrolls
     reverseBulkPayroll: builder.mutation({
-      query: ({month, year}) => ({
+      query: ({ month, year }) => ({
         url: "payroll/reverse-bulk",
         method: "POST",
-        body: {month, year},
+        body: { month, year },
         credentials: "include" as const,
       }),
       invalidatesTags: ["getAllPayrolls"],
     }),
 
     payrollsAsPaidBulk: builder.mutation({
-      query: ({month, year}) => ({
+      query: ({ month, year }) => ({
         url: "payroll/bulk-pay",
         method: "POST",
-        body: {month, year},
+        body: { month, year },
         credentials: "include" as const,
       }),
       invalidatesTags: ["getAllPayrolls"],
@@ -113,7 +119,6 @@ export const payrollApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["getAllPayrolls"],
     }),
-    
   }),
 });
 
@@ -127,9 +132,5 @@ export const {
   useMarkPayrollAsDraftMutation,
   useMarkPayrollAsPaidMutation,
   useMarkPayrollsAsDraftBulkMutation,
-  usePayrollsAsPaidBulkMutation
+  usePayrollsAsPaidBulkMutation,
 } = payrollApi;
-
-
-
-

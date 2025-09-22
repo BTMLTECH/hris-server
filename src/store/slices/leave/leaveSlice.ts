@@ -22,7 +22,7 @@ export interface LeaveFormData {
 
 export interface Pagination {
   total: number;
-  page: number;
+  page?: number;
   limit: number;
   pages: number;
 }
@@ -252,14 +252,14 @@ builder.addMatcher(
     );
 
 
-     if (pagination?.myRequests?.page) {
+     if (allApproved && pagination?.myRequests?.page) {
       const page = pagination.myRequests.page;
-      state.activityFeedCache[page] = myRequests;
+      state.activityFeedCache[page] = myRequests ?? [];
       state.activityFeedPagination = pagination.myRequests;
-      state.activityFeed = myRequests;
+      state.activityFeed = myRequests ?? [];
     }
 
-    if (pagination?.approvals?.page) {
+    if (allApproved && pagination?.approvals?.page) {
       const page = pagination.approvals.page;
       state.approvalsCache[page] = approvals;
       state.approvalsPagination = pagination.approvals;
@@ -361,7 +361,7 @@ builder.addMatcher(
     }
   );
 
-  // === POST: Reject Leave Request ===
+
   builder.addMatcher(
     leaveApi.endpoints.rejectLeaveRequest.matchPending,
     (state) => {
@@ -391,7 +391,7 @@ builder.addMatcher(
     }
   );
 
-  // === GET: Team Lead Info ===
+
   builder.addMatcher(
     leaveApi.endpoints.getTeamLead.matchPending,
     (state) => {
@@ -414,7 +414,7 @@ builder.addMatcher(
     }
   );
 
-  // === GET: Leave Status Overview ===
+
 builder.addMatcher(
   leaveApi.endpoints.getStatOverview.matchPending,
   (state) => {

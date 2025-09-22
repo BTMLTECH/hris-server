@@ -1,28 +1,37 @@
-
-import React from 'react';
-import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { FileText, Filter, RefreshCw } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { 
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Filter, RefreshCw } from "lucide-react";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import {
   setSelectedReport,
   setDateRange,
   setDepartment,
   setExportFormat,
   setCustomStartDate,
-  setCustomEndDate
-} from '@/store/slices/report/reportSlice';
-import { useEmployees } from '@/hooks/useEmployees';
-import { useToast } from '@/hooks/use-toast';
-import { useReduxReportContext } from '@/hooks/report/useReduxReport';
-import { departmentMap, GenerateReportDTO } from '@/types/report';
-import { IDepartment } from '@/types/user';
+  setCustomEndDate,
+} from "@/store/slices/report/reportSlice";
+import { useEmployees } from "@/hooks/useEmployees";
+import { useToast } from "@/hooks/use-toast";
+import { useReduxReportContext } from "@/hooks/report/useReduxReport";
+import { departmentMap, GenerateReportDTO } from "@/types/report";
+import { IDepartment } from "@/types/user";
 
 const Reports: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -30,24 +39,28 @@ const Reports: React.FC = () => {
   const { toast } = useToast();
   const { handleGenerateReport } = useReduxReportContext();
 
-  const { departmentsCache, formData } = useAppSelector((state) => state.profile);
+  const { departmentsCache } = useAppSelector((state) => state.profile);
   const { user } = useAppSelector((state) => state.auth);
-  const { selectedReport, dateRange, department, isGenerating, showCustomDatePicker, customStartDate, customEndDate, exportFormat } =
-    useAppSelector((state) => state.report);
-  const {  company } =
-    useAppSelector((state) => state.profile);
+  const {
+    selectedReport,
+    dateRange,
+    department,
+    isGenerating,
+    showCustomDatePicker,
+    customStartDate,
+    customEndDate,
+    exportFormat,
+  } = useAppSelector((state) => state.report);
+  const { company } = useAppSelector((state) => state.profile);
   const mappedDepartment = departmentMap[department] || "all";
 
-
-
   const reportTypes = [
-    { id: 'employee_summary', title: 'Employee Summary Report' },
-    { id: 'department_analysis', title: 'Department Analysis' },
-    { id: 'attendance_report', title: 'Attendance Report' },
-    { id: 'payroll_summary', title: 'Payroll Summary' },
-    { id: 'performance_metrics', title: 'Performance Metrics' },
+    { id: "employee_summary", title: "Employee Summary Report" },
+    { id: "department_analysis", title: "Department Analysis" },
+    { id: "attendance_report", title: "Attendance Report" },
+    { id: "payroll_summary", title: "Payroll Summary" },
+    { id: "performance_metrics", title: "Performance Metrics" },
   ];
-
 
   const handleGenerate = async () => {
     const payload: GenerateReportDTO = {
@@ -58,22 +71,19 @@ const Reports: React.FC = () => {
       department: mappedDepartment,
       exportFormat,
       company,
-       generatedBy: user?._id
-    }; 
+      generatedBy: user?._id,
+    };
 
     await handleGenerateReport(payload);
   };
 
   return (
     <div className="space-y-6">
-
-
       <Tabs defaultValue="generate" className="space-y-6">
         <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="generate" className="cursor-default">
             Generate Reports
           </TabsTrigger>
-
         </TabsList>
 
         <TabsContent value="generate" className="space-y-6">
@@ -84,7 +94,9 @@ const Reports: React.FC = () => {
                   <Filter className="h-5 w-5" />
                   Report Configuration
                 </CardTitle>
-                <CardDescription>Configure your report parameters</CardDescription>
+                <CardDescription>
+                  Configure your report parameters
+                </CardDescription>
               </CardHeader>
 
               <CardContent className="space-y-4">
@@ -94,7 +106,11 @@ const Reports: React.FC = () => {
                   <Select
                     value={selectedReport ?? undefined}
                     onValueChange={(val) =>
-                      dispatch(setSelectedReport(val as GenerateReportDTO['reportType']))
+                      dispatch(
+                        setSelectedReport(
+                          val as GenerateReportDTO["reportType"]
+                        )
+                      )
                     }
                   >
                     <SelectTrigger>
@@ -102,7 +118,9 @@ const Reports: React.FC = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {reportTypes.map((report) => (
-                        <SelectItem key={report.id} value={report.id}>{report.title}</SelectItem>
+                        <SelectItem key={report.id} value={report.id}>
+                          {report.title}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -114,7 +132,9 @@ const Reports: React.FC = () => {
                   <Select
                     value={dateRange ?? undefined}
                     onValueChange={(val) =>
-                      dispatch(setDateRange(val as GenerateReportDTO['dateRange']))
+                      dispatch(
+                        setDateRange(val as GenerateReportDTO["dateRange"])
+                      )
                     }
                   >
                     <SelectTrigger>
@@ -132,42 +152,43 @@ const Reports: React.FC = () => {
                 </div>
 
                 {/* Custom Dates */}
-             {showCustomDatePicker && (
-  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
-    {/* Start Date */}
-    <div className="flex flex-col">
-      <Label htmlFor="start-date">Start Date</Label>
-      <input
-        type="date"
-        id="start-date"
-        className="border rounded-md px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        value={customStartDate || ''}
-        onChange={(e) => {
-          dispatch(setCustomStartDate(e.target.value));
-          // Reset end date if it is before the new start date
-          if (customEndDate && e.target.value > customEndDate) {
-            dispatch(setCustomEndDate(''));
-          }
-        }}
-      />
-    </div>
+                {showCustomDatePicker && (
+                  <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Start Date */}
+                    <div className="flex flex-col">
+                      <Label htmlFor="start-date">Start Date</Label>
+                      <input
+                        type="date"
+                        id="start-date"
+                        className="border rounded-md px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={customStartDate || ""}
+                        onChange={(e) => {
+                          dispatch(setCustomStartDate(e.target.value));
+                          // Reset end date if it is before the new start date
+                          if (customEndDate && e.target.value > customEndDate) {
+                            dispatch(setCustomEndDate(""));
+                          }
+                        }}
+                      />
+                    </div>
 
-    {/* End Date */}
-    <div className="flex flex-col">
-      <Label htmlFor="end-date">End Date</Label>
-      <input
-        type="date"
-        id="end-date"
-        className="border rounded-md px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-        value={customEndDate || ''}
-        min={customStartDate || ''} // 👈 ensures end date cannot be before start date
-        onChange={(e) => dispatch(setCustomEndDate(e.target.value))}
-        disabled={!customStartDate} // 👈 disable until start date is selected
-      />
-    </div>
-  </div>
-)}
-
+                    {/* End Date */}
+                    <div className="flex flex-col">
+                      <Label htmlFor="end-date">End Date</Label>
+                      <input
+                        type="date"
+                        id="end-date"
+                        className="border rounded-md px-2 py-1.5 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={customEndDate || ""}
+                        min={customStartDate || ""} // 👈 ensures end date cannot be before start date
+                        onChange={(e) =>
+                          dispatch(setCustomEndDate(e.target.value))
+                        }
+                        disabled={!customStartDate} // 👈 disable until start date is selected
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Department */}
                 <div className="space-y-2">
@@ -184,7 +205,9 @@ const Reports: React.FC = () => {
                       {Object.values(departmentsCache || {})
                         .flat()
                         .map((dept: IDepartment) => (
-                          <SelectItem key={dept._id} value={dept.name}>{dept.name}</SelectItem>
+                          <SelectItem key={dept._id} value={dept.name}>
+                            {dept.name}
+                          </SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
@@ -195,7 +218,9 @@ const Reports: React.FC = () => {
                   <Label htmlFor="exportFormat">Export Options</Label>
                   <Select
                     value={exportFormat ?? undefined}
-                    onValueChange={(val) => dispatch(setExportFormat(val as 'pdf' | 'excel' | 'csv'))}
+                    onValueChange={(val) =>
+                      dispatch(setExportFormat(val as "pdf" | "excel" | "csv"))
+                    }
                     disabled={isGenerating}
                   >
                     <SelectTrigger>
@@ -209,7 +234,11 @@ const Reports: React.FC = () => {
                   </Select>
                 </div>
 
-                <Button onClick={handleGenerate} className="w-full" disabled={isGenerating}>
+                <Button
+                  onClick={handleGenerate}
+                  className="w-full"
+                  disabled={isGenerating}
+                >
                   {isGenerating ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

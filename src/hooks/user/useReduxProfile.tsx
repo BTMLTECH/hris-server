@@ -1,170 +1,198 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-
-import { useEditProfileMutation, useUploadProfileMutation, useGetProfileQuery, useDeleteProfileMutation, useGetAllProfileQuery, useTerminateProfileMutation, useActivateProfileMutation, useGetAnalyticsQuery } from "@/store/slices/profile/profileApi";
+import {
+  useEditProfileMutation,
+  useUploadProfileMutation,
+  useGetProfileQuery,
+  useDeleteProfileMutation,
+  useGetAllProfileQuery,
+  useTerminateProfileMutation,
+  useActivateProfileMutation,
+  useGetAnalyticsQuery,
+} from "@/store/slices/profile/profileApi";
 import { toast } from "../use-toast";
 import { ProfileContextType, ProfileFormData } from "@/types/user";
-import { setBulkEmployees, setFormData, setLoading } from "@/store/slices/profile/profileSlice";
+import {
+  setBulkEmployees,
+  setFormData,
+  setLoading,
+  setSelectedEmployee,
+} from "@/store/slices/profile/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { extractErrorMessage } from "@/utils/errorHandler";
 
-
-
-export const useReduxProfile= (): ProfileContextType => {
+export const useReduxProfile = (): ProfileContextType => {
   const dispatch = useAppDispatch();
 
-  const { formData, isLoading, error } = useAppSelector((state) => state.profile);    
+  const { formData, isLoading, error } = useAppSelector(
+    (state) => state.profile
+  );
   const { user } = useAppSelector((state) => state.auth);
-  const [editProfileMutation, {isLoading:editProfileIsLoading}] = useEditProfileMutation();
-  const [uploadProfileMutation, {isLoading:uploadIsLoading}] = useUploadProfileMutation();
-  const [deleteProfileMutation] = useDeleteProfileMutation();  
+  const [editProfileMutation, { isLoading: editProfileIsLoading }] =
+    useEditProfileMutation();
+  const [uploadProfileMutation, { isLoading: uploadIsLoading }] =
+    useUploadProfileMutation();
+  const [deleteProfileMutation] = useDeleteProfileMutation();
   const [terminateProfile] = useTerminateProfileMutation();
   const [activateProfile] = useActivateProfileMutation();
 
-  const {data} = useGetAnalyticsQuery( {},
- { skip: !user});
+  const { data } = useGetAnalyticsQuery({}, { skip: !user });
 
- 
-const editProfile = async (profile: any): Promise<boolean> => {
-  dispatch(setLoading(true));
-  try {
-    const result = await editProfileMutation(profile).unwrap();   
-    toast({ title: 'Profile updated successfully',
-     });
-     const editProfileHandler = async (profile: any): Promise<boolean> => {
-  dispatch(setLoading(true));
-  try {
-    await editProfileMutation(profile).unwrap();
+  const editProfile = async (profile: any): Promise<boolean> => {
+    dispatch(setLoading(true));
+    try {
+      const result = await editProfileMutation(profile).unwrap();
+      toast({ title: "Profile updated successfully" });
+      const editProfileHandler = async (profile: any): Promise<boolean> => {
+        dispatch(setLoading(true));
+        try {
+          const response = await editProfileMutation(profile).unwrap();
+          if (response) {
+            dispatch(setSelectedEmployee(response));
+          }
 
-    toast({
-      title: 'Profile updated successfully',
-    });
+          toast({
+            title: "Profile updated successfully",
+          });
 
-    // ✅ Merge updated fields into current formData without resetting department/classlevels
-    dispatch(setFormData({
-      ...formData,
-      ...profile, 
-    }));
+          dispatch(
+            setFormData({
+              ...formData,
+              ...profile,
+            })
+          );
 
-    return true;
-  } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Profile Update Error');
-    toast({
-      title: 'Profile Update Error',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-    return false;
-  } finally {
-    dispatch(setLoading(false));
-  }
-};
+          return true;
+        } catch (error: any) {
+          const errorMessage = extractErrorMessage(
+            error,
+            "Profile Update Error"
+          );
+          toast({
+            title: "Profile Update Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return false;
+        } finally {
+          dispatch(setLoading(false));
+        }
+      };
 
-    return true;
-  } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Profile Update Error');
-    toast({
-      title: 'Profile Update Error',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-    return false;
-  }finally{
-    dispatch(setLoading(false));
-  }
-};
-
-
-const uploadProfile = async (formData: FormData): Promise<boolean> => {
-  dispatch(setLoading(true));
-
-  try {
-    const success = await uploadProfileMutation(formData).unwrap();
-
-    if (success) {
-      toast({
-        title: 'Profile picture uploaded successfully',
-        description: 'Your profile picture has been updated.',
-      });
       return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, "Profile Update Error");
+      toast({
+        title: "Profile Update Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setLoading(false));
     }
-  } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Failed to upload profile picture');
+  };
 
-    toast({
-      title: 'Upload Error',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-    return false;
-  }finally{
-    dispatch(setLoading(false));
-  }
-};
+  const uploadProfile = async (formData: FormData): Promise<boolean> => {
+    dispatch(setLoading(true));
+
+    try {
+      const success = await uploadProfileMutation(formData).unwrap();
+
+      if (success) {
+        toast({
+          title: "Profile picture uploaded successfully",
+          description: "Your profile picture has been updated.",
+        });
+        return true;
+      }
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to upload profile picture"
+      );
+
+      toast({
+        title: "Upload Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
 
   const deleteProfile = async (id: string): Promise<boolean> => {
-  dispatch(setLoading(true));
+    dispatch(setLoading(true));
 
     try {
       const success = await deleteProfileMutation(id).unwrap();
-      if(success){
-
-        toast({ title: 'Profile deleted successfully' });  
-   
+      if (success) {
+        toast({ title: "Profile deleted successfully" });
       }
       return true;
     } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Failed to delete profile');
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to delete profile"
+      );
       toast({
-        title: 'Delete Error',
+        title: "Delete Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return false;
-    }finally{
-    dispatch(setLoading(false));
-  }
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   const profileTerminate = async (id: string): Promise<boolean> => {
-  dispatch(setLoading(true));
+    dispatch(setLoading(true));
 
     try {
       await terminateProfile(id).unwrap();
-      toast({ title: 'Profile terminated successfully' });
+      toast({ title: "Profile terminated successfully" });
       return true;
     } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Failed to terminate profile');
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to terminate profile"
+      );
 
       toast({
-        title: 'Terminate Error',
+        title: "Terminate Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return false;
-    }finally{
-    dispatch(setLoading(false));
-  }
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
   const profileActivate = async (id: string): Promise<boolean> => {
-  dispatch(setLoading(true));
+    dispatch(setLoading(true));
 
     try {
       await activateProfile(id).unwrap();
-      toast({ title: 'Profile terminated successfully' });
+      toast({ title: "Profile terminated successfully" });
       return true;
     } catch (error: any) {
-    const errorMessage = extractErrorMessage(error, 'Failed to terminate profile');
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to terminate profile"
+      );
 
       toast({
-        title: 'Terminate Error',
+        title: "Terminate Error",
         description: errorMessage,
-        variant: 'destructive',
+        variant: "destructive",
       });
       return false;
-    }finally{
-    dispatch(setLoading(false));
-  }
+    } finally {
+      dispatch(setLoading(false));
+    }
   };
 
   return {
@@ -176,6 +204,6 @@ const uploadProfile = async (formData: FormData): Promise<boolean> => {
     uploadProfile,
     deleteProfile,
     profileTerminate,
-    profileActivate
+    profileActivate,
   };
 };
