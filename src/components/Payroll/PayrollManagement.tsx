@@ -102,23 +102,7 @@ import {
 } from "../ui/dropdown-menu";
 import { NairaSign } from "../ui/NairaSign";
 import { DraftPayrollDialog } from "./DraftPayrollDialog";
-
-const months = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-const years = ["2030", "2029", "2028", "2027", "2026", "2025", "2024"];
+import { months, years } from "@/utils/normalize";
 
 const PayrollManagement: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -154,7 +138,6 @@ const PayrollManagement: React.FC = () => {
     editingRecord,
     payrollPagination,
     sortDirection,
-    payrollRecords,
     isDeleteDialogOpen,
     isBulkUploadOpen,
     isBulkDeleteDialogOpen,
@@ -176,39 +159,28 @@ const PayrollManagement: React.FC = () => {
   } | null>(null);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const canManagePayroll = user?.role === "admin" || user?.role === "hr";
-
-  // const newRecords = extractPayrollArray(
-  //   Array.isArray(cachedPayrolls) && cachedPayrolls.length > 0
-  //     ? cachedPayrolls
-  //     : payrollRecords
-  // );
-
-  // const filteredRecords = canManagePayroll
-  //   ? newRecords
-  //   : newRecords.filter((r) => r.user?._id === user?._id);
-
-  // inside your component file
-
-  // 1. Sort after filtering
-  // 1. Sorting (memoized)
   const sortedRecords = useMemo(() => {
-    const getMonthIndex = (m: string | number) =>
-      typeof m === "string"
-        ? months.indexOf(m) // "March" → 2
-        : Number(m) - 1; // 3 → 2
-
     return [...filteredRecords].sort((a, b) => {
-      const aDate = new Date(Number(a.year), getMonthIndex(a.month));
-      const bDate = new Date(Number(b.year), getMonthIndex(b.month));
+      const aDate = new Date(Number(a.year), Number(a.month) - 1);
+      const bDate = new Date(Number(b.year), Number(b.month) - 1);
+
+      if (aDate.getTime() !== bDate.getTime()) {
+        return sortDirection === "asc"
+          ? aDate.getTime() - bDate.getTime()
+          : bDate.getTime() - aDate.getTime();
+      }
+
+      const aCreated = new Date(a.createdAt).getTime();
+      const bCreated = new Date(b.createdAt).getTime();
+
       return sortDirection === "asc"
-        ? aDate.getTime() - bDate.getTime()
-        : bDate.getTime() - aDate.getTime();
+        ? aCreated - bCreated
+        : bCreated - aCreated;
     });
   }, [filteredRecords, sortDirection]);
 
-  // 2. Status calculation for current month/year
   const now = new Date();
-  const currentMonth = now.getMonth() + 1; // JS months are 0–11
+  const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
 
   const allStatus = useMemo(() => {
@@ -229,36 +201,6 @@ const PayrollManagement: React.FC = () => {
 
     return "mixed";
   }, [sortedRecords, currentMonth, currentYear]);
-
-  // const sortedRecords = [...filteredRecords].sort((a, b) => {
-  //   const monthIndex = (month: string) => months.indexOf(month);
-  //   const aDate = new Date(Number(a.year), monthIndex(a.month));
-  //   const bDate = new Date(Number(b.year), monthIndex(b.month));
-  //   return sortDirection === "asc"
-  //     ? aDate.getTime() - bDate.getTime()
-  //     : bDate.getTime() - aDate.getTime();
-  // });
-
-  // const now = new Date();
-  // const currentMonth = now.getMonth() + 1;
-  // const currentYear = now.getFullYear();
-
-  // const allStatus = useMemo(() => {
-  //   if (!filteredRecords.length) return "none";
-  //   const currentRecords = filteredRecords.filter(
-  //     (r) => Number(r.month) === currentMonth && Number(r.year) === currentYear
-  //   );
-  //   if (!currentRecords.length) return "none";
-
-  //   const statuses = currentRecords.map((r) => r.status);
-
-  //   if (statuses.every((s) => s === "pending")) return "pending";
-  //   if (statuses.every((s) => s === "draft")) return "draft";
-  //   if (statuses.every((s) => s === "processed")) return "processed";
-  //   if (statuses.every((s) => s === "paid")) return "paid";
-
-  //   return "mixed";
-  // }, [filteredRecords, currentMonth, currentYear]);
 
   const handleDeleteRecord = async (recordId: string, p0: string) => {
     const success = await deletePayroll(recordId);
@@ -423,7 +365,6 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
     actionType: string,
     actionFn: () => Promise<boolean>
   ) => {
-    // ✅ mark as loading
     setLocalLoading(key, actionType);
     try {
       await actionFn();
@@ -797,106 +738,160 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4 mb-6 items-end justify-between">
-                {/* Left side: Filters */}
                 <div className="flex flex-wrap gap-4 items-end w-full">
-                  {/* Month Dropdown */}
-                  <Select
-                    value={selectedMonth || ""}
-                    onValueChange={(value) => {
-                      dispatch(setSelectedMonth(value));
-                      dispatch(setFiltersApplied(true));
-                    }}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Search by month" />
-                    </SelectTrigger>
-                    <SelectContent
-                      side="bottom"
-                      sideOffset={4}
-                      className="max-h-48 overflow-y-auto"
-                    >
-                      {months.map((month) => (
-                        <SelectItem key={month} value={month}>
-                          {month}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {canManagePayroll ? (
+                    <>
+                      {/* Admin/HR Filters */}
 
-                  {/* Year Dropdown */}
-                  <Select
-                    value={selectedYear || ""}
-                    onValueChange={(value) => {
-                      dispatch(setSelectedYear(value));
-                      dispatch(setFiltersApplied(true));
-                    }}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Search by year" />
-                    </SelectTrigger>
-                    <SelectContent
-                      side="bottom"
-                      sideOffset={4}
-                      className="max-h-48 overflow-y-auto"
-                    >
-                      {years.map((year) => (
-                        <SelectItem key={year} value={year.toString()}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      {/* Month Dropdown */}
+                      <Select
+                        value={selectedMonth || ""}
+                        onValueChange={(value) => {
+                          dispatch(setSelectedMonth(value));
+                          dispatch(setFiltersApplied(true));
+                        }}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Search by month" />
+                        </SelectTrigger>
+                        <SelectContent
+                          side="bottom"
+                          sideOffset={4}
+                          className="max-h-48 overflow-y-auto"
+                        >
+                          {months.map((month) => (
+                            <SelectItem key={month} value={month}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
 
-                  {/* Clear Filters Button */}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      dispatch(setSelectedMonth(""));
-                      dispatch(setSelectedYear(""));
-                      dispatch(setSortDirection("desc"));
-                      dispatch(setFiltersApplied(false));
-                      dispatch(setSearchTerm(""));
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
+                      {/* Year Dropdown */}
+                      <Select
+                        value={selectedYear || ""}
+                        onValueChange={(value) => {
+                          dispatch(setSelectedYear(value));
+                          dispatch(setFiltersApplied(true));
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Search by year" />
+                        </SelectTrigger>
+                        <SelectContent
+                          side="bottom"
+                          sideOffset={4}
+                          className="max-h-48 overflow-y-auto"
+                        >
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
 
-                  {/* Sort Toggle */}
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      dispatch(
-                        setSortDirection(
-                          sortDirection === "desc" ? "asc" : "desc"
-                        )
-                      )
-                    }
-                  >
-                    Sort by {sortDirection === "desc" ? "Oldest" : "Latest"}
-                  </Button>
-
-                  {/* Search Bar */}
-                  <div className="flex-1 min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
-                    <Input
-                      type="text"
-                      placeholder="Search employee by name..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        dispatch(setSearchTerm(value));
-
-                        if (value.trim() === "") {
+                      {/* Clear Filters Button */}
+                      <Button
+                        variant="outline"
+                        onClick={() => {
                           dispatch(setSelectedMonth(""));
                           dispatch(setSelectedYear(""));
                           dispatch(setSortDirection("desc"));
                           dispatch(setFiltersApplied(false));
-                        } else {
-                          dispatch(setFiltersApplied(true));
+                          dispatch(setSearchTerm(""));
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+
+                      {/* Sort Toggle */}
+                      <Button
+                        variant="outline"
+                        onClick={() =>
+                          dispatch(
+                            setSortDirection(
+                              sortDirection === "desc" ? "asc" : "desc"
+                            )
+                          )
                         }
-                      }}
-                      className="w-full"
-                    />
-                  </div>
+                      >
+                        Sort by {sortDirection === "desc" ? "Oldest" : "Latest"}
+                      </Button>
+
+                      {/* Search Bar */}
+                      <div className="flex-1 min-w-[200px] md:min-w-[250px] lg:min-w-[300px]">
+                        <Input
+                          type="text"
+                          placeholder="Search employee by name..."
+                          value={searchTerm}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            dispatch(setSearchTerm(value));
+
+                            if (value.trim() === "") {
+                              dispatch(setSelectedMonth(""));
+                              dispatch(setSelectedYear(""));
+                              dispatch(setSortDirection("desc"));
+                              dispatch(setFiltersApplied(false));
+                            } else {
+                              dispatch(setFiltersApplied(true));
+                            }
+                          }}
+                          className="w-full"
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Employee View: Just show Year & Month */}
+                      <Select
+                        value={selectedMonth || ""}
+                        onValueChange={(value) => {
+                          dispatch(setSelectedMonth(value));
+                          dispatch(setFiltersApplied(true));
+                        }}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent
+                          side="bottom"
+                          sideOffset={4}
+                          className="max-h-48 overflow-y-auto"
+                        >
+                          {months.map((month) => (
+                            <SelectItem key={month} value={month}>
+                              {month}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={selectedYear || ""}
+                        onValueChange={(value) => {
+                          dispatch(setSelectedYear(value));
+                          dispatch(setFiltersApplied(true));
+                        }}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent
+                          side="bottom"
+                          sideOffset={4}
+                          className="max-h-48 overflow-y-auto"
+                        >
+                          {years.map((year) => (
+                            <SelectItem key={year} value={year.toString()}>
+                              {year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -909,7 +904,6 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                     <TableHead>Status</TableHead>
                     <TableHead>Basic Salary</TableHead>
                     <TableHead>Gross Salary</TableHead>
-                    <TableHead>Net Salary</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -991,9 +985,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                         <TableCell className="font-medium text-green-600">
                           ₦{record.grossSalary?.toLocaleString()}
                         </TableCell>
-                        <TableCell className="font-bold text-blue-600">
-                          ₦{record.netSalary?.toLocaleString()}
-                        </TableCell>
+
                         <TableCell>
                           <div className="flex space-x-2">
                             <Button
@@ -1403,6 +1395,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
           cachedPayrolls={sortedRecords}
           isDraftDialogOpen={isDraftDialogOpen}
           setIsDraftDialogOpen={setIsDraftDialogOpen}
+          pagination={payrollPagination}
           dispatch={dispatch}
         />
       </Dialog>

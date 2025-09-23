@@ -139,7 +139,9 @@ export default function BasicInfoSection({
           <Input
             id="dateOfBirth"
             type="date"
-            value={formData.dateOfBirth || ""}
+            value={
+              formData.dateOfBirth ? formData.dateOfBirth.split("T")[0] : ""
+            }
             onChange={(e) =>
               dispatch(
                 setFormData({ ...formData, dateOfBirth: e.target.value })

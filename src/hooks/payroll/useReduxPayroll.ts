@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
+  payrollApi,
   useDeletePayrollMutation,
   useGetAllPayrollsQuery,
   useMarkPayrollAsDraftMutation,
@@ -34,6 +35,9 @@ import {
   PayrollContextType,
 } from "@/types/payroll";
 import { useDebounce } from "./useDebounce";
+import { months } from "@/utils/normalize";
+import { store } from "@/store/store";
+import { refreshEndpoint } from "@/utils/refreshUtils";
 
 export const useReduxPayroll = (): PayrollContextType => {
   const dispatch = useAppDispatch();
@@ -62,16 +66,19 @@ export const useReduxPayroll = (): PayrollContextType => {
   const [markPayrollsAsDraftBulk] = useMarkPayrollsAsDraftBulkMutation();
   const [payrollsAsPaidBulk] = usePayrollsAsPaidBulkMutation();
 
-  const currentPage = payrollPagination?.page;
-  const cachedPayrolls = payrollCache[currentPage];
+  const currentPage = payrollPagination?.page ?? 1;
   const debouncedSearch = useDebounce(searchTerm, 500);
 
+  // Grab cache for the current page
+  const cachedPayrolls = payrollCache[currentPage];
   const isCacheAvailable =
     Array.isArray(cachedPayrolls) && cachedPayrolls.length > 0;
+
+  // Search handling
   const isValidSearch = debouncedSearch.trim().length >= 2;
   const shouldSearch = filtersApplied && isValidSearch;
-  const shouldFetchFromApi = !isCacheAvailable || !shouldSearch;
 
+  // Query params for backend
   const queryParams: {
     page: number;
     limit: number;
@@ -85,61 +92,95 @@ export const useReduxPayroll = (): PayrollContextType => {
 
   if (filtersApplied && selectedMonth) queryParams.month = selectedMonth;
   if (filtersApplied && selectedYear) queryParams.year = selectedYear;
-  if (filtersApplied && debouncedSearch.trim().length >= 2)
-    queryParams.search = debouncedSearch.trim();
+  if (shouldSearch) queryParams.search = debouncedSearch.trim();
 
+  // Flatten all cached pages safely
+  const allData = Array.isArray(Object.values(payrollCache).flat())
+    ? Object.values(payrollCache).flat()
+    : [];
+
+  // Decide if we need API fetch
+  const shouldFetchFromApi =
+    !isCacheAvailable ||
+    (filtersApplied &&
+      !allData.some((r) => {
+        const matchesName =
+          !debouncedSearch ||
+          r.user?.firstName
+            ?.toLowerCase()
+            .includes(debouncedSearch.toLowerCase()) ||
+          r.user?.lastName
+            ?.toLowerCase()
+            .includes(debouncedSearch.toLowerCase());
+
+        const monthNum = Number(r.month);
+        const matchesMonth = selectedMonth
+          ? monthNum ===
+            (isNaN(Number(selectedMonth))
+              ? months.indexOf(selectedMonth) + 1
+              : Number(selectedMonth))
+          : true;
+
+        const matchesYear = selectedYear
+          ? Number(r.year) === Number(selectedYear)
+          : true;
+
+        return matchesName && matchesMonth && matchesYear;
+      }));
+
+  // RTK Query
   const {
     data: payrollRecords,
     isLoading: isFetchingPayrolls,
     refetch: refetchPayrolls,
   } = useGetAllPayrollsQuery(queryParams, {
-    // skip: false,
     skip: !shouldFetchFromApi,
   });
 
+  // Build base records safely
   const baseRecords = extractPayrollArray(
-    Array.isArray(cachedPayrolls) && cachedPayrolls.length > 0
+    filtersApplied || shouldSearch
+      ? allData
+      : isCacheAvailable
       ? cachedPayrolls
       : payrollRecords
   );
 
-  const searchLower = debouncedSearch ? debouncedSearch.toLowerCase() : "";
-
+  // Local filtering
+  const searchLower = debouncedSearch?.toLowerCase() || "";
   const locallyFiltered = baseRecords.filter((r) => {
     const matchesName =
       !searchLower ||
       r.user?.firstName?.toLowerCase().includes(searchLower) ||
       r.user?.lastName?.toLowerCase().includes(searchLower);
 
-    const matchesMonth = selectedMonth ? r.month === selectedMonth : true;
-    const matchesYear = selectedYear ? r.year === selectedYear : true;
+    const monthNum = Number(r.month);
+    const matchesMonth = selectedMonth
+      ? monthNum ===
+        (isNaN(Number(selectedMonth))
+          ? months.indexOf(selectedMonth) + 1
+          : Number(selectedMonth))
+      : true;
+
+    const matchesYear = selectedYear
+      ? Number(r.year) === Number(selectedYear)
+      : true;
 
     return matchesName && matchesMonth && matchesYear;
   });
 
-  // If no local results and filters are applied → fallback to API results
+  // Hybrid final records (always array-safe)
   const finalRecords =
     locallyFiltered.length > 0 || !filtersApplied
       ? locallyFiltered
       : extractPayrollArray(payrollRecords);
 
+  // Effects
   useEffect(() => {
-    if (!filtersApplied) {
-      const cachedInitial = initialPayrollRecords;
-      const ONE_MINUTE = 60 * 1000;
-      const cacheAge = cachedInitial?.timestamp
-        ? Date.now() - cachedInitial.timestamp
-        : null;
-      if (
-        cachedInitial &&
-        cachedInitial.data.length > 0 &&
-        cacheAge !== null &&
-        cacheAge < ONE_MINUTE
-      ) {
-        dispatch(restorePayrollFromCache(cachedInitial));
-      } else {
-        refetchPayrolls();
-      }
+    if (!filtersApplied && initialPayrollRecords?.data?.length > 0) {
+      dispatch(restorePayrollFromCache(initialPayrollRecords));
+    } else if (!filtersApplied) {
+      refetchPayrolls();
     }
 
     if (payrollRecords?.data) {
@@ -149,16 +190,38 @@ export const useReduxPayroll = (): PayrollContextType => {
         dispatch(setPayrollPagination(pagination));
       }
 
-      if (users && !payrollCache[pagination.page]) {
+      if (Array.isArray(users) && pagination?.page) {
         dispatch(setPayrollCache({ page: pagination.page, data: users }));
       }
     }
-  }, [payrollRecords, dispatch, filtersApplied]);
+  }, [payrollRecords, dispatch, filtersApplied, refetchPayrolls]);
+
+  // ⏳ Auto-refresh every 1 minute ONLY when filtering/searching
+  useEffect(() => {
+    if (!(filtersApplied || shouldSearch) || !shouldFetchFromApi) return;
+
+    const interval = setInterval(() => {
+      refetchPayrolls();
+    }, 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [
+    filtersApplied,
+    shouldSearch,
+    shouldFetchFromApi,
+    refetchPayrolls,
+    debouncedSearch,
+    selectedMonth,
+    selectedYear,
+    payrollPagination?.page,
+  ]);
 
   const deletePayroll = async (id: string): Promise<boolean> => {
     try {
       await deletePayrollMutation(id).unwrap();
       toast({ title: "Payroll Deleted" });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -178,6 +241,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await processSinglePayrollMutation(payrollId).unwrap();
       toast({ title: "Payroll Processed Successfully" });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -197,6 +262,7 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await markPayrollAsDraft(payrollId).unwrap();
       toast({ title: "Payroll Drafted Successfully" });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -216,6 +282,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await markPayrollAsPaid(payrollId).unwrap();
       toast({ title: "Payroll Paid Successfully" });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -235,6 +303,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await reverseSinglePayrollMutation(payrollId).unwrap();
       toast({ title: "Payroll Reversed Successfully" });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -257,6 +327,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await processBulkPayrollMutation({ month, year }).unwrap();
       toast({ title: `Payrolls Processed Successfully` });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -280,6 +352,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await reverseBulkPayrollMutation({ month, year }).unwrap();
       toast({ title: ` Payrolls Reversed Successfully` });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -304,6 +378,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await markPayrollsAsDraftBulk({ month, year }).unwrap();
       toast({ title: `Payrolls Drafted Successfully` });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(
@@ -326,6 +402,8 @@ export const useReduxPayroll = (): PayrollContextType => {
     try {
       await payrollsAsPaidBulk({ month, year }).unwrap();
       toast({ title: `Payroll Paid Successfully` });
+      refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error, "Failed to pay payrolls");

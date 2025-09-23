@@ -14,7 +14,7 @@ export const payrollApi = apiSlice.injectEndpoints({
         search?: string;
       }
     >({
-      query: ({ page = 1, limit = 10, month, year, search }) => {
+      query: ({ page = 1, limit = 50, month, year, search }) => {
         const queryParams = new URLSearchParams({
           page: page.toString(),
           limit: limit.toString(),

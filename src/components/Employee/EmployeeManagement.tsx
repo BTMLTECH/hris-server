@@ -661,36 +661,7 @@ const EmployeeManagement: React.FC = () => {
                     </TabsContent>
                   </div>
                 </Tabs>
-                {/* 
-                <DialogFooter className="p-4 sm:p-6 lg:p-8 border-t flex flex-col sm:flex-row justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      dispatch(setIsDialogOpen(false));
-                      // dispatch(setIsEditMode(false));
-                      // dispatch(resetFormData());
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    onClick={handleSubmit}
-                    disabled={isLocalLoading("editemployee", "editemployee")}
-                  >
-                    {isLocalLoading("editemployee", "editemployee") ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin text-white" />
-                        {isEditMode ? "Updating..." : "Creating..."}
-                      </>
-                    ) : isEditMode ? (
-                      "Update Employee"
-                    ) : (
-                      "Create Employee"
-                    )}
-                  </Button>
-                </DialogFooter> */}
+
                 <DialogFooter className="p-4 sm:p-6 lg:p-8 border-t flex justify-end gap-2">
                   <Button
                     type="button"

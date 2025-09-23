@@ -93,6 +93,7 @@ export interface DraftPayrollDialogProps {
   isDraftDialogOpen: boolean;
   setIsDraftDialogOpen: (open: boolean) => void;
   dispatch: any;
+  pagination: PayrollPagination;
 }
 
 export interface TaxBand {
@@ -134,15 +135,6 @@ export interface PayrollResponse {
   timestamp?: number;
 }
 
-// export function extractPayrollArray(
-//   input: IPayroll[] | cachedInitialType | null | undefined
-// ): IPayroll[] {
-//   if (!input) return [];
-//   if (Array.isArray(input)) return input;
-//   if ("data" in input && Array.isArray(input.data)) return input.data;
-//   return [];
-// }
-
 export function extractPayrollArray(raw: any): IPayroll[] {
   if (!raw) return [];
   if (Array.isArray(raw)) {
@@ -153,15 +145,6 @@ export function extractPayrollArray(raw: any): IPayroll[] {
   }
   return [];
 }
-
-// export function extractPayrollArray(
-//   input: IPayroll[] | { data?: IPayroll[] } | null | undefined
-// ): IPayroll[] {
-//   if (!input) return [];
-//   if (Array.isArray(input)) return input;
-//   if ("data" in input && Array.isArray(input.data)) return input.data;
-//   return [];
-// }
 
 export interface PayrollPagination {
   total: number;

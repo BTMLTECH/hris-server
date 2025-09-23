@@ -64,7 +64,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           ...baseItems,
           // { id: 'profile', label: 'My Profile', icon: User },
           { id: "employees", label: "Employee Management", icon: Users },
-          { id: "attendance", label: "Attendance", icon: Clock },
+          { id: "attendance", label: "Attendance Management", icon: Clock },
           { id: "leave", label: "Leave Management", icon: Calendar },
           // { id: 'loan', label: 'Loan Management', icon: CreditCard },
           { id: "appraisal", label: "Appraisal Management", icon: Award },
@@ -86,8 +86,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             icon: PiggyBank,
           },
 
-          { id: "analytics", label: "Analytics", icon: BarChart },
-          { id: "reports", label: "Reports", icon: FileText },
+          { id: "analytics", label: "Analytics Management", icon: BarChart },
+          { id: "reports", label: "Reports Management", icon: FileText },
           // { id: 'settings', label: 'System Settings', icon: Settings },
         ];
 
@@ -95,13 +95,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       case "teamlead":
         return [
           ...baseItems,
-          { id: "profile", label: "My Profile", icon: User },
+          { id: "profile", label: "Profile Management", icon: User },
           // { id: 'employees', label: 'My Team', icon: Users },
-          { id: "attendance", label: "Team Attendance", icon: Clock },
-          { id: "leave", label: "Leave Requests", icon: Calendar },
+          { id: "attendance", label: "Attendance Management", icon: Clock },
+          { id: "leave", label: "Leave Management", icon: Calendar },
           // { id: 'loan', label: 'Loan Requests', icon: CreditCard },
           { id: "appraisal", label: "Appraisal Management", icon: Award },
           // { id: 'appraisal-approval', label: 'Appraisal Approval', icon: ClipboardCheck },
+          { id: "payroll", label: "Payroll Management", icon: DollarSign },
           {
             id: "handover",
             label: "Handover Management",
@@ -120,14 +121,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       case "employee":
         return [
           ...baseItems,
-          { id: "profile", label: "My Profile", icon: User },
-          { id: "attendance", label: "My Attendance", icon: Clock },
-          { id: "leave", label: "My Leave", icon: Calendar },
+          { id: "profile", label: "Profile Management", icon: User },
+          { id: "attendance", label: "Attendance Management", icon: Clock },
+          { id: "leave", label: "Leave Management", icon: Calendar },
           // { id: 'loan', label: 'My Loans', icon: CreditCard },
-          { id: "appraisal", label: "My Appraisals", icon: Award },
-          { id: "payroll", label: "Payroll", icon: DollarSign },
+          { id: "appraisal", label: "Appraisals Management", icon: Award },
+          { id: "payroll", label: "Payroll Management", icon: DollarSign },
           // { id: 'documents', label: 'My Documents', icon: FolderOpen },
-          { id: "handover", label: "Handover Tasks", icon: ArrowRightLeft },
+          {
+            id: "handover",
+            label: "Handover Management",
+            icon: ArrowRightLeft,
+          },
           { id: "training", label: "Training Management", icon: BookOpen },
           {
             id: "cooperative",

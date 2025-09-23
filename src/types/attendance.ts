@@ -3,16 +3,16 @@
 import { SerializedError } from "@reduxjs/toolkit";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
-
 export interface AttendanceRecord {
+  staffId?: string;
   id: string;
   employeeId: string;
   employeeName: string;
   date: string;
-  shift: 'day' | 'night';
+  shift: "day" | "night";
   checkIn?: string;
   checkOut?: string;
-  status: 'present' | 'absent' | 'late' | 'checked-in';
+  status: "present" | "absent" | "late" | "checked-in";
   hoursWorked?: number;
   biometricId?: string;
 }
@@ -28,7 +28,7 @@ export interface CompanySummaryData {
   totalEmployees: number;
   dayShiftPresent: number;
   nightShiftPresent: number;
-  attendanceRate: number; 
+  attendanceRate: number;
 }
 
 export interface PaginatedAttendanceResponse {
@@ -45,12 +45,12 @@ export interface PaginatedAttendanceResponse {
   };
 }
 export interface AttendanceContextType {
-  attendanceRecords: PaginatedAttendanceResponse;  
+  attendanceRecords: PaginatedAttendanceResponse;
   cachedRecords: AttendanceRecord[];
-  // attendanceStats: AttendanceStats | null;  
-  companyAttendanceSummary: any | null;  
-  adminAttendanceReport: any | null;  
-  exportedAttendanceData: any | null;  
+  // attendanceStats: AttendanceStats | null;
+  companyAttendanceSummary: any | null;
+  adminAttendanceReport: any | null;
+  exportedAttendanceData: any | null;
 
   isLoading: {
     historyLoading: boolean;
@@ -65,7 +65,13 @@ export interface AttendanceContextType {
   };
 
   error: {
-    historyError: string | null | FetchBaseQueryError | SerializedError | FetchBaseQueryError | SerializedError;
+    historyError:
+      | string
+      | null
+      | FetchBaseQueryError
+      | SerializedError
+      | FetchBaseQueryError
+      | SerializedError;
     // statsError: string | null | FetchBaseQueryError | SerializedError;
     summaryError: string | null | FetchBaseQueryError | SerializedError;
     adminReportError: string | null | FetchBaseQueryError | SerializedError;

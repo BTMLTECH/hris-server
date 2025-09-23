@@ -62,7 +62,7 @@ const initialState: PayrollState = {
   payrollPagination: {
     total: 0,
     page: 1,
-    limit: 100,
+    limit: 50,
     pages: 0,
   },
   payrollCache: {},
@@ -204,7 +204,7 @@ const payrollSlice = createSlice({
       state.selectedMonth = "";
       state.selectedYear = "";
       state.filtersApplied = false;
-      state.payrollPagination = { page: 1, limit: 100, total: 0, pages: 0 };
+      state.payrollPagination = { page: 1, limit: 20, total: 0, pages: 0 };
     },
     setPayrollRecords(state, action: PayloadAction<IPayroll[]>) {
       state.payrollRecords = action.payload;
@@ -269,7 +269,6 @@ const payrollSlice = createSlice({
       .addMatcher(
         payrollApi.endpoints.getAllPayrolls.matchFulfilled,
         (state, action: PayloadAction<cachedInitialType>) => {
-          console.log("action", action.payload);
           const payroll: IPayroll[] = action.payload.data.data;
           const pagination: PayrollResponse["pagination"] =
             action.payload.data.pagination;
@@ -287,39 +286,6 @@ const payrollSlice = createSlice({
           state.payrollPagination = pagination;
         }
       )
-
-      // .addMatcher(
-      //   payrollApi.endpoints.getAllPayrolls.matchFulfilled,
-      //   (state, action: PayloadAction<PayrollResponse>) => {
-      //     const { data, pagination } = action.payload;
-      //     const page = pagination?.page || 1;
-      //     const month = pagination?.month ?? "all";
-      //     const year = pagination?.year ?? "all";
-
-      //     const cacheKey = `${page}_${month}_${year}`;
-      //     const now = Date.now();
-
-      //     state.payrollCache[cacheKey] = {
-      //       data,
-      //       pagination,
-      //       count: data.length,
-      //       timestamp: now,
-      //     };
-
-      //     if (page === 1 && month === "all" && year === "all") {
-      //       state.initialPayrollRecords = {
-      //         data,
-      //         pagination,
-      //         count: data.length,
-      //         timestamp: now,
-      //       };
-      //     }
-      //     // Update current view data
-      //     state.payrollRecords = data;
-      //     state.payrollPagination = pagination;
-      //     state.isLoading = false;
-      //   }
-      // )
 
       .addMatcher(
         payrollApi.endpoints.getAllPayrolls.matchRejected,

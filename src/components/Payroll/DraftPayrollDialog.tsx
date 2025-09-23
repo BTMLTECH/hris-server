@@ -10,6 +10,14 @@ import { Loader2 } from "lucide-react";
 import { DraftPayrollDialogProps, IPayroll } from "@/types/payroll";
 import { PaginationNav } from "../ui/paginationNav";
 import { setPayrollPagination } from "@/store/slices/payroll/payrollSlice";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export function DraftPayrollDialog({
   handleProcessPayroll,
@@ -23,6 +31,7 @@ export function DraftPayrollDialog({
   isDraftDialogOpen,
   setIsDraftDialogOpen,
   dispatch,
+  pagination,
 }: DraftPayrollDialogProps & { handleBulkReverse?: () => void }) {
   const draftPayrolls =
     cachedPayrolls?.filter((p) => p.status === "draft") ?? [];
@@ -32,14 +41,11 @@ export function DraftPayrollDialog({
       open={isDraftDialogOpen}
       onOpenChange={(open) => {
         dispatch(setIsDraftDialogOpen(open));
-        if (!open) {
-          dispatch(setIsDraftDialogOpen(false));
-        }
       }}
     >
       <DialogContent className="max-w-5xl w-full max-h-[80vh] overflow-y-auto rounded-2xl shadow-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-semibold text-gray-900">
             Draft Payrolls
           </DialogTitle>
           <DialogDescription className="text-gray-600">
@@ -53,11 +59,11 @@ export function DraftPayrollDialog({
 
         {/* Sticky Bulk Action Buttons */}
         {draftPayrolls.length > 0 && (
-          <div className="sticky top-0 z-10 bg-white flex flex-col sm:flex-row gap-3 justify-end p-3 border-b">
+          <div className="sticky top-0 z-10 bg-white flex gap-3 justify-between sm:justify-end p-3 border-b shadow-sm shadow-gray-200">
             <Button
               onClick={handleBulkProcess}
               disabled={isLocalLoading("bulk-process", "bulk-process")}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-10 text-sm"
             >
               {isLocalLoading("bulk-process", "bulk-process") && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -69,7 +75,7 @@ export function DraftPayrollDialog({
               variant="destructive"
               onClick={handleBulkReverse}
               disabled={isLocalLoading("bulk-reverse", "bulk-reverse")}
-              className="w-full sm:w-auto"
+              className="w-full sm:w-auto h-10 text-sm"
             >
               {isLocalLoading("bulk-reverse", "bulk-reverse") && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -81,50 +87,55 @@ export function DraftPayrollDialog({
 
         {/* Table */}
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full border rounded-lg text-sm md:text-base">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="px-4 py-2">Staff ID</th>
-                <th className="px-4 py-2">Employee</th>
-                <th className="px-4 py-2 hidden sm:table-cell">Email</th>
-                <th className="px-4 py-2">Gross Salary</th>
-                <th className="px-4 py-2">Net Salary</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4 py-2">Staff ID</TableHead>
+                <TableHead className="px-4 py-2">Employee</TableHead>
+                <TableHead className="px-4 py-2 hidden sm:table-cell">
+                  Email
+                </TableHead>
+                <TableHead className="px-4 py-2">Basic Salary</TableHead>
+                <TableHead className="px-4 py-2">Gross Salary</TableHead>
+                <TableHead className="px-4 py-2">Total Allowances</TableHead>
+                <TableHead className="px-4 py-2">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {draftPayrolls.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
                     className="text-center py-6 text-gray-500 italic"
                   >
                     No draft payrolls found.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ) : (
                 draftPayrolls.map((payroll: IPayroll) => (
-                  <tr
+                  <TableRow
                     key={payroll._id}
                     className="border-b hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-2">
+                    <TableCell className="px-4 py-2">
                       {payroll.user?.staffId ?? "—"}
-                    </td>
-                    <td className="px-4 py-2 whitespace-nowrap">
-                      {payroll.user?.firstName} {payroll.user?.middleName}{" "}
-                      {payroll.user?.lastName}
-                    </td>
-                    <td className="px-4 py-2 hidden sm:table-cell">
+                    </TableCell>
+                    <TableCell className="px-4 py-2 whitespace-nowrap">
+                      {payroll.user?.firstName} {payroll.user?.lastName}
+                    </TableCell>
+                    <TableCell className="px-4 py-2 hidden sm:table-cell">
                       {payroll?.user?.email}
-                    </td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell className="px-4 py-2">
+                      {payroll.basicSalary?.toLocaleString() ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-4 py-2">
                       {payroll.grossSalary?.toLocaleString() ?? "—"}
-                    </td>
-                    <td className="px-4 py-2">
-                      {payroll.netSalary?.toLocaleString() ?? "—"}
-                    </td>
-                    <td className="px-4 py-2 flex flex-wrap gap-2">
+                    </TableCell>
+                    <TableCell className="px-4 py-2">
+                      {payroll.totalAllowances?.toLocaleString() ?? "—"}
+                    </TableCell>
+                    <TableCell className="px-4 py-2 flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         onClick={() =>
@@ -138,9 +149,7 @@ export function DraftPayrollDialog({
                         {isLocalLoading(
                           payroll._id ?? "",
                           "processPayroll"
-                        ) && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
+                        ) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Process
                       </Button>
                       <Button
@@ -157,28 +166,26 @@ export function DraftPayrollDialog({
                         {isLocalLoading(
                           payroll._id ?? "",
                           "reversePayroll"
-                        ) && (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        )}
+                        ) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Reverse
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {/* Pagination */}
-        {cachedPayrolls.pagination?.pages > 1 && (
+        {pagination?.pages > 1 && (
           <PaginationNav
-            page={cachedPayrolls.pagination?.page}
-            totalPages={cachedPayrolls.pagination?.pages}
+            page={pagination?.page}
+            totalPages={pagination?.pages}
             onPageChange={(newPage) =>
               dispatch(
                 setPayrollPagination({
-                  ...cachedPayrolls.pagination,
+                  ...pagination,
                   page: newPage,
                 })
               )

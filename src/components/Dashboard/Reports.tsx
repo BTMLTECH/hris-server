@@ -59,7 +59,7 @@ const Reports: React.FC = () => {
     { id: "department_analysis", title: "Department Analysis" },
     { id: "attendance_report", title: "Attendance Report" },
     { id: "payroll_summary", title: "Payroll Summary" },
-    { id: "performance_metrics", title: "Performance Metrics" },
+    // { id: "performance_metrics", title: "Performance Metrics" },
   ];
 
   const handleGenerate = async () => {
