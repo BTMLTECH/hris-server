@@ -4,7 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { logout } from "./auth/authSlice";
 
 const baseQuery = fetchBaseQuery({
-  baseUrl: "http://staging-hris.btmlimited.net/api/",
+  baseUrl: "http://hris.btmlimited.net/api/",
   // baseUrl: "http://localhost:8080/api/",
   credentials: "include",
 });

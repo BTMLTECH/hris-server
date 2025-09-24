@@ -6,7 +6,6 @@ import { apiSlice } from "../auth/apiSlice";
 
 export const attendanceApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // Biometry Check-In
     biometryCheckIn: builder.mutation({
       query: (data) => ({
         url: "attendance/biometry-check-in",
@@ -16,7 +15,6 @@ export const attendanceApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // Biometry Check-Out
     biometryCheckOut: builder.mutation({
       query: (data) => ({
         url: "attendance/biometry-check-out",
@@ -26,7 +24,6 @@ export const attendanceApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // Manual Check-In
     manualCheckIn: builder.mutation({
       query: (data) => ({
         url: "attendance/check-in",
@@ -37,7 +34,6 @@ export const attendanceApi = apiSlice.injectEndpoints({
       invalidatesTags: ["AttendanceHistory", "CompanySummary"],
     }),
 
-    // Manual Check-Out
     manualCheckOut: builder.mutation({
       query: (data) => ({
         url: "attendance/check-out",
@@ -48,7 +44,6 @@ export const attendanceApi = apiSlice.injectEndpoints({
       invalidatesTags: ["AttendanceHistory", "CompanySummary"],
     }),
 
-    // Get My Attendance History
     getMyAttendanceHistory: builder.query<
       PaginatedAttendanceResponse,
       { page: number; limit: number }
@@ -67,9 +62,9 @@ export const attendanceApi = apiSlice.injectEndpoints({
         method: "GET",
         credentials: "include" as const,
       }),
+      providesTags: (result) => (result ? [{ type: "AttendanceHistory" }] : []),
     }),
 
-    // Get Company Attendance Summary
     getCompanyAttendanceSummary: builder.query({
       query: () => ({
         url: "attendance/company-summary",
@@ -79,7 +74,6 @@ export const attendanceApi = apiSlice.injectEndpoints({
       providesTags: [{ type: "CompanySummary" }],
     }),
 
-    // Export Attendance Data to Excel
     exportAttendanceExcel: builder.query({
       query: () => ({
         url: "attendance/admin/export-excel",

@@ -29,16 +29,6 @@ export const useReduxAttendance = (): AttendanceContextType => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const cachedRecords = attendanceCache[page] ?? [];
 
-  // const {
-  //   data: attendanceRecords,
-  //   isLoading: historyLoading,
-  //   error: historyError,
-  //   refetch: refetchAttendanceHistory,
-  // } = useGetMyAttendanceHistoryQuery(
-  //   { page, limit: attendancePagination.limit },
-
-  // );
-
   const {
     data: attendanceRecords,
     isLoading: historyLoading,
@@ -56,7 +46,6 @@ export const useReduxAttendance = (): AttendanceContextType => {
     data: companyAttendanceSummary,
     isLoading: summaryLoading,
     error: summaryError,
-    refetch: refetchCompanySummary,
   } = useGetCompanyAttendanceSummaryQuery(undefined, {
     skip: !user,
   });
@@ -105,7 +94,7 @@ export const useReduxAttendance = (): AttendanceContextType => {
     try {
       await biometryCheckOut(data).unwrap();
       toast({ title: "Biometry Check-Out Successful" });
-      return true; // Return true if successful
+      return true;
     } catch (error: any) {
       toast({
         title: "Biometry Check-Out Error",

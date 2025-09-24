@@ -18,7 +18,7 @@ export const profileApi = apiSlice.injectEndpoints({
 
     uploadProfile: builder.mutation({
       query: (file: FormData) => ({
-        url: "user/upload",
+        url: "user/upload/profile",
         method: "PUT",
         body: file,
         credentials: "include" as const,
@@ -44,7 +44,6 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // Calculate Class
     calculateClass: builder.mutation({
       query: (body) => ({
         url: "levels/class",
@@ -54,7 +53,6 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // Create single class
     createClassLevel: builder.mutation({
       query: (body) => ({
         url: "levels/single",
@@ -75,7 +73,6 @@ export const profileApi = apiSlice.injectEndpoints({
       invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
-    // Update a class level by ID
     updateClassLevel: builder.mutation({
       query: ({ id, ...body }) => ({
         url: `levels/${id}`,

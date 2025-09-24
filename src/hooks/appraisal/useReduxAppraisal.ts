@@ -11,76 +11,82 @@ import {
 } from "@/store/slices/appraisal/appraisalApi";
 
 import { toast } from "../use-toast";
-import { setActivityCache, setActivityPagination, setAppraisalRequests, setIsLoading } from "@/store/slices/appraisal/appraisalSlice";
+import {
+  setActivityCache,
+  setActivityPagination,
+  setAppraisalRequests,
+  setIsLoading,
+  updateAppraisalActivityFeed,
+} from "@/store/slices/appraisal/appraisalSlice";
 import { extractErrorMessage } from "@/utils/errorHandler";
 import { Appraisal, UseReduxAppraisalReturnType } from "@/types/appraisal";
 import { useEffect } from "react";
 import { RootState } from "@/store/store";
-
+import { connectNotificationSocket } from "../auth/useReduxAuth";
 
 export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state: RootState) => state.auth);
-  const { activityPagination: pagination, activityFilter: filter , activityCache } = useAppSelector((state: RootState) => state.appraisal);
+  const {
+    activityPagination: pagination,
+    activityFilter: filter,
+    activityCache,
+  } = useAppSelector((state: RootState) => state.appraisal);
   const shouldSkip = !user;
   const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
-  const { data: getEmployeeUnderTeamlead = [], isLoading: queueLoading, error: queueErro} =   useGetEmployeeByDepartmentQuery
-  (undefined, {
-    skip: !user || (user.role !== "teamlead"),
-  })
+  const {
+    data: getEmployeeUnderTeamlead = [],
+    isLoading: queueLoading,
+    error: queueErro,
+  } = useGetEmployeeByDepartmentQuery(undefined, {
+    skip: !user || user.role !== "teamlead",
+  });
   const {
     data: appraisalActivityResponse,
     isLoading: appraisaActivityLoading,
     error: activityError,
     refetch: refetchActivity,
   } = useGetAppraisalActivityQuery(
-    {page: pagination.page, limit: pagination.limit,
-      status: filter,
-    },
+    { page: pagination.page, limit: pagination.limit, status: filter },
     {
-      skip: shouldSkip ,
+      skip: shouldSkip,
     }
   );
-  
 
-
-  
   // Cache & pagination sync
- useEffect(() => {
-  if (appraisalActivityResponse?.pagination) {
-    dispatch(setActivityPagination(appraisalActivityResponse.pagination));
-  }
+  useEffect(() => {
+    if (appraisalActivityResponse?.pagination) {
+      dispatch(setActivityPagination(appraisalActivityResponse.pagination));
+    }
 
-  // if (
-  //   appraisalActivityResponse?.data &&
-  //   !activityCache[filter]?.[pagination.page]
-  // ) {
-  //   dispatch(
-  //     setActivityCache({
-  //       page: pagination.page,
-  //       status: filter,
-  //       data: appraisalActivityResponse.data,
-  //     })
-  //   );
-  // }
-  // filter, pagination.page, dispatch, activityCache
-}, [appraisalActivityResponse, ]);
-
+    // if (
+    //   appraisalActivityResponse?.data &&
+    //   !activityCache[filter]?.[pagination.page]
+    // ) {
+    //   dispatch(
+    //     setActivityCache({
+    //       page: pagination.page,
+    //       status: filter,
+    //       data: appraisalActivityResponse.data,
+    //     })
+    //   );
+    // }
+    // filter, pagination.page, dispatch, activityCache
+  }, [appraisalActivityResponse]);
 
   // Update appraisals from cache (immediate UI feedback)
- useEffect(() => {
-  const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
-  dispatch(setAppraisalRequests(cachedPageData));
-}, [filter, pagination.page, activityCache, dispatch]);
+  useEffect(() => {
+    const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
+    dispatch(setAppraisalRequests(cachedPageData));
+  }, [filter, pagination.page, activityCache, dispatch]);
 
-    const appraisalActivity = appraisalActivityResponse?.data ?? [];
-    const activityPagination = appraisalActivityResponse?.pagination ?? {
-      total: 0,
-      page: 1,
-      limit: 10,
-      pages: 0,
-    };
-
+  const appraisalActivity = appraisalActivityResponse?.data ?? [];
+  const activityPagination = appraisalActivityResponse?.pagination ?? {
+    total: 0,
+    page: 1,
+    limit: 10,
+    pages: 0,
+  };
 
   const [createAppraisalRequest, { isLoading: creatingAppraisal }] =
     useCreateAppraisalRequestMutation();
@@ -91,35 +97,47 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
   const [rejectAppraisalRequest, { isLoading: rejectingAppraisal }] =
     useRejectAppraisalRequestMutation();
 
-    const [updateAppraisalRequest, {isLoading: updatingAppraisal}] = useUpdateAppraisalRequestMutation() 
+  const [updateAppraisalRequest, { isLoading: updatingAppraisal }] =
+    useUpdateAppraisalRequestMutation();
 
-    const handleCreateAppraisalRequest = async (
-      data: Partial<Appraisal>
-    ): Promise<boolean> => {
-      dispatch(setIsLoading(true));
-      try {
-        await createAppraisalRequest(data).unwrap();
-        toast({ title: "Appraisal Request Submitted" });
-  
-        return true;
-      } catch (error: any) {
-        const errorMessage = extractErrorMessage(error, "Appraisal Request Failed");
-        toast({
-          title: "Appraisal Request Failed",
-          description: errorMessage,
-          variant: "destructive",
-        });
-        return false;
-      } finally {
-        dispatch(setIsLoading(false));
-      }
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const socket = connectNotificationSocket(user._id.toString());
+
+    socket.on("appraisal:update", (rawPayload: any) => {
+      dispatch(updateAppraisalActivityFeed(rawPayload));
+    });
+
+    return () => {
+      socket.off("appraisal:update");
     };
+  }, [user?._id, dispatch]);
 
+  const handleCreateAppraisalRequest = async (
+    data: Partial<Appraisal>
+  ): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+    try {
+      await createAppraisalRequest(data).unwrap();
+      toast({ title: "Appraisal Request Submitted" });
 
-  
-      // useEffect(() => {
-      //   refetchActivity();
-      // }, [pagination.page]);
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(
+        error,
+        "Appraisal Request Failed"
+      );
+      toast({
+        title: "Appraisal Request Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setIsLoading(false));
+    }
+  };
 
   const handleUpdateAppraisalRequest = async (
     id: string,
@@ -144,7 +162,9 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     }
   };
 
-  const handleApproveAppraisalRequest = async (id: string): Promise<boolean> => {
+  const handleApproveAppraisalRequest = async (
+    id: string
+  ): Promise<boolean> => {
     dispatch(setIsLoading(true));
     try {
       await approveAppraisalRequest({ id }).unwrap();
@@ -169,7 +189,7 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     try {
       await rejectAppraisalRequest({ id }).unwrap();
       toast({ title: "Appraisal Rejected" });
-    
+
       return true;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error, "Rejection Failed");
@@ -184,33 +204,23 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     }
   };
 
-
   return {
-    // appraisalApprovalQueue,
     getEmployeeUnderTeamlead,
     appraisalActivity,
     activityPagination,
     cachedPageData,
-    
-    
+
     isLoading: {
-      // approvalQueueLoading,
       creatingAppraisal,
       approvingAppraisal,
       rejectingAppraisal,
       updatingAppraisal,
-      appraisaActivityLoading
-    },
-    error: {
-      // approvalQueueError,
-      activityError
-
+      appraisaActivityLoading,
     },
     handleCreateAppraisalRequest,
     handleApproveAppraisalRequest,
     handleRejectAppraisalRequest,
     handleUpdateAppraisalRequest,
-    // refetchApprovalQueue,
-    refetchActivity
+    refetchActivity,
   };
 };

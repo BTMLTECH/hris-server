@@ -25,30 +25,29 @@ import {
   AreaChart,
   Area,
   Line,
+  LabelList,
 } from "recharts";
 import {
   TrendingUp,
-  TrendingDown,
   Users,
   Calendar,
-  DollarSign,
   Award,
   Activity,
   PieChart as PieChartIcon,
 } from "lucide-react";
 import { IAnalytics } from "@/types/user";
 import { useAppSelector } from "@/store/hooks";
+import { reverseDepartmentMap } from "@/types/report";
+import { NairaSign } from "../ui/NairaSign";
 
 const Analytics: React.FC = () => {
   const { analytics } = useAppSelector((state) => state.profile);
-  // Destructure the data from the analytics prop
   const salaryByRoleData = analytics?.salaryDistributionByRole || [];
   const leaveTypesData = analytics?.leaveTypesData || [];
   const hiringTrendsData = analytics?.hiringTrends || [];
   const attendanceData = analytics?.attendanceData || [];
   const salaryByDeptData = analytics?.salaryDistributionByDept || [];
 
-  // Chart configurations for tooltips
   const chartConfig = {
     employees: { label: "Employees", color: "#3B82F6" },
     hires: { label: "New Hires", color: "#10B981" },
@@ -260,18 +259,30 @@ const Analytics: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-base lg:text-lg flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
+              <NairaSign className="h-5 w-5" />
               Average Salary by Department
             </CardTitle>
             <CardDescription className="text-sm">
               Compare average salaries across departments.
             </CardDescription>
           </CardHeader>
+
           <CardContent className="min-h-[300px]">
             {salaryByDeptData.length > 0 ? (
               <ChartContainer config={chartConfig}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={salaryByDeptData}>
+                  <BarChart
+                    data={salaryByDeptData.map((d) => ({
+                      ...d,
+                      department: (() => {
+                        const name =
+                          reverseDepartmentMap[d.department] || d.department;
+                        return name.length > 15
+                          ? name.slice(0, 15) + "…"
+                          : name;
+                      })(),
+                    }))}
+                  >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="department" fontSize={12} />
                     <YAxis fontSize={12} />
@@ -279,8 +290,13 @@ const Analytics: React.FC = () => {
                     <Bar
                       dataKey="avgSalary"
                       fill="#F59E0B"
-                      name="Avg Salary"
+                      name="Avg Salary "
                       radius={[4, 4, 0, 0]}
+                    />
+                    <LabelList
+                      dataKey="avgSalary"
+                      position="top"
+                      formatter={(val) => `₦${val.toLocaleString()}`}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -401,9 +417,11 @@ const Analytics: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ department, employees }) =>
-                        `${department}: ${employees}`
-                      }
+                      label={({ department, employees }) => {
+                        const deptName =
+                          reverseDepartmentMap[department] || department;
+                        return `${deptName}: ${employees}`;
+                      }}
                       outerRadius={80}
                       fill="#8884d8"
                       dataKey="employees"
@@ -415,6 +433,7 @@ const Analytics: React.FC = () => {
                         />
                       ))}
                     </Pie>
+
                     <ChartTooltip content={<ChartTooltipContent />} />
                   </PieChart>
                 </ResponsiveContainer>

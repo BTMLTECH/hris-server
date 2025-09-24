@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -6,7 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,58 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { useCombinedContext } from "@/contexts/AuthContext";
-import {
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Briefcase,
-  GraduationCap,
-  Edit,
-  Save,
-  X,
-  Shield,
-  Users,
-  Settings,
-  Loader2,
-  HandCoins,
-  Upload,
-  Umbrella,
-} from "lucide-react";
+import { Mail, Calendar, Briefcase, Settings, Umbrella } from "lucide-react";
 import ProfilePictureUpload from "./ProfilePictureUpload";
-import { useDispatch } from "react-redux";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { AppDispatch } from "@/store/store";
-import {
-  setFormData,
-  setIsEditing,
-  setLoading,
-} from "@/store/slices/profile/profileSlice";
+
+import { useAppSelector } from "@/store/hooks";
+
 import { formatDateTime } from "@/utils/date";
-import {
-  getEditableFields,
-  getRoleColor,
-  getRoleIcon,
-} from "@/utils/getEditableFields";
-import { useReduxProfile } from "@/hooks/user/useReduxProfile";
-import { ProfileResponse, ProfileState } from "@/types/user";
-import { toast } from "@/hooks/use-toast";
+import { getRoleColor, getRoleIcon } from "@/utils/getEditableFields";
+
 import { Switch } from "../ui/switch";
-import {
-  setCooperativeRecord,
-  setIsDialogOpen,
-} from "@/store/slices/cooperative/cooperativeSlice";
-import { useReduxContribution } from "@/hooks/cooperative/useReduxCooperative";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { reverseDepartmentMap } from "@/types/report";
 
 const UserProfile: React.FC = () => {
-  const dispatch = useAppDispatch();
   const { profile: userProfile } = useCombinedContext();
   const { profile: user } = userProfile;
   const { formData } = useAppSelector((state) => state.profile);
@@ -241,18 +200,13 @@ const UserProfile: React.FC = () => {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
-                      <Label htmlFor="departmentName">Department</Label>
-                      <Input
-                        id="departmentName"
-                        value={formData.departmentName}
-                        disabled
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="department">Department ID</Label>
+                      <Label htmlFor="department">Department</Label>
                       <Input
                         id="department"
-                        value={formData.department}
+                        value={
+                          reverseDepartmentMap[formData.department] ||
+                          formData.department
+                        }
                         disabled
                       />
                     </div>
@@ -260,16 +214,17 @@ const UserProfile: React.FC = () => {
                       <Label htmlFor="position">Position</Label>
                       <Input id="position" value={formData.position} disabled />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Role</Label>
-                      <Input id="role" value={formData.role} disabled />
-                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="employmentDate">Employment Date</Label>
                       <Input
                         id="employmentDate"
                         type="date"
-                        value={formData.employmentDate}
+                        value={
+                          formData.employmentDate
+                            ? formData.employmentDate.split("T")[0]
+                            : ""
+                        }
                         disabled
                       />
                     </div>
@@ -318,7 +273,7 @@ const UserProfile: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="basicPay">Basic Pay (USD)</Label>
+                        <Label htmlFor="basicPay">Basic Pay (NGN)</Label>
                         <Input
                           id="basicPay"
                           type="number"
@@ -327,7 +282,7 @@ const UserProfile: React.FC = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="allowances">Allowances (USD)</Label>
+                        <Label htmlFor="allowances">Allowances (NGN)</Label>
                         <Input
                           id="allowances"
                           type="number"

@@ -21,7 +21,7 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
     handleMarkAllAsRead,
   } = useReduxNotificationContext();
   const { user } = useAppSelector((state) => state.auth);
-  const canManageNotification = user?.role === 'admin' || user?.role === 'hr';
+  const canManageNotification = user?.role === "admin" || user?.role === "hr";
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +38,6 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
     }
   };
 
-  // Scroll to top when page changes to avoid confusion
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
@@ -62,31 +61,30 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
           flex flex-col rounded-lg shadow-xl border bg-white
         "
       >
-  <CardHeader className="flex items-center justify-between pb-3 px-6 pt-4">
-  <div className="flex items-center space-x-2">
-    <CardTitle id="notification-list-title" className="text-lg">
-      All Notifications
-    </CardTitle>
+        <CardHeader className="flex items-center justify-between pb-3 px-6 pt-4">
+          <div className="flex items-center space-x-2">
+            <CardTitle id="notification-list-title" className="text-lg">
+              All Notifications
+            </CardTitle>
 
-    {/* Show X button next to title */}
-    <Button
-      size="sm"
-      variant="ghost"
-      onClick={onClose}
-      aria-label="Close notifications"
-    >
-      <X className="h-5 w-5" />
-    </Button>
-  </div>
+            {/* Show X button next to title */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              aria-label="Close notifications"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
 
-  {/* Right-aligned button if allowed */}
-  {canManageNotification && (
-    <Button size="sm" variant="outline" onClick={handleMarkAllAsRead}>
-      Mark All as Read
-    </Button>
-  )}
-</CardHeader>
-
+          {/* Right-aligned button if allowed */}
+          {canManageNotification && (
+            <Button size="sm" variant="outline" onClick={handleMarkAllAsRead}>
+              Mark All as Read
+            </Button>
+          )}
+        </CardHeader>
 
         {/* Scrollable content */}
         <CardContent
@@ -128,18 +126,17 @@ const NotificationList: React.FC<NotificationListProps> = ({ onClose }) => {
                     )}
                   </div>
                   {canManageNotification && (
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteNotification(notification._id);
-                    }}
-                    aria-label="Delete notification"
-                  >
-                    <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNotification(notification._id);
+                      }}
+                      aria-label="Delete notification"
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </Button>
                   )}
                 </div>
               ))

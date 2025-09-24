@@ -86,7 +86,6 @@ export interface IAttendance {
   attendance: number;
 }
 
-// Interface for Chart Configuration
 export interface IChartConfig {
   key: string;
   label: string;
@@ -95,15 +94,13 @@ export interface IChartConfig {
 
 export interface IBirthdayAnalytics {
   month: string;
-  celebrants: [
-    {
-      staffId: string;
-      firstName: string;
-      lastName: string;
-      dateOfBirth: Date;
-      profileImage: string;
-    }
-  ];
+  celebrants: {
+    staffId: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth: Date;
+    profileImage: string;
+  }[];
 }
 
 // Interface for Key Metrics

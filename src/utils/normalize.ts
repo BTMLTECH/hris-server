@@ -244,3 +244,63 @@ export const months = [
 ];
 
 export const years = ["2030", "2029", "2028", "2027", "2026", "2025", "2024"];
+
+export function mapAndCacheAppraisals(
+  state,
+  appraisals: any[],
+  pagination: { page: number }
+) {
+  const status = state.activityFilter;
+  const page = pagination.page;
+
+  const mappedData = Array.isArray(appraisals)
+    ? appraisals.map((appraisal: any) => ({
+        ...appraisal,
+        employeeId: appraisal.user?._id,
+        employeeName: appraisal.user?.firstName,
+        employeeLastName: appraisal.user?.lastName,
+      }))
+    : [];
+
+  if (!state.activityCache[status]) state.activityCache[status] = {};
+  state.activityCache[status][page] = mappedData;
+
+  state.appraisalRequests = mappedData;
+}
+
+export function updateLeaveState(
+  state: any,
+  payload: ReturnType<typeof normalizeLeaveRequest>
+) {
+  const { myRequests, approvals, allApproved, summary, balance, pagination } =
+    payload;
+
+  if (pagination?.myRequests?.page) {
+    const page = pagination.myRequests.page;
+    state.activityFeedCache[page] = myRequests ?? [];
+    state.activityFeedPagination = pagination.myRequests;
+    state.activityFeed = myRequests ?? [];
+  }
+
+  if (pagination?.approvals?.page) {
+    const page = pagination.approvals.page;
+    state.approvalsCache[page] = approvals ?? [];
+    state.approvalsPagination = pagination.approvals;
+    state.approvals = approvals ?? [];
+  }
+
+  if (pagination?.allApproved?.page) {
+    const page = pagination.allApproved.page;
+    state.allApprovedCache[page] = allApproved ?? [];
+    state.allApprovedPagination = pagination.allApproved;
+    state.allApproved = allApproved ?? [];
+  }
+
+  state.statusOverview = {
+    pending: summary.pending,
+    approved: summary.approved,
+    rejected: summary.rejected,
+    expired: summary.expired,
+  };
+  state.balance = balance;
+}

@@ -28,7 +28,7 @@ interface DashboardOverviewProps {
 const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onNavigate,
 }) => {
-  const { user: useDashboardOverview, profile } = useCombinedContext();
+  const { user: useDashboardOverview } = useCombinedContext();
   const { user } = useDashboardOverview;
   const { analytics } = useAppSelector((state) => state.profile);
 

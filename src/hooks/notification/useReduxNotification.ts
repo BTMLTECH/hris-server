@@ -17,30 +17,17 @@ import {
 } from "@/store/slices/notification/notificationSlice";
 import { toast } from "@/hooks/use-toast";
 import { INotification, NotificationContextType } from "@/types/notification";
-
+import { connectNotificationSocket } from "../auth/useReduxAuth";
 import { io, Socket } from "socket.io-client";
-
 let socket: Socket | null = null;
-const connectNotificationSocket = (userId: string) => {
-  if (!socket) {
-      socket = io('http://localhost:8080', {
-        withCredentials: true,
-        transports: ['websocket'],
-        query: { userId }
-      });
-  }
-  return socket;
-};
 
 export const useReduxNotificationContext = (): NotificationContextType => {
   const dispatch = useAppDispatch();
-  const { user} = useAppSelector(
-    (state) => state.auth
-  );
+  const { user } = useAppSelector((state) => state.auth);
   const { notifications, unreadCount, pagination } = useAppSelector(
     (state) => state.notification
   );
-const userId = user?._id
+  const userId = user?._id;
   const {
     isLoading: fetchingNotifications,
     error: fetchError,
@@ -56,7 +43,6 @@ const userId = user?._id
     useMarkAllNotificationsAsReadMutation();
   const [deleteNotification, { isLoading: deletingNotification }] =
     useDeleteNotificationMutation();
-
 
   const handleMarkAsRead = async (id: string): Promise<boolean> => {
     try {
@@ -121,19 +107,17 @@ const userId = user?._id
   };
 
   useEffect(() => {
-     if (!user?._id) return;
+    if (!user?._id) return;
 
     const sock = connectNotificationSocket(userId);
 
-    sock.on("connect", () => {
-    });
+    sock.on("connect", () => {});
 
     sock.on("notification:new", (notif: INotification) => {
       handlePushNotification(notif);
     });
 
-    sock.on("disconnect", () => {
-    });
+    sock.on("disconnect", () => {});
 
     return () => {
       sock.off("notification:new");

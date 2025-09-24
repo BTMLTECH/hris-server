@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { appraisalApi } from './appraisalApi';
-import { Appraisal, AppraisalObjective } from '@/types/appraisal';
-import { AppraisalTarget } from '@/data/appraisalTargets';
+import { appraisalApi } from "./appraisalApi";
+import { Appraisal, AppraisalObjective } from "@/types/appraisal";
+import { AppraisalTarget } from "@/data/appraisalTargets";
+import { mapAndCacheAppraisals } from "@/utils/normalize";
 
 interface AppraisalFormData {
   title: string;
@@ -18,7 +19,7 @@ interface AppraisalState {
   isCreateDialogOpen: boolean;
   isLoading: boolean;
   error: string | null;
-  step: 'basic' | 'targets' | 'preview';
+  step: "basic" | "targets" | "preview";
   formData: AppraisalFormData;
   selectedTargets: AppraisalTarget[];
   availableTargets: AppraisalTarget[];
@@ -30,12 +31,11 @@ interface AppraisalState {
     pages: number;
   };
   activityFilter: string;
-   activityCache: {
+  activityCache: {
     all: Record<number, Appraisal[]>;
     approved: Record<number, Appraisal[]>;
     rejected: Record<number, Appraisal[]>;
   };
- 
 }
 
 const initialState: AppraisalState = {
@@ -44,36 +44,34 @@ const initialState: AppraisalState = {
   isCreateDialogOpen: false,
   isLoading: false,
   error: null,
-  step: 'basic',
+  step: "basic",
   formData: {
-    title: '',
-    period: 'monthly',
+    title: "",
+    period: "monthly",
     dueDate: null,
   },
   selectedTargets: [],
   availableTargets: [],
   selectedAppraisal: null,
-  objectives: [],  
+  objectives: [],
   activityPagination: {
     total: 0,
     page: 1,
     limit: 10,
     pages: 0,
   },
-  activityFilter: 'all',  
+  activityFilter: "all",
   activityCache: {
     all: {},
     approved: {},
     rejected: {},
   },
-
 };
 
 const appraisalSlice = createSlice({
-  name: 'appraisal',
+  name: "appraisal",
   initialState,
   reducers: {
-    
     setIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.isDialogOpen = action.payload;
     },
@@ -86,7 +84,7 @@ const appraisalSlice = createSlice({
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
     },
-    setStep(state, action: PayloadAction<AppraisalState['step']>) {
+    setStep(state, action: PayloadAction<AppraisalState["step"]>) {
       state.step = action.payload;
     },
     setFormData(state, action: PayloadAction<Partial<AppraisalFormData>>) {
@@ -101,49 +99,51 @@ const appraisalSlice = createSlice({
     setSelectedAppraisal(state, action: PayloadAction<Appraisal | null>) {
       state.selectedAppraisal = action.payload;
     },
-   
+
     updateAppraisalInState(
       state,
       action: PayloadAction<{
         appraisal: Appraisal;
         actionType:
-          | 'pending'
-          | 'approved'
-          | 'rejected'
-          | 'completed'
-          | 'sent_to_employee'
-          | 'needs_revision'
-          | 'submitted'
-          | 'update';
+          | "pending"
+          | "approved"
+          | "rejected"
+          | "completed"
+          | "sent_to_employee"
+          | "needs_revision"
+          | "submitted"
+          | "update";
       }>
     ) {
       const { appraisal, actionType } = action.payload;
-      const index = state.appraisalRequests.findIndex(a => a.id === appraisal.id);
+      const index = state.appraisalRequests.findIndex(
+        (a) => a.id === appraisal.id
+      );
 
       if (index !== -1) {
         let status = appraisal.status;
 
         switch (actionType) {
-          case 'pending':
-            status = 'pending';
+          case "pending":
+            status = "pending";
             break;
-          case 'approved':
-            status = 'approved';
+          case "approved":
+            status = "approved";
             break;
-          case 'rejected':
-            status = 'rejected';
+          case "rejected":
+            status = "rejected";
             break;
-          case 'sent_to_employee':
-            status = 'sent_to_employee';
+          case "sent_to_employee":
+            status = "sent_to_employee";
             break;
-          case 'needs_revision':
-            status = 'needs_revision';
+          case "needs_revision":
+            status = "needs_revision";
             break;
-          case 'submitted':
-            status = 'submitted';
+          case "submitted":
+            status = "submitted";
             break;
           default:
-            status = appraisal.status; 
+            status = appraisal.status;
         }
 
         state.appraisalRequests[index] = {
@@ -154,13 +154,19 @@ const appraisalSlice = createSlice({
 
       state.selectedAppraisal = null;
     },
-    setActivityPagination(state, action: PayloadAction<AppraisalState['activityPagination']>) {
+    setActivityPagination(
+      state,
+      action: PayloadAction<AppraisalState["activityPagination"]>
+    ) {
       state.activityPagination = action.payload;
     },
     setActivityFilter(state, action: PayloadAction<string>) {
       state.activityFilter = action.payload;
     },
-    setActivityCache(state, action: PayloadAction<{ status: string; page: number; data: Appraisal[] }>) {
+    setActivityCache(
+      state,
+      action: PayloadAction<{ status: string; page: number; data: Appraisal[] }>
+    ) {
       const { status, page, data } = action.payload;
       if (!state.activityCache[status]) {
         state.activityCache[status] = {};
@@ -168,27 +174,31 @@ const appraisalSlice = createSlice({
       state.activityCache[status][page] = data;
     },
 
-
     setAppraisalRequests(state, action: PayloadAction<Appraisal[]>) {
       state.appraisalRequests = action.payload;
     },
     clearActivityCache(state) {
-    state.activityCache = {
-      all: {},
-      approved: {},
-      rejected: {},
-    };
+      state.activityCache = {
+        all: {},
+        approved: {},
+        rejected: {},
+      };
       state.appraisalRequests = [];
     },
 
-   setAppraisalObjectives(
+    setAppraisalObjectives(
       state,
-      action: PayloadAction<{ appraisalId: string; objectives: AppraisalObjective[] }>
+      action: PayloadAction<{
+        appraisalId: string;
+        objectives: AppraisalObjective[];
+      }>
     ) {
       const { appraisalId, objectives } = action.payload;
 
       // Update objectives inside the list
-      const appraisal = state.appraisalRequests.find(a => a.id === appraisalId);
+      const appraisal = state.appraisalRequests.find(
+        (a) => a.id === appraisalId
+      );
       if (appraisal) {
         appraisal.objectives = objectives;
       }
@@ -200,28 +210,40 @@ const appraisalSlice = createSlice({
       state.objectives = objectives;
     },
 
-
     toggleTarget(state, action: PayloadAction<AppraisalTarget>) {
-      const exists = state.selectedTargets.find(t => t.id === action.payload.id);
+      const exists = state.selectedTargets.find(
+        (t) => t.id === action.payload.id
+      );
       if (exists) {
-        state.selectedTargets = state.selectedTargets.filter(t => t.id !== action.payload.id);
+        state.selectedTargets = state.selectedTargets.filter(
+          (t) => t.id !== action.payload.id
+        );
       } else {
         state.selectedTargets.push(action.payload);
       }
+    },
+    updateAppraisalActivityFeed: (
+      state,
+      action: PayloadAction<{
+        appraisals: any[];
+        pagination: {
+          page: number;
+          total: number;
+          limit: number;
+          pages: number;
+        };
+      }>
+    ) => {
+      mapAndCacheAppraisals(
+        state,
+        action.payload.appraisals,
+        action.payload.pagination
+      );
     },
     resetAppraisalForm: () => initialState,
   },
 
   extraReducers: (builder) => {
-    // // === GET: Appraisal Approval Queue ===
-    // builder.addMatcher(
-    //   appraisalApi.endpoints.getAppraisalApprovalQueue.matchFulfilled,
-    //   (state, action) => {
-    //     state.appraisalRequests = action.payload.data;
-    //   }
-    // );
-
-    // === POST: Create Appraisal ===
     builder.addMatcher(
       appraisalApi.endpoints.createAppraisalRequest.matchPending,
       (state) => {
@@ -231,7 +253,7 @@ const appraisalSlice = createSlice({
     );
     builder.addMatcher(
       appraisalApi.endpoints.createAppraisalRequest.matchFulfilled,
-         (state, action) => {
+      (state, action) => {
         const updated = action.payload.data;
         const normalized = {
           ...updated,
@@ -240,14 +262,14 @@ const appraisalSlice = createSlice({
           employeeLastName: updated.user?.lastName,
         };
 
-        state.appraisalRequests = state.appraisalRequests.map(appraisal =>
+        state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
           appraisal.id === normalized.id ? normalized : appraisal
         );
 
         state.isLoading = false;
       }
     );
-   builder.addMatcher(
+    builder.addMatcher(
       appraisalApi.endpoints.createAppraisalRequest.matchFulfilled,
       (state, action) => {
         const newAppraisal = action.payload.data;
@@ -261,7 +283,6 @@ const appraisalSlice = createSlice({
         state.isLoading = false;
       }
     );
-
 
     // === PATCH: Update Appraisal ===
     builder.addMatcher(
@@ -282,7 +303,7 @@ const appraisalSlice = createSlice({
           employeeLastName: updated.user?.lastName,
         };
 
-        state.appraisalRequests = state.appraisalRequests.map(appraisal =>
+        state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
           appraisal.id === normalized.id ? normalized : appraisal
         );
 
@@ -294,7 +315,7 @@ const appraisalSlice = createSlice({
       appraisalApi.endpoints.updateAppraisalRequest.matchRejected,
       (state, action) => {
         state.isLoading = false;
-        state.error = action.error.message || 'Failed to update appraisal';
+        state.error = action.error.message || "Failed to update appraisal";
       }
     );
 
@@ -303,7 +324,7 @@ const appraisalSlice = createSlice({
       appraisalApi.endpoints.approveAppraisalRequest.matchFulfilled,
       (state, action) => {
         const approved = action.payload.data;
-        state.appraisalRequests = state.appraisalRequests.map(appraisal =>
+        state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
           appraisal.id === approved.id ? approved : appraisal
         );
       }
@@ -314,52 +335,22 @@ const appraisalSlice = createSlice({
       appraisalApi.endpoints.rejectAppraisalRequest.matchFulfilled,
       (state, action) => {
         const rejected = action.payload.data;
-        state.appraisalRequests = state.appraisalRequests.map(appraisal =>
+        state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
           appraisal.id === rejected.id ? rejected : appraisal
         );
       }
     );
 
-    // GET: Get appraisal activity
-    // builder.addMatcher(
-    //   appraisalApi.endpoints.getAppraisalActivity.matchFulfilled,
-    //   (state, action) => {
-    //      state.appraisalRequests = Array.isArray(action.payload.data)
-    //   ? action.payload.data.map((appraisal:any) => ({
-    //       ...appraisal,
-    //       employeeId: appraisal.user?._id, 
-    //       employeeName: appraisal.user?.firstName,
-    //       employeeLastName: appraisal.user?.lastName,
-    //     }))
-    //   : []
-    //   }
-    // );
-
     builder.addMatcher(
       appraisalApi.endpoints.getAppraisalActivity.matchFulfilled,
       (state, action) => {
-        const status = state.activityFilter;
-        const page = action.payload.pagination.page;
-
-        const mappedData = Array.isArray(action.payload.data)
-          ? action.payload.data.map((appraisal: any) => ({
-              ...appraisal,
-              employeeId: appraisal.user?._id,
-              employeeName: appraisal.user?.firstName,
-              employeeLastName: appraisal.user?.lastName,
-            }))
-          : [];
-
-        if (!state.activityCache[status]) state.activityCache[status] = {};
-        state.activityCache[status][page] = mappedData;
-
-        // This should only affect current view
-        state.appraisalRequests = mappedData;
+        mapAndCacheAppraisals(
+          state,
+          action.payload.data,
+          action.payload.pagination
+        );
       }
     );
-
-
-
   },
 });
 
@@ -374,13 +365,14 @@ export const {
   toggleTarget,
   setSelectedTargets,
   setSelectedAppraisal,
-  setAppraisalObjectives, 
+  setAppraisalObjectives,
   updateAppraisalInState,
   setActivityPagination,
   setActivityFilter,
   setActivityCache,
   setAppraisalRequests,
   clearActivityCache,
+  updateAppraisalActivityFeed,
   resetAppraisalForm,
 } = appraisalSlice.actions;
 

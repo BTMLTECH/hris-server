@@ -32,6 +32,7 @@ import {
   setLoading,
   setProfileCache,
   setProfilePagination,
+  updateBirthdayAnalytics,
 } from "@/store/slices/profile/profileSlice";
 import { set } from "date-fns";
 import {
@@ -44,7 +45,20 @@ import {
 import { extractErrorMessage } from "@/utils/errorHandler";
 import { clearActivityCache } from "@/store/slices/appraisal/appraisalSlice";
 import { clearAttenadanceCache } from "@/store/slices/attendance/attendanceSlice";
-import { CreateCompanyDTO } from "@/types/user";
+import { CreateCompanyDTO, IBirthdayAnalytics } from "@/types/user";
+import { io, Socket } from "socket.io-client";
+let socket: Socket | null = null;
+
+export const connectNotificationSocket = (userId: string) => {
+  if (!socket) {
+    socket = io("http://localhost:8080", {
+      withCredentials: true,
+      transports: ["websocket"],
+      query: { userId },
+    });
+  }
+  return socket;
+};
 
 export const useReduxAuth = (): AuthContextType => {
   const dispatch = useAppDispatch();
@@ -56,8 +70,6 @@ export const useReduxAuth = (): AuthContextType => {
     classlevelPagination,
     departmentsPagination,
     profileCache,
-    departmentsCache,
-    classlevelCache,
   } = useAppSelector((state) => state.profile);
   const [loginMutation] = useLoginMutation();
   const [resetPasswordMutation] = useResetPasswordMutation();
@@ -116,6 +128,20 @@ export const useReduxAuth = (): AuthContextType => {
       }
     }
   }, [profilesRecord, dispatch, profileCache]);
+
+  useEffect(() => {
+    if (!user?._id) return;
+
+    const socket = connectNotificationSocket(user._id.toString());
+
+    socket.on("birthday:new", (payload: IBirthdayAnalytics) => {
+      dispatch(updateBirthdayAnalytics(payload));
+    });
+
+    return () => {
+      socket.off("birthday:new");
+    };
+  }, [user?._id, dispatch]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     dispatch(setIsLoading(true));

@@ -40,44 +40,22 @@ export const useReduxProfile = (): ProfileContextType => {
 
   const editProfile = async (profile: any): Promise<boolean> => {
     dispatch(setLoading(true));
+
     try {
-      const result = await editProfileMutation(profile).unwrap();
+      const response = await editProfileMutation(profile).unwrap();
+
+      if (response) {
+        dispatch(setSelectedEmployee(response));
+      }
+
       toast({ title: "Profile updated successfully" });
-      const editProfileHandler = async (profile: any): Promise<boolean> => {
-        dispatch(setLoading(true));
-        try {
-          const response = await editProfileMutation(profile).unwrap();
-          if (response) {
-            dispatch(setSelectedEmployee(response));
-          }
 
-          toast({
-            title: "Profile updated successfully",
-          });
-
-          dispatch(
-            setFormData({
-              ...formData,
-              ...profile,
-            })
-          );
-
-          return true;
-        } catch (error: any) {
-          const errorMessage = extractErrorMessage(
-            error,
-            "Profile Update Error"
-          );
-          toast({
-            title: "Profile Update Error",
-            description: errorMessage,
-            variant: "destructive",
-          });
-          return false;
-        } finally {
-          dispatch(setLoading(false));
-        }
-      };
+      dispatch(
+        setFormData({
+          ...formData,
+          ...profile,
+        })
+      );
 
       return true;
     } catch (error: any) {

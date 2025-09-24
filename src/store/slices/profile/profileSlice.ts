@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/profile/profileSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   CreateCompanyDTO,
   IAnalytics,
+  IBirthdayAnalytics,
   IClassLevel,
   IDepartment,
   ProfileFormData,
@@ -13,7 +15,6 @@ import {
   blankCompanyFormData,
   blankProfileFormData,
 } from "@/constants/blankProfileFormData";
-import { act } from "react";
 import { IOnboardingTask } from "@/types/auth";
 
 const initialState: ProfileState = {
@@ -261,6 +262,41 @@ const profileSlice = createSlice({
       };
     },
 
+    updateBirthdayAnalytics: (
+      state,
+      action: PayloadAction<IBirthdayAnalytics>
+    ) => {
+      // If analytics not loaded yet, initialize it with minimal structure
+      if (!state.analytics) {
+        state.analytics = {
+          company: "",
+          salaryDistributionByDept: [],
+          salaryDistributionByRole: [],
+          leaveTypesData: [],
+          hiringTrends: [],
+          attendanceData: [],
+          chartConfig: [],
+          birthdayAnalytics: [],
+          keyMetrics: {} as any,
+          dashboardCards: {} as any,
+          recentActivity: [],
+        };
+      }
+
+      const existing = state.analytics.birthdayAnalytics.find(
+        (b) => b.month === action.payload.month
+      );
+
+      if (existing) {
+        existing.celebrants = [
+          ...existing.celebrants,
+          ...action.payload.celebrants,
+        ];
+      } else {
+        state.analytics.birthdayAnalytics.push(action.payload);
+      }
+    },
+
     resetCompanyFormData(state) {
       state.companyFormData = blankCompanyFormData;
     },
@@ -441,6 +477,7 @@ export const {
   setSelectedActionType,
   setIsManageDialogOpen,
   setCompanyFormData,
+  updateBirthdayAnalytics,
   resetCompanyFormData,
 } = profileSlice.actions;
 export default profileSlice.reducer;

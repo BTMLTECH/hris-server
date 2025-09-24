@@ -19,8 +19,7 @@ interface BirthdayAnalyticsProps {
 const BirthdayAnalytics: React.FC<BirthdayAnalyticsProps> = ({ birthdays }) => {
   const currentMonthShort = new Date().toLocaleString("default", {
     month: "short",
-  }); // e.g., "Sep"
-
+  });
   const currentMonthCelebrants =
     birthdays.find(
       (b) => b.month.toLowerCase() === currentMonthShort.toLowerCase()

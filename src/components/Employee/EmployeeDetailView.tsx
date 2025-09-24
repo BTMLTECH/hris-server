@@ -13,8 +13,7 @@ import {
   Loader2,
 } from "lucide-react";
 import RoleBadge, { RoleBadgeProps } from "@/components/RoleBadge";
-import { IClassLevel, ProfileFormData } from "@/types/user";
-import { Input } from "../ui/input";
+import { ProfileFormData } from "@/types/user";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import AccountInfoSection from "./AccountInfoSection";
 import BasicInfoSection from "./BasicInfoSection";

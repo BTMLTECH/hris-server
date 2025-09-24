@@ -1,12 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-import { LeaveRequest, LeaveBalance, TeamLeadResponse, LeaveActivityFeedItem, LeaveBalanceItem } from '@/types/leave'; // Update path if needed
-import { leaveApi } from './leaveApi';
-import { normalizeLeaveRequest } from '@/utils/normalize';
+import {
+  LeaveRequest,
+  LeaveBalance,
+  TeamLeadResponse,
+  LeaveActivityFeedItem,
+  LeaveBalanceItem,
+} from "@/types/leave"; // Update path if needed
+import { leaveApi } from "./leaveApi";
+import { normalizeLeaveRequest, updateLeaveState } from "@/utils/normalize";
 
-export type LeaveType = 'compassionate' | 'annual' | 'maternity';
-
+export type LeaveType = "compassionate" | "annual" | "maternity";
 
 export interface LeaveFormData {
   type: LeaveType;
@@ -14,9 +19,9 @@ export interface LeaveFormData {
   endDate: string;
   reason: string;
   teamleadId: string;
-  days: number,
-  typeIdentify: string,
-  allowance: 'yes' | 'no';
+  days: number;
+  typeIdentify: string;
+  allowance: "yes" | "no";
   relievers: string[];
 }
 
@@ -26,7 +31,7 @@ export interface Pagination {
   limit: number;
   pages: number;
 }
- 
+
 export type LeaveFeedCache = Record<number, LeaveActivityFeedItem[]>;
 export type ApprovalFeedCache = Record<number, LeaveActivityFeedItem[]>;
 export type AllApprovedFeedCache = Record<number, LeaveActivityFeedItem[]>;
@@ -44,7 +49,7 @@ interface LeaveState {
   isDialogOpen: boolean;
   createIsDialogOpen: boolean;
   selectedRequest: LeaveActivityFeedItem | null;
-  selectedDates: string[];  
+  selectedDates: string[];
   formData: LeaveFormData;
   rejectionNote: string;
   dateCalculation: {
@@ -52,16 +57,16 @@ interface LeaveState {
     workingDays: number;
     holidays: any[];
   } | null;
-   teamLead: TeamLeadResponse | null;
+  teamLead: TeamLeadResponse | null;
 
-   statusOverview: {
+  statusOverview: {
     pending: number;
     approved: number;
     rejected: number;
     expired: number;
   };
 
-  selectedRequestId: LeaveActivityFeedItem | null
+  selectedRequestId: LeaveActivityFeedItem | null;
   activityFeedCache: LeaveFeedCache;
   activityFeedPagination: Pagination;
 
@@ -71,7 +76,6 @@ interface LeaveState {
   allApprovedCache: AllApprovedFeedCache;
   allApprovedPagination: Pagination;
 }
-
 
 const initialState: LeaveState = {
   isLoading: false,
@@ -87,38 +91,38 @@ const initialState: LeaveState = {
   createIsDialogOpen: false,
   selectedDates: [],
   formData: {
-    type: 'annual',
-    startDate: '',
-    endDate: '',
-    reason: '',
-    teamleadId: '',
+    type: "annual",
+    startDate: "",
+    endDate: "",
+    reason: "",
+    teamleadId: "",
     days: null,
-    typeIdentify: 'leave',
-    allowance: 'yes',
-    relievers: []
+    typeIdentify: "leave",
+    allowance: "yes",
+    relievers: [],
   },
   teamLead: null,
   dateCalculation: null,
   selectedRequest: null,
   selectedRequestId: null,
 
-  rejectionNote: '',
+  rejectionNote: "",
   statusOverview: {
     pending: 0,
     approved: 0,
     rejected: 0,
-    expired: 0
+    expired: 0,
   },
-  activityFeedCache:  {},
-  approvalsCache:  {},
-  allApprovedCache:  {},
+  activityFeedCache: {},
+  approvalsCache: {},
+  allApprovedCache: {},
   activityFeedPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   allApprovedPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   approvalsPagination: { total: 0, page: 1, limit: 30, pages: 0 },
 };
 
 const leaveSlice = createSlice({
-  name: 'leave',
+  name: "leave",
   initialState,
   reducers: {
     setLoading(state, action: PayloadAction<boolean>) {
@@ -131,62 +135,74 @@ const leaveSlice = createSlice({
       state.error = action.payload;
     },
 
-     setIsDialogOpen(state, action: PayloadAction<boolean>) {
+    setIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.isDialogOpen = action.payload;
     },
-     setCreateIsDialogOpen(state, action: PayloadAction<boolean>) {
+    setCreateIsDialogOpen(state, action: PayloadAction<boolean>) {
       state.createIsDialogOpen = action.payload;
     },
 
-    setAllLeavePagination: (state, action: PayloadAction<typeof initialState.allApprovedPagination>) => {
+    setAllLeavePagination: (
+      state,
+      action: PayloadAction<typeof initialState.allApprovedPagination>
+    ) => {
       state.allApprovedPagination = action.payload;
     },
 
-    setActivityFeedPagination: (state, action: PayloadAction<typeof initialState.activityFeedPagination>) => {
+    setActivityFeedPagination: (
+      state,
+      action: PayloadAction<typeof initialState.activityFeedPagination>
+    ) => {
       state.activityFeedPagination = action.payload;
     },
 
     setAllApprovedCache: (
-          state,
-          action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
+      state,
+      action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
     ) => {
-          state.allApprovedCache[action.payload.page] = action.payload.data;
+      state.allApprovedCache[action.payload.page] = action.payload.data;
     },
 
     setActivityCache: (
-          state,
-          action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
+      state,
+      action: PayloadAction<{ page: number; data: LeaveActivityFeedItem[] }>
     ) => {
-          state.activityFeedCache[action.payload.page] = action.payload.data;
+      state.activityFeedCache[action.payload.page] = action.payload.data;
     },
 
-     setSelectedRequest(state, action: PayloadAction<LeaveActivityFeedItem | null>) {
+    setSelectedRequest(
+      state,
+      action: PayloadAction<LeaveActivityFeedItem | null>
+    ) {
       state.selectedRequest = action.payload;
     },
-     setRejectionNote(state, action: PayloadAction<string>) {
+    setRejectionNote(state, action: PayloadAction<string>) {
       state.rejectionNote = action.payload;
     },
 
-     setRequests(state, action: PayloadAction<LeaveRequest[]>) {
+    setRequests(state, action: PayloadAction<LeaveRequest[]>) {
       state.requests = action.payload;
     },
     setSelectedDates(state, action: PayloadAction<string[]>) {
       state.selectedDates = action.payload;
     },
-    setFormData(state, action: PayloadAction<LeaveState['formData']>) {
+    setFormData(state, action: PayloadAction<LeaveState["formData"]>) {
       state.formData = action.payload;
     },
 
     setSelectedRequestId(state, action: PayloadAction<LeaveActivityFeedItem>) {
       state.selectedRequestId = action.payload;
     },
-    setDateCalculation(state, action: PayloadAction<LeaveState['dateCalculation']>) {
+    setDateCalculation(
+      state,
+      action: PayloadAction<LeaveState["dateCalculation"]>
+    ) {
       state.dateCalculation = action.payload;
     },
-     setTeamLead(state, action: PayloadAction<TeamLeadResponse>) {
+    setTeamLead(state, action: PayloadAction<TeamLeadResponse>) {
       state.teamLead = action.payload;
     },
-     updateStatusOverview: (
+    updateStatusOverview: (
       state,
       action: PayloadAction<{ approved?: boolean; rejected?: boolean }>
     ) => {
@@ -203,252 +219,206 @@ const leaveSlice = createSlice({
       state.formData = initialState.formData;
       state.dateCalculation = null;
     },
-     resetLeaveState: () => initialState, 
+    updateLeaveActivityFeed: (
+      state,
+      action: PayloadAction<ReturnType<typeof normalizeLeaveRequest>>
+    ) => {
+      updateLeaveState(state, action.payload);
+    },
+
+    resetLeaveState: () => initialState,
   },
-extraReducers: (builder) => {
-  // === GET: Leave Approval Queue ===
-  builder.addMatcher(
-    leaveApi.endpoints.getLeaveApprovalQueue.matchPending,
-    (state) => {
-      state.isLoading = true;
-      state.error = null;
-    }
-  );
-  builder.addMatcher(
-    leaveApi.endpoints.getLeaveApprovalQueue.matchFulfilled,
-    (state, action) => {
-      state.isLoading = false;
-     state.approvalQueue = action.payload.data.data.map(normalizeLeaveRequest);
-
-    }
-  );
-  builder.addMatcher(
-    leaveApi.endpoints.getLeaveApprovalQueue.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to fetch approval queue';
-    }
-  );
-
-  // === GET: Activity Feed ===
-  builder.addMatcher(
-    leaveApi.endpoints.getLeaveActivityFeed.matchPending,
-    (state) => {
-      state.isLoading = true;
-      state.error = null;
-    }
-  );
-
-builder.addMatcher(
-  leaveApi.endpoints.getLeaveActivityFeed.matchFulfilled,
-  (state, action) => {
-
-
-    state.isLoading = false;
-
-    // ✅ Normalize the full response
-    const { myRequests, approvals, allApproved,  summary, balance , pagination } = normalizeLeaveRequest(
-      action.payload
+  extraReducers: (builder) => {
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveApprovalQueue.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveApprovalQueue.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+        state.approvalQueue = action.payload.data.data.map(
+          normalizeLeaveRequest
+        );
+      }
+    );
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveApprovalQueue.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || "Failed to fetch approval queue";
+      }
     );
 
-
-     if (allApproved && pagination?.myRequests?.page) {
-      const page = pagination.myRequests.page;
-      state.activityFeedCache[page] = myRequests ?? [];
-      state.activityFeedPagination = pagination.myRequests;
-      state.activityFeed = myRequests ?? [];
-    }
-
-    if (allApproved && pagination?.approvals?.page) {
-      const page = pagination.approvals.page;
-      state.approvalsCache[page] = approvals;
-      state.approvalsPagination = pagination.approvals;
-      state.approvals = approvals; 
-    }
-
-    if (allApproved && pagination?.allApproved?.page) {
-      const page = pagination.allApproved.page;
-      state.allApprovedCache[page] = allApproved;
-      state.allApprovedPagination = pagination.allApproved;
-      state.allApproved = allApproved; 
-    }
-
-    state.statusOverview = {
-      pending: summary.pending,
-      approved: summary.approved,
-      rejected: summary.rejected,
-      expired: summary.expired,
-    };
-    state.balance = balance;
-    state.statusOverview = {
-      pending: summary.pending,
-      approved: summary.approved,
-      rejected: summary.rejected,
-      expired: summary.expired,
-    };
-
-    state.balance = balance;
-  }
-);
-
-
-  builder.addMatcher(
-    leaveApi.endpoints.getLeaveActivityFeed.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to fetch activity feed';
-    }
-  );
-
-  // === POST: Create Leave Request ===
-  builder.addMatcher(
-    leaveApi.endpoints.createLeaveRequest.matchPending,
-    (state) => {
-      state.isLoading = true;
-      state.error = null;
-    }
-  );
-  
-builder.addMatcher(
-  leaveApi.endpoints.createLeaveRequest.matchFulfilled,
-  (state, action) => {
-    const newReq = action.payload.data;
-    const exists = state.requests.some(req => req.id === newReq.id);
-    if (!exists) {
-      state.requests.push(newReq);
-    }
-    state.isLoading = false;
-  }
-);
-
-  builder.addMatcher(
-    leaveApi.endpoints.createLeaveRequest.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to submit leave request';
-    }
-  );
-
-  // === POST: Approve Leave Request ===
-  builder.addMatcher(
-    leaveApi.endpoints.approveLeaveRequest.matchPending,
-    (state) => {
-      state.isLoading = true;
-      state.error = null;
-    }
-  );
-  builder.addMatcher(
-  leaveApi.endpoints.approveLeaveRequest.matchFulfilled,
-  (state, action) => {
-    state.isLoading = false;
-
-    
-    state.approvalQueue = state.approvalQueue.filter(
-      (req) => req.id !== action.meta.arg.originalArgs 
+    // === GET: Activity Feed ===
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveActivityFeed.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
     );
 
-   
-    state.statusOverview.approved += 1;
-    state.statusOverview.pending -= 1;
-  }
-);
-
-  builder.addMatcher(
-    leaveApi.endpoints.approveLeaveRequest.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to approve leave request';
-    }
-  );
-
-
-  builder.addMatcher(
-    leaveApi.endpoints.rejectLeaveRequest.matchPending,
-    (state) => {
-      state.isLoading = true;
-      state.error = null;
-    }
-  );
-builder.addMatcher(
-  leaveApi.endpoints.rejectLeaveRequest.matchFulfilled,
-  (state, action) => {
-    state.isLoading = false;
-
-    state.approvalQueue = state.approvalQueue.filter(
-      (req) => req.id !== action.meta.arg.originalArgs.id
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveActivityFeed.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+        updateLeaveState(state, action.payload);
+      }
     );
 
-    state.statusOverview.rejected += 1;
-    state.statusOverview.pending -= 1;
-  }
-);
+    builder.addMatcher(
+      leaveApi.endpoints.getLeaveActivityFeed.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || "Failed to fetch activity feed";
+      }
+    );
 
-  builder.addMatcher(
-    leaveApi.endpoints.rejectLeaveRequest.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to reject leave request';
-    }
-  );
+    // === POST: Create Leave Request ===
+    builder.addMatcher(
+      leaveApi.endpoints.createLeaveRequest.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
 
+    builder.addMatcher(
+      leaveApi.endpoints.createLeaveRequest.matchFulfilled,
+      (state, action) => {
+        const newReq = action.payload.data;
+        const exists = state.requests.some((req) => req.id === newReq.id);
+        if (!exists) {
+          state.requests.push(newReq);
+        }
+        state.isLoading = false;
+      }
+    );
 
-  builder.addMatcher(
-    leaveApi.endpoints.getTeamLead.matchPending,
-    (state) => {
+    builder.addMatcher(
+      leaveApi.endpoints.createLeaveRequest.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || "Failed to submit leave request";
+      }
+    );
+
+    // === POST: Approve Leave Request ===
+    builder.addMatcher(
+      leaveApi.endpoints.approveLeaveRequest.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
+    builder.addMatcher(
+      leaveApi.endpoints.approveLeaveRequest.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+
+        state.approvalQueue = state.approvalQueue.filter(
+          (req) => req.id !== action.meta.arg.originalArgs
+        );
+
+        state.statusOverview.approved += 1;
+        state.statusOverview.pending -= 1;
+      }
+    );
+
+    builder.addMatcher(
+      leaveApi.endpoints.approveLeaveRequest.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error =
+          action.error?.message || "Failed to approve leave request";
+      }
+    );
+
+    builder.addMatcher(
+      leaveApi.endpoints.rejectLeaveRequest.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
+    builder.addMatcher(
+      leaveApi.endpoints.rejectLeaveRequest.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+
+        state.approvalQueue = state.approvalQueue.filter(
+          (req) => req.id !== action.meta.arg.originalArgs.id
+        );
+
+        state.statusOverview.rejected += 1;
+        state.statusOverview.pending -= 1;
+      }
+    );
+
+    builder.addMatcher(
+      leaveApi.endpoints.rejectLeaveRequest.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || "Failed to reject leave request";
+      }
+    );
+
+    builder.addMatcher(leaveApi.endpoints.getTeamLead.matchPending, (state) => {
       state.isLoading = true;
       state.error = null;
-    }
-  );
-  builder.addMatcher(
-    leaveApi.endpoints.getTeamLead.matchFulfilled,
-    (state, action) => {
-      state.isLoading = false;
-      state.teamLead = action.payload; 
-    }
-  );
-  builder.addMatcher(
-    leaveApi.endpoints.getTeamLead.matchRejected,
-    (state, action) => {
-      state.isLoading = false;
-      state.error = action.error?.message || 'Failed to fetch team lead';
-    }
-  );
+    });
+    builder.addMatcher(
+      leaveApi.endpoints.getTeamLead.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+        state.teamLead = action.payload;
+      }
+    );
+    builder.addMatcher(
+      leaveApi.endpoints.getTeamLead.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error = action.error?.message || "Failed to fetch team lead";
+      }
+    );
 
+    builder.addMatcher(
+      leaveApi.endpoints.getStatOverview.matchPending,
+      (state) => {
+        state.isLoading = true;
+        state.error = null;
+      }
+    );
 
-builder.addMatcher(
-  leaveApi.endpoints.getStatOverview.matchPending,
-  (state) => {
-    state.isLoading = true;
-    state.error = null;
-  }
-);
+    builder.addMatcher(
+      leaveApi.endpoints.getStatOverview.matchFulfilled,
+      (state, action) => {
+        state.isLoading = false;
+        state.statusOverview = {
+          pending: action.payload.data.pending,
+          approved: action.payload.data.approved,
+          rejected: action.payload.data.rejected,
+          expired: action.payload.data.expired,
+        };
+      }
+    );
 
-builder.addMatcher(
-  leaveApi.endpoints.getStatOverview.matchFulfilled,
-  (state, action) => {
-    state.isLoading = false;
-    state.statusOverview = {
-      pending: action.payload.data.pending,
-      approved: action.payload.data.approved,
-      rejected: action.payload.data.rejected,
-      expired: action.payload.data.expired
-    };
-  }
-);
-
-builder.addMatcher(
-  leaveApi.endpoints.getStatOverview.matchRejected,
-  (state, action) => {
-    state.isLoading = false;
-    state.error = action.error?.message || 'Failed to fetch leave status overview';
-  }
-);
-
-}
-
+    builder.addMatcher(
+      leaveApi.endpoints.getStatOverview.matchRejected,
+      (state, action) => {
+        state.isLoading = false;
+        state.error =
+          action.error?.message || "Failed to fetch leave status overview";
+      }
+    );
+  },
 });
 
-export const { 
+export const {
   setLoading,
   setError,
   resetLeaveState,
@@ -467,8 +437,8 @@ export const {
   setAllApprovedCache,
   setActivityCache,
   setSelectedRequestId,
-  setLeaveDialog
-
+  updateLeaveActivityFeed,
+  setLeaveDialog,
 } = leaveSlice.actions;
 
 export default leaveSlice.reducer;

@@ -1,9 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bell, X, Calendar, User, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  Bell,
+  X,
+  Calendar,
+  User,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 import NotificationList from "./NotificationList";
 import { useReduxNotificationContext } from "@/hooks/notification/useReduxNotification";
 import { useAppSelector } from "@/store/hooks";
@@ -13,11 +21,15 @@ interface NotificationCenterProps {
   notifications: any;
 }
 
-const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose, notifications }) => {
+const NotificationCenter: React.FC<NotificationCenterProps> = ({
+  onClose,
+  notifications,
+}) => {
   const { user } = useAppSelector((state) => state.auth);
   const canManageNotifications = user?.role === "admin" || user?.role === "hr";
   const [showAll, setShowAll] = useState(false);
-  const { handleMarkAsRead, handleMarkAllAsRead } = useReduxNotificationContext();
+  const { handleMarkAsRead, handleMarkAllAsRead } =
+    useReduxNotificationContext();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -45,7 +57,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose, notifi
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
+            <CardTitle className="text-lg font-semibold">
+              Notifications
+            </CardTitle>
             {unreadCount > 0 && (
               <Badge variant="secondary" className="text-xs px-2 py-0.5">
                 {unreadCount}
@@ -104,7 +118,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose, notifi
                         {notification.title}
                       </p>
                       {!notification.read && (
-                        <Badge variant="secondary" className="ml-2 px-1 py-0 text-xs">
+                        <Badge
+                          variant="secondary"
+                          className="ml-2 px-1 py-0 text-xs"
+                        >
                           New
                         </Badge>
                       )}
