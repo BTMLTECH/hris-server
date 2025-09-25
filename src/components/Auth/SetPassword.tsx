@@ -1,31 +1,39 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, CheckCircle, Mail, Lock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useReduxAuth } from '@/hooks/auth/useReduxAuth';
+import React, { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, CheckCircle, Mail, Lock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useReduxAuth } from "@/hooks/auth/useReduxAuth";
 
 interface SetPasswordProps {
   token?: string;
   email?: string;
 }
 
-const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail }) => {
-  const [email, setEmail] = useState('');
-  const [tempPassword, setTempPassword] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const SetPassword: React.FC<SetPasswordProps> = ({
+  token,
+  email: initialEmail,
+}) => {
+  const [email, setEmail] = useState("");
+  const [tempPassword, setTempPassword] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showTempPassword, setShowTempPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
-  const {setNewPassword} = useReduxAuth()
+  const { setNewPassword } = useReduxAuth();
 
   const validatePassword = (pwd: string) => {
     const minLength = pwd.length >= 8;
@@ -33,26 +41,27 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
     const hasLower = /[a-z]/.test(pwd);
     const hasNumber = /\d/.test(pwd);
     const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pwd);
-    
+
     return {
       minLength,
       hasUpper,
       hasLower,
       hasNumber,
       hasSpecial,
-      isValid: minLength && hasUpper && hasLower && hasNumber && hasSpecial
+      isValid: minLength && hasUpper && hasLower && hasNumber && hasSpecial,
     };
   };
 
   const passwordValidation = validatePassword(password);
-  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const passwordsMatch =
+    password === confirmPassword && confirmPassword.length > 0;
 
   const handleSetPassword = async () => {
     if (!email || !tempPassword) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -61,7 +70,7 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
       toast({
         title: "Invalid Password",
         description: "Please ensure your password meets all requirements",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -70,58 +79,57 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
       toast({
         title: "Passwords Don't Match",
         description: "Please ensure both passwords are identical",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     setIsLoading(true);
-    
 
-  const success = await setNewPassword(
-    password,
-    {
-      minLength: 8,
-      requireUppercase: true,
-      requireNumber: true,
-      requireSpecialChar: true,
-    },
-    tempPassword,
-    token
-  );
+    const success = await setNewPassword(
+      password,
+      {
+        minLength: 8,
+        requireUppercase: true,
+        requireNumber: true,
+        requireSpecialChar: true,
+      },
+      tempPassword,
+      token
+    );
 
-  setIsLoading(false);
+    setIsLoading(false);
 
-  if (success) {
-    setIsSuccess(true);
-  }
-  
+    if (success) {
+      setIsSuccess(true);
+    }
   };
 
- if (isSuccess) {
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-6 text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Password Set Successfully!</h2>
-          <p className="text-gray-600 mb-6">
-            You can now log in to your account using your new password.
-          </p>
-          <Button
-            className="w-full"
-            onClick={() =>
-              window.location.href = 'http://staging-hris.btmlimited.net'
-            }
-          >
-            Go to Login
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">
+              Password Set Successfully!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              You can now log in to your account using your new password.
+            </p>
+            <Button
+              className="w-full"
+              onClick={() =>
+                (window.location.href = "http://hris.btmlimited.net")
+              }
+            >
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -129,7 +137,8 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Set Your Password</CardTitle>
           <CardDescription>
-            Please verify your email and temporary password, then create a new secure password.
+            Please verify your email and activation code, then create a new
+            secure password.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -170,7 +179,11 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowTempPassword(!showTempPassword)}
                 >
-                  {showTempPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showTempPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -192,7 +205,11 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -214,7 +231,11 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -222,26 +243,88 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
 
           {password && (
             <div className="space-y-2">
-              <Label className="text-sm font-medium">Password Requirements</Label>
+              <Label className="text-sm font-medium">
+                Password Requirements
+              </Label>
               <div className="space-y-1 text-sm">
-                <div className={`flex items-center gap-2 ${passwordValidation.minLength ? 'text-green-600' : 'text-gray-500'}`}>
-                  <div className={`w-2 h-2 rounded-full ${passwordValidation.minLength ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.minLength
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordValidation.minLength
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   At least 8 characters
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.hasUpper ? 'text-green-600' : 'text-gray-500'}`}>
-                  <div className={`w-2 h-2 rounded-full ${passwordValidation.hasUpper ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.hasUpper
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordValidation.hasUpper
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   One uppercase letter
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.hasLower ? 'text-green-600' : 'text-gray-500'}`}>
-                  <div className={`w-2 h-2 rounded-full ${passwordValidation.hasLower ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.hasLower
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordValidation.hasLower
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   One lowercase letter
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.hasNumber ? 'text-green-600' : 'text-gray-500'}`}>
-                  <div className={`w-2 h-2 rounded-full ${passwordValidation.hasNumber ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.hasNumber
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordValidation.hasNumber
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   One number
                 </div>
-                <div className={`flex items-center gap-2 ${passwordValidation.hasSpecial ? 'text-green-600' : 'text-gray-500'}`}>
-                  <div className={`w-2 h-2 rounded-full ${passwordValidation.hasSpecial ? 'bg-green-500' : 'bg-gray-300'}`} />
+                <div
+                  className={`flex items-center gap-2 ${
+                    passwordValidation.hasSpecial
+                      ? "text-green-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      passwordValidation.hasSpecial
+                        ? "bg-green-500"
+                        : "bg-gray-300"
+                    }`}
+                  />
                   One special character
                 </div>
               </div>
@@ -254,10 +337,16 @@ const SetPassword: React.FC<SetPasswordProps> = ({ token, email: initialEmail })
             </Alert>
           )}
 
-          <Button 
-            className="w-full" 
+          <Button
+            className="w-full"
             onClick={handleSetPassword}
-            disabled={!email || !tempPassword || !passwordValidation.isValid || !passwordsMatch || isLoading}
+            disabled={
+              !email ||
+              !tempPassword ||
+              !passwordValidation.isValid ||
+              !passwordsMatch ||
+              isLoading
+            }
           >
             {isLoading ? "Setting Password..." : "Set My Password"}
           </Button>
