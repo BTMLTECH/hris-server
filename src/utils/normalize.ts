@@ -251,7 +251,7 @@ export function mapAndCacheAppraisals(
   pagination: { page: number }
 ) {
   const status = state.activityFilter;
-  const page = pagination.page;
+  const page = pagination?.page;
 
   const mappedData = Array.isArray(appraisals)
     ? appraisals.map((appraisal: any) => ({
@@ -297,10 +297,10 @@ export function updateLeaveState(
   }
 
   state.statusOverview = {
-    pending: summary.pending,
-    approved: summary.approved,
-    rejected: summary.rejected,
-    expired: summary.expired,
+    pending: summary?.pending,
+    approved: summary?.approved,
+    rejected: summary?.rejected,
+    expired: summary?.expired,
   };
   state.balance = balance;
 }
