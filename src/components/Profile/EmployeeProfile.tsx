@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
@@ -290,7 +289,11 @@ const EmployeeProfile: React.FC = () => {
                       <Input
                         id="dateOfBirth"
                         type="date"
-                        value={formData.dateOfBirth}
+                        value={
+                          formData.dateOfBirth
+                            ? formData.dateOfBirth.split("T")[0]
+                            : ""
+                        }
                         onChange={(e) =>
                           dispatch(
                             setFormData({

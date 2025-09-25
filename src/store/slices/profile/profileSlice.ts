@@ -266,7 +266,6 @@ const profileSlice = createSlice({
       state,
       action: PayloadAction<IBirthdayAnalytics>
     ) => {
-      // If analytics not loaded yet, initialize it with minimal structure
       if (!state.analytics) {
         state.analytics = {
           company: "",

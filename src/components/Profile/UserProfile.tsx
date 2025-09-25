@@ -135,7 +135,11 @@ const UserProfile: React.FC = () => {
                       <Input
                         id="dateOfBirth"
                         type="date"
-                        value={formData.dateOfBirth}
+                        value={
+                          formData.dateOfBirth
+                            ? formData.dateOfBirth.split("T")[0]
+                            : ""
+                        }
                         disabled
                       />
                     </div>
