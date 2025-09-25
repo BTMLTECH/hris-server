@@ -51,7 +51,7 @@ let socket: Socket | null = null;
 
 export const connectNotificationSocket = (userId: string) => {
   if (!socket) {
-    socket = io("http://localhost:8080", {
+    socket = io(`${import.meta.env.VITE_API_URL}`, {
       withCredentials: true,
       transports: ["websocket"],
       query: { userId },
