@@ -269,12 +269,9 @@ export function mapAndCacheAppraisals(
   state.appraisalRequests = mappedData;
 }
 
-export function updateLeaveState(
-  state: any,
-  payload: ReturnType<typeof normalizeLeaveRequest>
-) {
+export function updateLeaveState(state: any, payload: any) {
   const { myRequests, approvals, allApproved, summary, balance, pagination } =
-    payload;
+    payload.data;
 
   if (pagination?.myRequests?.page) {
     const page = pagination.myRequests.page;

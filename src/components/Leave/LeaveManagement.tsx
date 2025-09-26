@@ -136,7 +136,6 @@ const LeaveManagement: React.FC = () => {
   const { profilePagination } = useAppSelector((state) => state.profile);
   const { cachedApprovedLeave } = useReduxLeave();
   const canView = user?.role === "admin" || user?.role === "hr";
-
   const currentLeavePage = activityFeedPagination?.page ?? 1;
   const cachedMyApproved = activityFeedCache?.[currentLeavePage] ?? [];
 
