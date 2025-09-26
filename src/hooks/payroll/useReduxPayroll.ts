@@ -351,9 +351,10 @@ export const useReduxPayroll = (): PayrollContextType => {
   useEffect(() => {
     if (!filtersApplied && initialPayrollRecords?.data?.length > 0) {
       dispatch(restorePayrollFromCache(initialPayrollRecords));
-    } else if (!filtersApplied) {
-      refetchPayrolls();
     }
+    // else if (!filtersApplied) {
+    //   refetchPayrolls();
+    // }
 
     if (payrollRecords?.data) {
       const { pagination, data: users } = payrollRecords.data;
@@ -362,7 +363,7 @@ export const useReduxPayroll = (): PayrollContextType => {
         dispatch(setPayrollCache({ page: pagination.page, data: users }));
       }
     }
-  }, [payrollRecords, filtersApplied, initialPayrollRecords, refetchPayrolls]);
+  }, [payrollRecords, filtersApplied, initialPayrollRecords]);
 
   // Compute total pages
   const totalPages = Math.ceil(

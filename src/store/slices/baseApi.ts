@@ -2,6 +2,8 @@
 import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
 import { toast } from "@/hooks/use-toast";
 import { logout } from "./auth/authSlice";
+import { history } from "@/utils/history";
+
 const isProd = import.meta.env.VITE_NODE_ENV === "production";
 
 const baseQuery = fetchBaseQuery({
@@ -35,9 +37,9 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       "Token expired",
     ];
 
-    // if (authErrorMessages.includes(errorMessage)) {
-    //   api.dispatch(logout());
-    // }
+    if (authErrorMessages.includes(errorMessage)) {
+      api.dispatch(logout());
+    }
 
     if (isProd && !authErrorMessages.includes(errorMessage)) {
       return { data: null };

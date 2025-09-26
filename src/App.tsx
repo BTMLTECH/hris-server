@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,12 +7,11 @@ import { CombinedProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Provider } from "react-redux";
-import { persistor, store} from "./store/store";
+import { persistor, store } from "./store/store";
 import { PersistGate } from "redux-persist/integration/react";
 import SetPassword from "./components/Auth/SetPassword";
 
 const queryClient = new QueryClient();
-
 
 const SetPasswordWithToken = () => {
   const [params] = useSearchParams();
@@ -22,15 +20,16 @@ const SetPasswordWithToken = () => {
 };
 
 const App = () => (
-    <Provider store={store}>
+  <Provider store={store}>
     <PersistGate loading={<div>Loading...</div>} persistor={persistor}>
       <TooltipProvider>
         <CombinedProvider>
           <Toaster />
           <Sonner />
+
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/set-password" element={<SetPasswordWithToken />} /> 
+            <Route path="/set-password" element={<SetPasswordWithToken />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CombinedProvider>
