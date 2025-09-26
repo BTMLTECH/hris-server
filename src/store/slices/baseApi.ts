@@ -35,12 +35,9 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
       "Token expired",
     ];
 
-    if (authErrorMessages.includes(errorMessage)) {
-      // Logout in Redux
-      api.dispatch(logout());
-
-      window.location.href = "/";
-    }
+    // if (authErrorMessages.includes(errorMessage)) {
+    //   api.dispatch(logout());
+    // }
 
     if (isProd && !authErrorMessages.includes(errorMessage)) {
       return { data: null };
