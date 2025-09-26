@@ -274,7 +274,6 @@ const attendanceSlice = createSlice({
         }
       );
 
-    // Manual Check-In
     builder
       .addMatcher(
         attendanceApi.endpoints.manualCheckIn.matchPending,
@@ -292,7 +291,6 @@ const attendanceSlice = createSlice({
         }
       );
 
-    // Manual Check-Out
     builder
       .addMatcher(
         attendanceApi.endpoints.manualCheckOut.matchPending,

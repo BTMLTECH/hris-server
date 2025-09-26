@@ -2,14 +2,21 @@
 import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
 import { toast } from "@/hooks/use-toast";
 import { logout } from "./auth/authSlice";
+const isProd = import.meta.env.VITE_NODE_ENV === "production";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: `${import.meta.env.VITE_API_URL}/api/`,
+  // baseUrl: "http://localhost:8080/api/",
   credentials: "include",
 });
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
+
+  if (!isProd && result.error) {
+    // Only log errors in development
+    console.error(result.error);
+  }
 
   if (result.error?.status === 429) {
     toast({ title: "Too many requests. Please try again later!" });
@@ -30,6 +37,10 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 
     if (authErrorMessages.includes(errorMessage)) {
       api.dispatch(logout());
+    }
+
+    if (isProd && !authErrorMessages.includes(errorMessage)) {
+      return { data: null };
     }
   }
 

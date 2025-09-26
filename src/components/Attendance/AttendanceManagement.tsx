@@ -80,6 +80,8 @@ const AttendanceManagement: React.FC = () => {
   const { canClockIn } = useShiftClockStatus(newRecords, selectedShift);
   const canManagePayroll = user?.role === "admin" || user?.role === "hr";
 
+  console.log("canManagePayroll", newRecords);
+
   const handleClockIn = async () => {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5);
@@ -307,6 +309,7 @@ const AttendanceManagement: React.FC = () => {
                   <TableRow>
                     <TableHead>Staff ID</TableHead>
                     <TableHead>Employee Name</TableHead>
+                    <TableHead>Department</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Shift</TableHead>
                     <TableHead>Check In</TableHead>
@@ -328,8 +331,11 @@ const AttendanceManagement: React.FC = () => {
                         const ShiftIcon = shiftInfo.icon;
                         return (
                           <TableRow key={record.id}>
-                            <TableCell>{record.staffId}</TableCell>
-                            <TableCell>{record.employeeName}</TableCell>
+                            <TableCell>{record?.staffId || "N/A"}</TableCell>
+                            <TableCell>
+                              {record?.employeeName || "N/A"}
+                            </TableCell>
+                            <TableCell>{record?.department || "N/A"}</TableCell>
                             <TableCell>
                               {new Date(record.date).toLocaleDateString()}
                             </TableCell>

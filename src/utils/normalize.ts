@@ -25,6 +25,7 @@ export const normalizeAttendanceRecord = (record: any): AttendanceRecord => {
     id: record._id,
     staffId: user.staffId ?? "N/A",
     employeeId: user._id ?? null,
+    department: user?.department,
     employeeName:
       user.firstName && user.lastName
         ? `${user.firstName} ${user.lastName}`
