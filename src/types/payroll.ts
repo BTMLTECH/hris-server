@@ -181,6 +181,7 @@ export interface PayrollResponse {
 }
 
 export interface PayrollContextType {
+  totalPages: number;
   cachedPayrolls: IPayroll[] | any;
   // cachedPayrollData: PayrollResponse;
   payrollPagination: PayrollPagination;

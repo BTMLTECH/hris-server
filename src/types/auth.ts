@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CreateCompanyDTO, ProfileFormData } from "./user";
 
-
 export interface EmergencyContact {
   name: string;
   phone: string;
@@ -9,9 +8,8 @@ export interface EmergencyContact {
   relationship: string;
 }
 
-
 export interface AccountInfo {
-  classLevel: string; 
+  classLevel: string;
   basicPay: number;
   allowances: number;
   bankAccountNumber: string;
@@ -24,19 +22,19 @@ export interface AccountInfo {
 export interface CooperativeInfo {
   monthlyContribution: number;
   totalContributed: number;
-  lastContributionDate?: string; 
+  lastContributionDate?: string;
 }
 
 export interface IOnboardingTask {
   name: string;
-  category: 'training' | 'services' | 'device';
+  category: "training" | "services" | "device";
   completed: boolean;
-  completedAt?: string; 
+  completedAt?: string;
 }
 
 export interface IOnboardingRequirement {
   _id?: string;
-  employee: string; 
+  employee: string;
   department: string;
   tasks: IOnboardingTask[];
   createdAt: string;
@@ -45,15 +43,15 @@ export interface IOnboardingRequirement {
 export interface ICompany {
   name: string;
   description?: string;
-  roles: string; 
-  department: string; 
+  roles: string;
+  department: string;
   status: string;
   createdAt?: Date;
   branding?: {
-      displayName?: string;
-      logoUrl?: string;
-      primaryColor?: string;
-    }
+    displayName?: string;
+    logoUrl?: string;
+    primaryColor?: string;
+  };
 }
 
 export interface User {
@@ -70,7 +68,7 @@ export interface User {
   city?: string;
   mobile?: string;
   email: string;
-  password?: string; 
+  password?: string;
   department: string;
   biometryId?: string;
   profileImage?: string;
@@ -78,9 +76,9 @@ export interface User {
   officeBranch?: string;
   employmentDate?: string;
   accountInfo: AccountInfo;
-  role: 'md' | 'teamlead' | 'employee' | 'admin' | 'hr';
-  company: ICompany; 
-  status: 'active' | 'inactive' | 'terminated';
+  role: "md" | "teamlead" | "employee" | "admin" | "hr";
+  company: ICompany;
+  status: "active" | "inactive" | "terminated";
   terminationDate?: string;
   isActive: boolean;
   failedLoginAttempts: number;
@@ -96,7 +94,7 @@ export interface User {
   createdAt: string;
   nextOfKin: EmergencyContact;
   sendInvite?: boolean;
-  token?: string; 
+  token?: string;
   onboardingRequirements?: IOnboardingRequirement[];
   basicSalary: number;
   totalAllowance: number;
@@ -108,7 +106,7 @@ export interface UserState {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  code: string | null;  
+  code: string | null;
 }
 
 export interface LoginResponse {
@@ -119,12 +117,11 @@ export interface LoginResponse {
   };
 }
 
-
-export interface  Verify2fa  {
+export interface Verify2fa {
   user?: User;
   // token: string | null;
   // refreshToken?: string | null;
-};
+}
 
 export interface PasswordConfig {
   minLength?: number;
@@ -136,7 +133,7 @@ export interface PasswordConfig {
 export interface AuthContextType {
   user: User | null;
   profileRecord: User | null;
-  profileError: any
+  profileError: any;
   cachedEmployees: ProfileFormData[];
   isLoading: boolean;
   error: string | null;
@@ -144,15 +141,20 @@ export interface AuthContextType {
   profilesIsLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
-  verify2fa: (email: string,code: string) => Promise<boolean>;
+  verify2fa: (email: string, code: string) => Promise<boolean>;
   resend2fa: (email: string) => Promise<boolean>;
   reqestNewPassword: (email: string) => Promise<boolean>;
   resendInvite: (email: string) => Promise<boolean>;
-  setNewPassword: (newPassword: string, passwordConfig:PasswordConfig, temporaryPassword: string, token:string) => Promise<boolean>;
+  setNewPassword: (
+    newPassword: string,
+    passwordConfig: PasswordConfig,
+    temporaryPassword: string,
+    token: string
+  ) => Promise<boolean>;
   logout: () => void;
   inviteUser: (userData: Partial<User>) => Promise<boolean>;
-  bulkInviteUsers: (formData: FormData) => Promise<boolean>;  
-  createCompanyWithAdim: (data: CreateCompanyDTO) => Promise<boolean>;  
+  bulkInviteUsers: (formData: FormData) => Promise<boolean>;
+  createCompanyWithAdim: (data: CreateCompanyDTO) => Promise<boolean>;
   hasRole: (roles: string[]) => boolean;
   clearError: () => void;
 }

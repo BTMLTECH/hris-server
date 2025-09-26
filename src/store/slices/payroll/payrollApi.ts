@@ -133,4 +133,5 @@ export const {
   useMarkPayrollAsPaidMutation,
   useMarkPayrollsAsDraftBulkMutation,
   usePayrollsAsPaidBulkMutation,
+  useLazyGetAllPayrollsQuery,
 } = payrollApi;

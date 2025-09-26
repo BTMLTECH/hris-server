@@ -99,20 +99,58 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
+    // getAllProfile: builder.query<
+    //   PaginatedProfilesResponse,
+    //   { page: number; limit: number, search: string }
+    // >({
+    //   query: ({ page = 1, limit = 20, search: string }) => ({
+    //     url: `user/users?page=${page}&limit=${limit}`,
+    //     method: "GET",
+    //   }),
+    //   providesTags: (result) =>
+    //     result
+    //       ? [
+    //           ...result.data.data.map(({ _id }) => ({
+    //             type: "Profiles" as const,
+    //             _id,
+    //           })),
+    //           { type: "Profiles", id: "LIST" },
+    //         ]
+    //       : [{ type: "Profiles", id: "LIST" }],
+    // }),
+
     getAllProfile: builder.query<
       PaginatedProfilesResponse,
-      { page: number; limit: number }
+      {
+        page?: number;
+        limit?: number;
+        search?: string;
+        department?: string;
+        status?: string;
+      }
     >({
-      query: ({ page = 1, limit = 20 }) => ({
-        url: `user/users?page=${page}&limit=${limit}`,
-        method: "GET",
-      }),
+      query: ({ page = 1, limit = 20, search, department, status }) => {
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        });
+
+        if (search) params.append("search", search);
+        if (department && department !== "all")
+          params.append("department", department);
+        if (status) params.append("status", status);
+
+        return {
+          url: `user/users?${params.toString()}`,
+          method: "GET",
+        };
+      },
       providesTags: (result) =>
         result
           ? [
               ...result.data.data.map(({ _id }) => ({
                 type: "Profiles" as const,
-                _id,
+                id: _id,
               })),
               { type: "Profiles", id: "LIST" },
             ]
@@ -171,4 +209,5 @@ export const {
   useTerminateProfileMutation,
   useActivateProfileMutation,
   useGetAnalyticsQuery,
+  useLazyGetAllProfileQuery,
 } = profileApi;

@@ -80,8 +80,6 @@ const AttendanceManagement: React.FC = () => {
   const { canClockIn } = useShiftClockStatus(newRecords, selectedShift);
   const canManagePayroll = user?.role === "admin" || user?.role === "hr";
 
-  console.log("canManagePayroll", newRecords);
-
   const handleClockIn = async () => {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5);

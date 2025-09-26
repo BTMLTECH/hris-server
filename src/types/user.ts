@@ -265,6 +265,7 @@ export interface ProfileState {
   filterDepartment: string;
   isProcessingBulk: boolean;
   nextStaffId: string;
+  statusFilter: "active" | "inactive";
   isEditMode: boolean;
   selectedDeleteId: string;
   isDeleteDialogOpen: boolean;
@@ -306,6 +307,9 @@ export interface PaginatedProfilesResponse {
       page: number;
       limit: number;
       pages: number;
+      search: string;
+      department: string;
+      status: string;
     };
     count: number;
   };

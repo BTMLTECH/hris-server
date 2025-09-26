@@ -119,6 +119,7 @@ const PayrollManagement: React.FC = () => {
     payrollsAsDraftBulk,
     reverseSinglePayroll,
     processBulkPayroll,
+    totalPages,
   } = useReduxPayroll();
   const {
     handleCalculateClass,
@@ -1130,7 +1131,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                 loadingPdf={loadingPdf}
               />
 
-              {payrollPagination?.pages > 1 && (
+              {totalPages > 1 && (
                 <PaginationNav
                   page={payrollPagination?.page}
                   totalPages={payrollPagination.pages}

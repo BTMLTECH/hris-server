@@ -28,6 +28,7 @@ const initialState: ProfileState = {
   showDetailView: false,
   searchTerm: "",
   filterDepartment: "all",
+  statusFilter: "active",
   isProcessingBulk: false,
   bulkEmployees: [],
   classlevel: [],
@@ -89,6 +90,9 @@ const profileSlice = createSlice({
       >
     ) {
       state.selectedActionType = action.payload;
+    },
+    setStatusFilter(state, action: PayloadAction<"active" | "inactive">) {
+      state.statusFilter = action.payload;
     },
 
     setIsActionDialogOpen(state, action: PayloadAction<boolean>) {
@@ -477,6 +481,7 @@ export const {
   setIsManageDialogOpen,
   setCompanyFormData,
   updateBirthdayAnalytics,
+  setStatusFilter,
   resetCompanyFormData,
 } = profileSlice.actions;
 export default profileSlice.reducer;
