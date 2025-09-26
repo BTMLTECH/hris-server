@@ -36,7 +36,10 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
     ];
 
     if (authErrorMessages.includes(errorMessage)) {
+      // Logout in Redux
       api.dispatch(logout());
+
+      window.location.href = "/";
     }
 
     if (isProd && !authErrorMessages.includes(errorMessage)) {
