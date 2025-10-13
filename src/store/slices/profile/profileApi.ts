@@ -109,7 +109,7 @@ export const profileApi = apiSlice.injectEndpoints({
         status?: string;
       }
     >({
-      query: ({ page = 1, limit = 20, search, department, status }) => {
+      query: ({ page = 1, limit = 40, search, department, status }) => {
         const params = new URLSearchParams({
           page: page.toString(),
           limit: limit.toString(),
