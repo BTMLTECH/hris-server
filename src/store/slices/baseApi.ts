@@ -2,7 +2,6 @@
 import { fetchBaseQuery, createApi } from "@reduxjs/toolkit/query/react";
 import { toast } from "@/hooks/use-toast";
 import { logout } from "./auth/authSlice";
-import { history } from "@/utils/history";
 
 const isProd = import.meta.env.VITE_NODE_ENV === "production";
 
@@ -15,20 +14,16 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
 
-  if (!isProd && result.error) {
-    // Only log errors in development
-    console.error(result.error);
-  }
-
   if (result.error?.status === 429) {
     toast({ title: "Too many requests. Please try again later!" });
   }
-
   if (result.error?.status === 401) {
     const errorMessage =
       typeof result.error?.data === "object" && result.error?.data !== null
         ? (result.error.data as { message?: string }).message
         : "";
+
+    console.log("errorMessage", errorMessage);
 
     const authErrorMessages = [
       "No token provided",
@@ -63,6 +58,7 @@ export const baseApi = createApi({
     "Notifications",
     "Trainings",
     "Contribution",
+    "Handover",
   ],
   endpoints: () => ({}),
 });

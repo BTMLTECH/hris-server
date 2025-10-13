@@ -76,7 +76,7 @@ export interface User {
   officeBranch?: string;
   employmentDate?: string;
   accountInfo: AccountInfo;
-  role: "md" | "teamlead" | "employee" | "admin" | "hr";
+  role: "md" | "teamlead" | "employee" | "admin" | "hr" | "qa";
   company: ICompany;
   status: "active" | "inactive" | "terminated";
   terminationDate?: string;
@@ -119,8 +119,6 @@ export interface LoginResponse {
 
 export interface Verify2fa {
   user?: User;
-  // token: string | null;
-  // refreshToken?: string | null;
 }
 
 export interface PasswordConfig {
@@ -131,14 +129,17 @@ export interface PasswordConfig {
 }
 
 export interface AuthContextType {
+  totalPages: number;
+  shouldShowSkeleton: boolean;
+  shouldSearch: boolean;
   user: User | null;
-  profileRecord: User | null;
-  profileError: any;
+  // profileRecord: User | null;
+  // profileError: any;
   cachedEmployees: ProfileFormData[];
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  profilesIsLoading: boolean;
+  // profilesIsLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   resetPassword: (email: string) => Promise<boolean>;
   verify2fa: (email: string, code: string) => Promise<boolean>;

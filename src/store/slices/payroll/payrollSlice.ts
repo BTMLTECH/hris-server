@@ -62,7 +62,7 @@ const initialState: PayrollState = {
   payrollPagination: {
     total: 0,
     page: 1,
-    limit: 50,
+    limit: 20,
     pages: 0,
   },
   payrollCache: {},

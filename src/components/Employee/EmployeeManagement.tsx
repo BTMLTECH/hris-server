@@ -52,6 +52,7 @@ import {
   UserCheck,
   MoreHorizontal,
   Filter,
+  Users,
 } from "lucide-react";
 
 import { toast } from "@/hooks/use-toast";
@@ -78,6 +79,7 @@ import {
   setLoading,
   setIsCompanyDialogOpen,
   resetCompanyFormData,
+  setStatusFilter,
 } from "@/store/slices/profile/profileSlice";
 import { useReduxProfile } from "@/hooks/user/useReduxProfile";
 import { useLoadingState } from "@/hooks/useLoadingState";
@@ -118,6 +120,7 @@ const EmployeeManagement: React.FC = () => {
     isCompanyDialogOpen,
     companyFormData,
     nextStaffId,
+    statusFilter,
   } = useAppSelector((state) => state.profile);
   const { editProfile, deleteProfile, profileTerminate, profileActivate } =
     useReduxProfile();
@@ -131,33 +134,17 @@ const EmployeeManagement: React.FC = () => {
     createCompanyWithAdim,
     bulkInviteUsers,
     resendInvite,
-    profilesIsLoading,
+    // profilesIsLoading,
+    totalPages,
+    shouldShowSkeleton,
+    shouldSearch,
   } = useReduxAuth();
-  const shouldShowSkeleton =
-    !user || (["hr", "admin"].includes(user.role) && profilesIsLoading);
+
   const mappedDepartment = departmentMap[formData?.department] || "all";
-  const [statusFilter, setStatusFilter] = useState<"active" | "inactive">(
-    "active"
-  );
 
   const isParentCompany = cachedEmployees?.some(
     (employee: ProfileFormData) => employee.company?.name
   );
-
-  const filteredEmployees = cachedEmployees?.filter((employee: any) => {
-    const fullName = `${employee.firstName} ${employee.lastName}`.toLowerCase();
-
-    const matchesSearch =
-      fullName.includes(searchTerm.toLowerCase()) ||
-      employee.email.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesDepartment =
-      filterDepartment === "all" || employee.department === filterDepartment;
-
-    const matchesStatus = employee.status?.toLowerCase() === statusFilter;
-
-    return matchesSearch && matchesDepartment && matchesStatus;
-  });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -441,7 +428,7 @@ const EmployeeManagement: React.FC = () => {
               <DropdownMenuContent align="end" className="w-48">
                 {/* Filter */}
                 <DropdownMenuItem
-                  onClick={() => setStatusFilter("active")}
+                  onClick={() => dispatch(setStatusFilter("active"))}
                   className={
                     statusFilter === "active" ? "bg-blue-100 text-blue-600" : ""
                   }
@@ -450,7 +437,7 @@ const EmployeeManagement: React.FC = () => {
                   Show Active
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setStatusFilter("inactive")}
+                  onClick={() => dispatch(setStatusFilter("inactive"))}
                   className={
                     statusFilter === "inactive"
                       ? "bg-blue-100 text-blue-600"
@@ -749,65 +736,102 @@ const EmployeeManagement: React.FC = () => {
       </Card>
 
       {/* Employee Table */}
+      {/* Employee Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Employees ({filteredEmployees.length})</CardTitle>
+          <CardTitle>Employees ({cachedEmployees.length})</CardTitle>
           <CardDescription>
             Manage your organization's employees
           </CardDescription>
         </CardHeader>
+
         {shouldShowSkeleton ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <TableRow key={`skeleton-${i}`} className="animate-pulse">
-              {/* Employee Cell */}
-              <TableCell>
-                <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
-                  <div className="space-y-1">
-                    <div className="h-4 w-32 bg-muted rounded" />
-                    <div className="h-3 w-40 bg-muted-foreground/50 rounded" />
-                    <div className="h-3 w-28 bg-muted-foreground/40 rounded" />
-                  </div>
-                </div>
-              </TableCell>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Staff ID</TableHead>
+                  <TableHead>Employee</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Department</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Hire Date</TableHead>
+                  {canManageEmployees && <TableHead>Basic Salary</TableHead>}
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`} className="animate-pulse">
+                    {/* Staff ID */}
+                    <TableCell>
+                      <div className="h-4 w-20 bg-muted rounded" />
+                    </TableCell>
 
-              {/* Role */}
-              <TableCell>
-                <div className="h-4 w-16 bg-muted rounded" />
-              </TableCell>
+                    {/* Employee Cell */}
+                    <TableCell>
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-full bg-muted" />
+                        <div className="space-y-1">
+                          <div className="h-4 w-32 bg-muted rounded" />
+                          <div className="h-3 w-40 bg-muted-foreground/50 rounded" />
+                          <div className="h-3 w-28 bg-muted-foreground/40 rounded" />
+                        </div>
+                      </div>
+                    </TableCell>
 
-              {/* Department */}
-              <TableCell>
-                <div className="h-4 w-24 bg-muted rounded" />
-              </TableCell>
+                    {/* Role */}
+                    <TableCell>
+                      <div className="h-4 w-16 bg-muted rounded" />
+                    </TableCell>
 
-              {/* Status */}
-              <TableCell>
-                <div className="h-4 w-20 bg-muted rounded" />
-              </TableCell>
+                    {/* Department */}
+                    <TableCell>
+                      <div className="h-4 w-24 bg-muted rounded" />
+                    </TableCell>
 
-              {/* Hire Date */}
-              <TableCell>
-                <div className="h-4 w-28 bg-muted rounded" />
-              </TableCell>
+                    {/* Status */}
+                    <TableCell>
+                      <div className="h-4 w-20 bg-muted rounded" />
+                    </TableCell>
 
-              {/* Salary (conditionally rendered) */}
-              {canManageEmployees && (
-                <TableCell>
-                  <div className="h-4 w-20 bg-muted rounded" />
-                </TableCell>
-              )}
+                    {/* Hire Date */}
+                    <TableCell>
+                      <div className="h-4 w-28 bg-muted rounded" />
+                    </TableCell>
 
-              {/* Actions */}
-              <TableCell>
-                <div className="flex space-x-2">
-                  <div className="h-8 w-8 rounded bg-muted" />
-                  <div className="h-8 w-8 rounded bg-muted" />
-                  <div className="h-8 w-8 rounded bg-muted" />
-                </div>
-              </TableCell>
-            </TableRow>
-          ))
+                    {/* Salary (conditionally rendered) */}
+                    {canManageEmployees && (
+                      <TableCell>
+                        <div className="h-4 w-20 bg-muted rounded" />
+                      </TableCell>
+                    )}
+
+                    {/* Actions */}
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <div className="h-8 w-8 rounded bg-muted" />
+                        <div className="h-8 w-8 rounded bg-muted" />
+                        <div className="h-8 w-8 rounded bg-muted" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        ) : cachedEmployees.length === 0 ? (
+          <CardContent>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Users className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">No employees found</h3>
+              <p className="text-muted-foreground mt-2">
+                {shouldSearch
+                  ? "No employees match your search criteria"
+                  : "No employees available"}
+              </p>
+            </div>
+          </CardContent>
         ) : (
           <CardContent>
             <Table>
@@ -825,7 +849,7 @@ const EmployeeManagement: React.FC = () => {
               </TableHeader>
 
               <TableBody>
-                {[...filteredEmployees]
+                {[...cachedEmployees]
                   .sort((a, b) => {
                     const dateA = new Date(a.createdAt ?? 0).getTime();
                     const dateB = new Date(b.createdAt ?? 0).getTime();
@@ -838,6 +862,7 @@ const EmployeeManagement: React.FC = () => {
                           {employee.staffId || "-"}
                         </span>
                       </TableCell>
+
                       {/* Employee Info */}
                       <TableCell>
                         <div className="flex items-center space-x-3">
@@ -869,13 +894,11 @@ const EmployeeManagement: React.FC = () => {
                         </span>
                       </TableCell>
 
+                      {/* Department */}
                       <TableCell>
                         <span className="capitalize">
-                          {/* {employee?.department || '-'} */}
-                          <span className="capitalize">
-                            {reverseDepartmentMap[employee?.department || ""] ||
-                              "-"}
-                          </span>
+                          {reverseDepartmentMap[employee?.department || ""] ||
+                            "-"}
                         </span>
                       </TableCell>
 
@@ -928,19 +951,6 @@ const EmployeeManagement: React.FC = () => {
                           {/* Edit / Delete */}
                           {canManageEmployees && (
                             <>
-                              {/* <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleEdit(employee, "edit")}
-                                disabled={isLocalLoading(employee._id, "edit")}
-                              >
-                                {isLocalLoading(employee._id, "edit") ? (
-                                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                                ) : (
-                                  <Edit className="h-4 w-4" />
-                                )}
-                              </Button> */}
-
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -960,6 +970,7 @@ const EmployeeManagement: React.FC = () => {
                                   <Trash2 className="h-4 w-4" />
                                 )}
                               </Button>
+
                               {employee.status === "active" && (
                                 <Button
                                   variant="outline"
@@ -983,6 +994,7 @@ const EmployeeManagement: React.FC = () => {
                                   )}
                                 </Button>
                               )}
+
                               {employee.status === "inactive" && (
                                 <Button
                                   variant="outline"
@@ -1045,22 +1057,29 @@ const EmployeeManagement: React.FC = () => {
               </TableBody>
             </Table>
 
-            {/* Pagination */}
-            {profilePagination.pages > 1 && (
-              <PaginationNav
-                page={profilePagination.page}
-                totalPages={profilePagination.pages}
-                onPageChange={(newPage) =>
-                  dispatch(
-                    setProfilePagination({
-                      ...profilePagination,
-                      page: newPage,
-                    })
-                  )
-                }
-                className="mt-6"
-              />
-            )}
+            <PaginationNav
+              page={profilePagination?.page}
+              totalPages={totalPages}
+              pageSize={profilePagination?.limit || 20}
+              onPageChange={(newPage) =>
+                dispatch(
+                  setProfilePagination({
+                    ...profilePagination,
+                    page: newPage,
+                  })
+                )
+              }
+              onPageSizeChange={(newSize) =>
+                dispatch(
+                  setProfilePagination({
+                    ...profilePagination,
+                    page: 1,
+                    limit: newSize,
+                  })
+                )
+              }
+              className="mt-6"
+            />
           </CardContent>
         )}
       </Card>

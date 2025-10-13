@@ -27,6 +27,7 @@ import { toast } from "@/hooks/use-toast";
 import { AuthContextType, PasswordConfig, User } from "@/types/auth";
 import {
   clearEmployeeCache,
+  restoreProfileFromCache,
   setBulkEmployees,
   setFormData,
   setLoading,
@@ -41,12 +42,15 @@ import {
   useGetDepartmentsQuery,
   useGetLastStaffIdQuery,
   useGetProfileQuery,
+  useLazyGetAllProfileQuery,
 } from "@/store/slices/profile/profileApi";
 import { extractErrorMessage } from "@/utils/errorHandler";
 import { clearActivityCache } from "@/store/slices/appraisal/appraisalSlice";
 import { clearAttenadanceCache } from "@/store/slices/attendance/attendanceSlice";
 import { CreateCompanyDTO, IBirthdayAnalytics } from "@/types/user";
 import { io, Socket } from "socket.io-client";
+import { useDebounce } from "../payroll/useDebounce";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 let socket: Socket | null = null;
 
 export const connectNotificationSocket = (userId: string) => {
@@ -70,6 +74,9 @@ export const useReduxAuth = (): AuthContextType => {
     classlevelPagination,
     departmentsPagination,
     profileCache,
+    searchTerm,
+    filterDepartment,
+    statusFilter,
   } = useAppSelector((state) => state.profile);
   const [loginMutation] = useLoginMutation();
   const [resetPasswordMutation] = useResetPasswordMutation();
@@ -82,52 +89,323 @@ export const useReduxAuth = (): AuthContextType => {
   const [createCompany] = useCreateCompanyMutation();
   const [newSetPassword] = useNewSetPasswordMutation();
   const [requestPassword] = useRequestPasswordMutation();
-  const currentProfilePage = profilePagination?.page;
-  const cachedEmployees = profileCache[currentProfilePage] ?? [];
   const currentDepartmentPage = departmentsPagination?.page;
   const currentClasslevelPage = classlevelPagination?.page;
-  const shouldAllUsers = !isAuthenticated || !user;
-  const shouldSkipAll = isAuthenticated;
+  // const shouldAllUsers = !isAuthenticated || !user;
+  // const { data } = useGetLastStaffIdQuery(undefined, {
+  //   skip: shouldAllUsers,
+  // });
+  // const { data: profileRecord, error: profileError } = useGetProfileQuery(
+  //   undefined,
+  //   {
+  //     skip: shouldAllUsers,
+  //   }
+  // );
 
-  const { data } = useGetLastStaffIdQuery(undefined, {
-    skip: shouldAllUsers,
+  // const {} = useGetDepartmentsQuery(
+  //   { page: currentDepartmentPage, limit: departmentsPagination.limit },
+  //   { skip: shouldAllUsers }
+  // );
+
+  // const {} = useGetClassLevelQuery(
+  //   { page: currentClasslevelPage, limit: classlevelPagination.limit },
+  //   { skip: shouldAllUsers }
+  // );
+
+  // const currentPage = profilePagination?.page ?? 1;
+  // const pageSize = profilePagination?.limit || 20;
+  // const debouncedSearch = useDebounce(searchTerm, 500);
+
+  // const cachedProfiles = profileCache[currentPage] ?? [];
+  // const allCachedProfiles = Object.values(profileCache).flatMap((page: any) =>
+  //   Array.isArray(page) ? page : []
+  // );
+  // const isCacheAvailable = cachedProfiles.length > 0;
+
+  // // Search + filter handling
+  // const isValidSearch = debouncedSearch.trim().length >= 2;
+  // const filtersApplied =
+  //   !!debouncedSearch || filterDepartment !== "all" || !!statusFilter;
+  // const shouldSearch = filtersApplied && isValidSearch;
+
+  // // In your useReduxAuth hook, add these loading states:
+
+  // // Base query
+  // const {
+  //   data: profilesRecord,
+  //   isLoading: profilesIsLoading,
+  //   refetch: refetchProfiles,
+  // } = useGetAllProfileQuery(
+  //   { page: currentPage, limit: pageSize },
+  //   { skip: !isAuthenticated, refetchOnMountOrArgChange: false }
+  // );
+
+  // // Lazy query for server search
+  // const [
+  //   triggerServerSearch,
+  //   { data: serverSearchResult, isFetching: isSearching },
+  // ] = useLazyGetAllProfileQuery();
+
+  // // Match helper
+  // const matchesProfile = (p: any, searchText?: string) => {
+  //   const searchLower = (searchText || "").toLowerCase();
+  //   const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+  //   console.log("p", p);
+
+  //   const matchesSearch =
+  //     !searchLower ||
+  //     fullName.includes(searchLower) ||
+  //     p.email?.toLowerCase().includes(searchLower) ||
+  //     p.staffId?.toLowerCase().includes(searchLower);
+
+  //   const matchesDepartment =
+  //     filterDepartment === "all" || p.department === filterDepartment;
+
+  //   const matchesStatus =
+  //     !statusFilter || p.status?.toLowerCase() === statusFilter.toLowerCase();
+
+  //   return matchesSearch && matchesDepartment && matchesStatus;
+  // };
+
+  // const locallyFilteredAll = allCachedProfiles.filter((p) =>
+  //   matchesProfile(p, debouncedSearch)
+  // );
+  // const hasLocalMatches = locallyFilteredAll.length > 0;
+
+  // const startIndex = (currentPage - 1) * pageSize;
+  // const endIndex = startIndex + pageSize;
+  // const paginatedFilteredProfiles = locallyFilteredAll.slice(
+  //   startIndex,
+  //   endIndex
+  // );
+
+  // const isSearchingBackend = shouldSearch && !hasLocalMatches && isSearching;
+  // const isLoadingInitialData =
+  //   !shouldSearch && !isCacheAvailable && profilesIsLoading;
+  // const shouldShowSkeleton = isSearchingBackend || isLoadingInitialData;
+
+  // useEffect(() => {
+  //   if (!shouldSearch) return;
+
+  //   if (hasLocalMatches) {
+  //     if (currentPage !== 1) {
+  //       dispatch(setProfilePagination({ ...profilePagination, page: 1 }));
+  //     }
+  //     return;
+  //   }
+
+  //   dispatch(setProfilePagination({ ...profilePagination, page: 1 }));
+
+  //   const serverParams: any = {
+  //     page: 1,
+  //     limit: pageSize,
+  //   };
+
+  //   if (debouncedSearch.trim()) {
+  //     serverParams.search = debouncedSearch.trim();
+  //   }
+
+  //   if (filterDepartment !== "all") {
+  //     serverParams.department = filterDepartment;
+  //   }
+
+  //   if (statusFilter) {
+  //     serverParams.status = statusFilter;
+  //   }
+
+  //   triggerServerSearch(serverParams);
+  // }, [
+  //   debouncedSearch,
+  //   shouldSearch,
+  //   hasLocalMatches,
+  //   currentPage,
+  //   filterDepartment,
+  //   statusFilter,
+  // ]);
+
+  // useEffect(() => {
+  //   if (!serverSearchResult?.data) return;
+
+  //   const { pagination, data: users } = serverSearchResult.data;
+  //   if (pagination) dispatch(setProfilePagination(pagination));
+  //   if (Array.isArray(users) && pagination?.page) {
+  //     dispatch(setProfileCache({ page: pagination.page, data: users }));
+  //   }
+  // }, [serverSearchResult]);
+
+  // // Cache base query results
+  // useEffect(() => {
+  //   if (!profilesRecord?.data || shouldSearch) return;
+
+  //   const { pagination, data: users } = profilesRecord.data;
+  //   if (pagination) dispatch(setProfilePagination(pagination));
+  //   if (Array.isArray(users) && pagination?.page) {
+  //     dispatch(setProfileCache({ page: pagination.page, data: users }));
+  //   }
+  // }, [profilesRecord, shouldSearch]);
+
+  // const finalProfiles = (() => {
+  //   if (shouldSearch) {
+  //     if (hasLocalMatches) return paginatedFilteredProfiles;
+  //     if (isSearching) return [];
+  //     if (serverSearchResult?.data) return serverSearchResult.data.data ?? [];
+  //     return [];
+  //   }
+
+  //   if (isCacheAvailable) return cachedProfiles;
+  //   return profilesRecord?.data?.data ?? [];
+  // })();
+
+  // const totalPages = (() => {
+  //   if (shouldSearch) {
+  //     return Math.ceil(locallyFilteredAll.length / pageSize);
+  //   } else {
+  //     return (
+  //       profilePagination?.pages || profilesRecord?.data?.pagination?.pages || 1
+  //     );
+  //   }
+  // })();
+  const {
+    finalData: finalProfiles,
+    totalPages,
+    isSearching,
+    isBaseLoading,
+    shouldShowSkeleton,
+    shouldSearch,
+    shouldSkip,
+  } = useSmartPaginatedResource({
+    useBaseQuery: useGetAllProfileQuery,
+    useLazyQuery: useLazyGetAllProfileQuery,
+    cache: profileCache,
+    pagination: profilePagination,
+    setPagination: setProfilePagination,
+    setCache: setProfileCache,
+    searchTerm,
+
+    filtersApplied:
+      !!searchTerm || filterDepartment !== "all" || !!statusFilter,
+
+    // ✅ buildParams ensures backend gets correct filters
+    buildParams: (page, limit) => ({
+      page,
+      limit,
+      search: searchTerm?.trim() || undefined,
+      department: filterDepartment !== "all" ? filterDepartment : undefined,
+      status: statusFilter || undefined,
+    }),
+
+    filterFn: (p, searchText) => {
+      const s = searchText.toLowerCase();
+      const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+
+      const matchesSearch =
+        !s ||
+        fullName.includes(s) ||
+        p.email?.toLowerCase().includes(s) ||
+        p.staffId?.toLowerCase().includes(s);
+
+      const matchesDept =
+        filterDepartment === "all" || p.department === filterDepartment;
+
+      const profileStatus = (p.status || "").toLowerCase().trim();
+      const activeStatus = statusFilter
+        ? statusFilter.toLowerCase().trim()
+        : "";
+
+      const matchesStatus = !activeStatus || profileStatus === activeStatus;
+
+      return matchesSearch && matchesDept && matchesStatus;
+    },
   });
-  const { data: profileRecord, error: profileError } = useGetProfileQuery(
-    undefined,
-    {
-      skip: shouldAllUsers,
-    }
-  );
 
-  const { data: profilesRecord, isLoading: profilesIsLoading } =
-    useGetAllProfileQuery(
-      { page: currentProfilePage, limit: profilePagination.limit },
-      { skip: !shouldSkipAll, refetchOnMountOrArgChange: true }
-    );
+  console.log("statusFilter", statusFilter);
+  // const {
+  //   finalData: finalProfiles,
+  //   totalPages,
+  //   isSearching,
+  //   isBaseLoading,
+  //   shouldShowSkeleton,
+  //   shouldSearch,
+  //   shouldSkip,
+  // } = useSmartPaginatedResource({
+  //   useBaseQuery: useGetAllProfileQuery,
+  //   useLazyQuery: useLazyGetAllProfileQuery,
+  //   cache: profileCache,
+  //   pagination: profilePagination,
+  //   setPagination: setProfilePagination,
+  //   setCache: setProfileCache,
+  //   searchTerm,
+  //   filtersApplied:
+  //     !!searchTerm || filterDepartment !== "all" || !!statusFilter,
+  //   // filterFn: (p, searchText) => {
+  //   //   const s = searchText.toLowerCase();
+  //   //   const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+  //   //   const matchesSearch =
+  //   //     !s ||
+  //   //     fullName.includes(s) ||
+  //   //     p.email?.toLowerCase().includes(s) ||
+  //   //     p.staffId?.toLowerCase().includes(s);
+
+  //   //   const matchesDept =
+  //   //     filterDepartment === "all" || p.department === filterDepartment;
+  //   //   console.log("statusFilter", statusFilter);
+  //   //   console.log("p.status", p.status);
+  //   //   const matchesStatus =
+  //   //     !statusFilter ||
+  //   //     p.status?.toLowerCase().trim() === statusFilter.toLowerCase().trim();
+
+  //   //   console.log("matchesStatus", matchesStatus);
+
+  //   //   return matchesSearch && matchesDept && matchesStatus;
+  //   // },
+  //   filterFn: (p, searchText) => {
+  //     const s = searchText.toLowerCase();
+  //     const fullName = `${p.firstName ?? ""} ${p.lastName ?? ""}`.toLowerCase();
+
+  //     const matchesSearch =
+  //       !s ||
+  //       fullName.includes(s) ||
+  //       p.email?.toLowerCase().includes(s) ||
+  //       p.staffId?.toLowerCase().includes(s);
+
+  //     const matchesDept =
+  //       filterDepartment === "all" || p.department === filterDepartment;
+
+  //     // ✅ Normalize and compare safely
+  //     const profileStatus = (p.status || "").toLowerCase().trim();
+  //     const activeStatus = statusFilter
+  //       ? statusFilter.toLowerCase().trim()
+  //       : "";
+
+  //     const matchesStatus = !activeStatus || profileStatus === activeStatus;
+
+  //     // Debug
+  //     console.log("statusFilter:", statusFilter);
+  //     console.log("p.status:", p.status);
+  //     console.log("matchesStatus:", matchesStatus);
+
+  //     return matchesSearch && matchesDept && matchesStatus;
+  //   },
+  //   buildParams: (page, limit) => ({
+  //   page,
+  //   limit,
+  //   search: searchTerm?.trim() || undefined,
+  //   department: filterDepartment !== "all" ? filterDepartment : undefined,
+  //   status: statusFilter || undefined,
+  // }),
+  // });
+
+  console.log("filterDepartment", filterDepartment);
 
   const {} = useGetDepartmentsQuery(
     { page: currentDepartmentPage, limit: departmentsPagination.limit },
-    { skip: shouldAllUsers }
+    { skip: shouldSkip }
   );
 
   const {} = useGetClassLevelQuery(
     { page: currentClasslevelPage, limit: classlevelPagination.limit },
-    { skip: shouldAllUsers }
+    { skip: shouldSkip }
   );
-
-  useEffect(() => {
-    if (profilesRecord?.data) {
-      const { pagination, data: users } = profilesRecord.data;
-
-      if (pagination) {
-        dispatch(setProfilePagination(pagination));
-      }
-
-      if (users && !profileCache[pagination.page]) {
-        dispatch(setProfileCache({ page: pagination.page, data: users }));
-      }
-    }
-  }, [profilesRecord, dispatch, profileCache]);
 
   useEffect(() => {
     if (!user?._id) return;
@@ -433,13 +711,16 @@ export const useReduxAuth = (): AuthContextType => {
 
   return {
     user,
-    profileRecord,
-    cachedEmployees,
+    // profileRecord,
+    shouldShowSkeleton,
+    shouldSearch,
+    cachedEmployees: finalProfiles,
+    totalPages,
     isLoading,
     error: error || "",
-    profileError,
+    // profileError,
     isAuthenticated,
-    profilesIsLoading,
+    // profilesIsLoading,
     login,
     resetPassword,
     reqestNewPassword,

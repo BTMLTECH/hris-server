@@ -39,6 +39,7 @@ import { useDebounce } from "./useDebounce";
 import { months } from "@/utils/normalize";
 import { store } from "@/store/store";
 import { refreshEndpoint } from "@/utils/refreshUtils";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 
 export const useReduxPayroll = (): PayrollContextType => {
   const dispatch = useAppDispatch();
@@ -69,88 +70,44 @@ export const useReduxPayroll = (): PayrollContextType => {
   const [payrollsAsPaidBulk] = usePayrollsAsPaidBulkMutation();
 
   // const currentPage = payrollPagination?.page ?? 1;
+  // const pageSize = payrollPagination?.limit || 20;
   // const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // // Grab cache for the current page
-  // const cachedPayrolls = payrollCache[currentPage];
-  // const isCacheAvailable =
-  //   Array.isArray(cachedPayrolls) && cachedPayrolls.length > 0;
+  // const cachedPayrolls = payrollCache[currentPage] ?? [];
+  // const allCachedPayrolls = Object.values(payrollCache).flatMap((page: any) =>
+  //   Array.isArray(page) ? page : []
+  // );
+
+  // const isCacheAvailable = cachedPayrolls.length > 0;
 
   // // Search handling
   // const isValidSearch = debouncedSearch.trim().length >= 2;
   // const shouldSearch = filtersApplied && isValidSearch;
 
-  // // Query params for backend
-  // const queryParams: {
-  //   page: number;
-  //   limit: number;
-  //   month?: string;
-  //   year?: string;
-  //   search?: string;
-  // } = {
+  // // Base query params
+  // const baseQueryParams: any = {
   //   page: currentPage,
-  //   limit: payrollPagination?.limit || 20,
+  //   limit: pageSize,
   // };
+  // if (selectedMonth) baseQueryParams.month = selectedMonth;
+  // if (selectedYear) baseQueryParams.year = selectedYear;
 
-  // if (filtersApplied && selectedMonth) queryParams.month = selectedMonth;
-  // if (filtersApplied && selectedYear) queryParams.year = selectedYear;
-  // if (shouldSearch) queryParams.search = debouncedSearch.trim();
-
-  // // Flatten all cached pages safely
-  // const allData = Array.isArray(Object.values(payrollCache).flat())
-  //   ? Object.values(payrollCache).flat()
-  //   : [];
-
-  // // Decide if we need API fetch
-  // const shouldFetchFromApi =
-  //   !isCacheAvailable ||
-  //   (filtersApplied &&
-  //     !allData.some((r) => {
-  //       const matchesName =
-  //         !debouncedSearch ||
-  //         r.user?.firstName
-  //           ?.toLowerCase()
-  //           .includes(debouncedSearch.toLowerCase()) ||
-  //         r.user?.lastName
-  //           ?.toLowerCase()
-  //           .includes(debouncedSearch.toLowerCase());
-
-  //       const monthNum = Number(r.month);
-  //       const matchesMonth = selectedMonth
-  //         ? monthNum ===
-  //           (isNaN(Number(selectedMonth))
-  //             ? months.indexOf(selectedMonth) + 1
-  //             : Number(selectedMonth))
-  //         : true;
-
-  //       const matchesYear = selectedYear
-  //         ? Number(r.year) === Number(selectedYear)
-  //         : true;
-
-  //       return matchesName && matchesMonth && matchesYear;
-  //     }));
-
-  // // RTK Query
+  // // Base query for payroll
   // const {
   //   data: payrollRecords,
   //   isLoading: isFetchingPayrolls,
   //   refetch: refetchPayrolls,
-  // } = useGetAllPayrollsQuery(queryParams, {
-  //   skip: !shouldFetchFromApi,
-  // });
+  // } = useGetAllPayrollsQuery(baseQueryParams, { skip: !user });
 
-  // // Build base records safely
-  // const baseRecords = extractPayrollArray(
-  //   filtersApplied || shouldSearch
-  //     ? allData
-  //     : isCacheAvailable
-  //     ? cachedPayrolls
-  //     : payrollRecords
-  // );
+  // // Lazy server search query
+  // const [
+  //   triggerServerSearch,
+  //   { data: serverSearchResult, isFetching: isSearching },
+  // ] = useLazyGetAllPayrollsQuery();
 
-  // // Local filtering
-  // const searchLower = debouncedSearch?.toLowerCase() || "";
-  // const locallyFiltered = baseRecords.filter((r) => {
+  // // Helper: check if a record matches search/filters
+  // const matchesRecord = (r: any, searchText?: string) => {
+  //   const searchLower = (searchText || "").toLowerCase();
   //   const matchesName =
   //     !searchLower ||
   //     r.user?.firstName?.toLowerCase().includes(searchLower) ||
@@ -169,207 +126,154 @@ export const useReduxPayroll = (): PayrollContextType => {
   //     : true;
 
   //   return matchesName && matchesMonth && matchesYear;
-  // });
+  // };
 
-  // // Hybrid final records (always array-safe)
-  // const finalRecords =
-  //   locallyFiltered.length > 0 || !filtersApplied
-  //     ? locallyFiltered
-  //     : extractPayrollArray(payrollRecords);
+  // // Local filtering
+  // const locallyFilteredAll = allCachedPayrolls.filter((r) =>
+  //   matchesRecord(r, debouncedSearch)
+  // );
+  // const hasLocalMatches = locallyFilteredAll.length > 0;
 
-  // // Effects
+  // // Paginate local results
+  // const startIndex = (currentPage - 1) * pageSize;
+  // const endIndex = startIndex + pageSize;
+  // const paginatedFilteredPayrolls = locallyFilteredAll.slice(
+  //   startIndex,
+  //   endIndex
+  // );
+
+  // const isSearchingBackend = shouldSearch && !hasLocalMatches && isSearching;
+  // const isLoadingInitialData = !shouldSearch && !isCacheAvailable && isFetchingPayrolls;
+  // const shouldShowSkeleton = isSearchingBackend || isLoadingInitialData;
+
+  // // Trigger server search if cache misses
+  // useEffect(() => {
+  //   if (!shouldSearch) return;
+  //   if (hasLocalMatches) return;
+
+  //   // Reset page for new search
+  //   dispatch(setPayrollPagination({ ...payrollPagination, page: 1 }));
+
+  //   const serverParams: any = {
+  //     page: 1,
+  //     limit: pageSize,
+  //     search: debouncedSearch.trim(),
+  //   };
+  //   if (selectedMonth) serverParams.month = selectedMonth;
+  //   if (selectedYear) serverParams.year = selectedYear;
+
+  //   triggerServerSearch(serverParams);
+  // }, [
+  //   debouncedSearch,
+  //   selectedMonth,
+  //   selectedYear,
+  //   shouldSearch,
+  //   hasLocalMatches,
+  // ]);
+
+  // // Cache server search results
+  // useEffect(() => {
+  //   if (!serverSearchResult?.data) return;
+
+  //   const { pagination, data: users } = serverSearchResult.data;
+  //   if (pagination) dispatch(setPayrollPagination(pagination));
+  //   if (Array.isArray(users) && pagination?.page) {
+  //     dispatch(setPayrollCache({ page: pagination.page, data: users }));
+  //   }
+  // }, [serverSearchResult]);
+
+  // // Build final records
+  // const finalRecords = (() => {
+  //   if (shouldSearch) {
+  //     if (hasLocalMatches)
+  //       return extractPayrollArray(paginatedFilteredPayrolls);
+  //     if (isSearching) return [];
+  //     if (serverSearchResult?.data)
+  //       return extractPayrollArray(serverSearchResult);
+  //     return [];
+  //   }
+
+  //   if (isCacheAvailable) return extractPayrollArray(cachedPayrolls);
+  //   return extractPayrollArray(payrollRecords);
+  // })();
+
+  // // Sync cache and pagination for base query
   // useEffect(() => {
   //   if (!filtersApplied && initialPayrollRecords?.data?.length > 0) {
   //     dispatch(restorePayrollFromCache(initialPayrollRecords));
   //   } else if (!filtersApplied) {
-  //     refetchPayrolls();
+  //     // refetchPayrolls();
   //   }
 
   //   if (payrollRecords?.data) {
   //     const { pagination, data: users } = payrollRecords.data;
-
-  //     if (pagination) {
-  //       dispatch(setPayrollPagination(pagination));
-  //     }
-
+  //     if (pagination) dispatch(setPayrollPagination(pagination));
   //     if (Array.isArray(users) && pagination?.page) {
   //       dispatch(setPayrollCache({ page: pagination.page, data: users }));
   //     }
   //   }
-  // }, [payrollRecords, dispatch, filtersApplied, refetchPayrolls]);
+  // }, [payrollRecords, filtersApplied, initialPayrollRecords, refetchPayrolls]);
 
-  // // ⏳ Auto-refresh every 1 minute ONLY when filtering/searching
-  // useEffect(() => {
-  //   if (!(filtersApplied || shouldSearch) || !shouldFetchFromApi) return;
+  //   const totalPages = (() => {
+  //   if (shouldSearch) {
+  //     return Math.ceil(locallyFilteredAll.length / pageSize);
+  //   } else {
+  //     return (
+  //       payrollPagination?.pages || payrollRecords?.data?.pagination?.pages || 1
+  //     );
+  //   }
+  // })();
 
-  //   const interval = setInterval(() => {
-  //     refetchPayrolls();
-  //   }, 60 * 1000);
-
-  //   return () => clearInterval(interval);
-  // }, [
-  //   filtersApplied,
-  //   shouldSearch,
-  //   shouldFetchFromApi,
-  //   refetchPayrolls,
-  //   debouncedSearch,
-  //   selectedMonth,
-  //   selectedYear,
-  //   payrollPagination?.page,
-  // ]);
-
-  // --- assumptions: your RTK Query slice exposes both:
-  //    useGetAllPayrollsQuery(...)    (regular hook)
-  //    useLazyGetAllPayrollsQuery()   (lazy hook)
-  // --- and you still keep your useDebounce(searchTerm, 500)
-
-  const currentPage = payrollPagination?.page ?? 1;
-  const pageSize = payrollPagination?.limit || 20;
-  const debouncedSearch = useDebounce(searchTerm, 500);
-
-  // Cached payroll helpers
-  const cachedPayrolls = payrollCache[currentPage] ?? [];
-  const allCachedPayrolls = Object.values(payrollCache).flatMap((page: any) =>
-    Array.isArray(page) ? page : []
-  );
-  const isCacheAvailable = cachedPayrolls.length > 0;
-
-  // Search handling
-  const isValidSearch = debouncedSearch.trim().length >= 2;
-  const shouldSearch = filtersApplied && isValidSearch;
-
-  // Base query params
-  const baseQueryParams: any = {
-    page: currentPage,
-    limit: pageSize,
-  };
-  if (selectedMonth) baseQueryParams.month = selectedMonth;
-  if (selectedYear) baseQueryParams.year = selectedYear;
-
-  // Base query for payroll
   const {
-    data: payrollRecords,
-    isLoading: isFetchingPayrolls,
-    refetch: refetchPayrolls,
-  } = useGetAllPayrollsQuery(baseQueryParams, { skip: !user });
-
-  // Lazy server search query
-  const [
-    triggerServerSearch,
-    { data: serverSearchResult, isFetching: isSearching },
-  ] = useLazyGetAllPayrollsQuery();
-
-  // Helper: check if a record matches search/filters
-  const matchesRecord = (r: any, searchText?: string) => {
-    const searchLower = (searchText || "").toLowerCase();
-    const matchesName =
-      !searchLower ||
-      r.user?.firstName?.toLowerCase().includes(searchLower) ||
-      r.user?.lastName?.toLowerCase().includes(searchLower);
-
-    const monthNum = Number(r.month);
-    const matchesMonth = selectedMonth
-      ? monthNum ===
-        (isNaN(Number(selectedMonth))
-          ? months.indexOf(selectedMonth) + 1
-          : Number(selectedMonth))
-      : true;
-
-    const matchesYear = selectedYear
-      ? Number(r.year) === Number(selectedYear)
-      : true;
-
-    return matchesName && matchesMonth && matchesYear;
-  };
-
-  // Local filtering
-  const locallyFilteredAll = allCachedPayrolls.filter((r) =>
-    matchesRecord(r, debouncedSearch)
-  );
-  const hasLocalMatches = locallyFilteredAll.length > 0;
-
-  // Paginate local results
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const paginatedFilteredPayrolls = locallyFilteredAll.slice(
-    startIndex,
-    endIndex
-  );
-
-  // Trigger server search if cache misses
-  useEffect(() => {
-    if (!shouldSearch) return;
-    if (hasLocalMatches) return;
-
-    // Reset page for new search
-    dispatch(setPayrollPagination({ ...payrollPagination, page: 1 }));
-
-    const serverParams: any = {
-      page: 1,
-      limit: pageSize,
-      search: debouncedSearch.trim(),
-    };
-    if (selectedMonth) serverParams.month = selectedMonth;
-    if (selectedYear) serverParams.year = selectedYear;
-
-    triggerServerSearch(serverParams);
-  }, [
-    debouncedSearch,
-    selectedMonth,
-    selectedYear,
+    finalData,
+    totalPages,
+    isSearching,
+    isBaseLoading,
+    shouldShowSkeleton,
     shouldSearch,
-    hasLocalMatches,
-  ]);
+  } = useSmartPaginatedResource({
+    useBaseQuery: useGetAllPayrollsQuery,
+    useLazyQuery: useLazyGetAllPayrollsQuery,
+    cache: payrollCache,
+    pagination: payrollPagination,
+    setPagination: setPayrollPagination,
+    setCache: setPayrollCache,
+    searchTerm,
+    filtersApplied: !!searchTerm || !!selectedMonth || !!selectedYear,
+    filterFn: (r, s) => {
+      const searchLower = (s || "").toLowerCase();
+      const matchesName =
+        !searchLower ||
+        r.user?.firstName?.toLowerCase().includes(searchLower) ||
+        r.user?.lastName?.toLowerCase().includes(searchLower);
 
-  // Cache server search results
-  useEffect(() => {
-    if (!serverSearchResult?.data) return;
+      const matchesMonth = selectedMonth
+        ? Number(r.month) ===
+          (isNaN(Number(selectedMonth))
+            ? months.indexOf(selectedMonth as string) + 1
+            : Number(selectedMonth))
+        : true;
 
-    const { pagination, data: users } = serverSearchResult.data;
-    if (pagination) dispatch(setPayrollPagination(pagination));
-    if (Array.isArray(users) && pagination?.page) {
-      dispatch(setPayrollCache({ page: pagination.page, data: users }));
-    }
-  }, [serverSearchResult]);
+      const matchesYear = selectedYear
+        ? Number(r.year) === Number(selectedYear)
+        : true;
 
-  // Build final records
-  const finalRecords = (() => {
-    if (shouldSearch) {
-      if (hasLocalMatches)
-        return extractPayrollArray(paginatedFilteredPayrolls);
-      if (isSearching) return [];
-      if (serverSearchResult?.data)
-        return extractPayrollArray(serverSearchResult);
-      return [];
-    }
+      return matchesName && matchesMonth && matchesYear;
+    },
+    buildParams: (page, limit) => {
+      const params: any = { page, limit };
+      if (selectedMonth) params.month = selectedMonth;
+      if (selectedYear) params.year = selectedYear;
+      return params;
+    },
+  });
 
-    if (isCacheAvailable) return extractPayrollArray(cachedPayrolls);
-    return extractPayrollArray(payrollRecords);
-  })();
-
-  // Sync cache and pagination for base query
-  useEffect(() => {
-    if (!filtersApplied && initialPayrollRecords?.data?.length > 0) {
-      dispatch(restorePayrollFromCache(initialPayrollRecords));
-    }
-    // else if (!filtersApplied) {
-    //   refetchPayrolls();
-    // }
-
-    if (payrollRecords?.data) {
-      const { pagination, data: users } = payrollRecords.data;
-      if (pagination) dispatch(setPayrollPagination(pagination));
-      if (Array.isArray(users) && pagination?.page) {
-        dispatch(setPayrollCache({ page: pagination.page, data: users }));
-      }
-    }
-  }, [payrollRecords, filtersApplied, initialPayrollRecords]);
-
-  // Compute total pages
-  const totalPages = Math.ceil(
-    (shouldSearch ? locallyFilteredAll.length : allCachedPayrolls.length) /
-      pageSize
-  );
+  // console.log("totalPages", totalPages);
+  // console.log("startIndex", startIndex);
+  // console.log("pageSize", pageSize);
+  // console.log("locallyFilteredAll", locallyFilteredAll.length);
+  // console.log("allCachedProfiles", allCachedPayrolls.length);
+  // console.log("payrollPagination", payrollPagination);
 
   // const currentPage = payrollPagination?.page ?? 1;
   // const debouncedSearch = useDebounce(searchTerm, 500);
@@ -719,10 +623,11 @@ export const useReduxPayroll = (): PayrollContextType => {
   };
 
   return {
+    shouldShowSkeleton,
     totalPages,
-    isLoading: isFetchingPayrolls,
+    isLoading: isBaseLoading,
     error: error ?? null,
-    cachedPayrolls: finalRecords,
+    cachedPayrolls: finalData,
     payrollPagination,
     selectedPayroll,
     isDialogOpen,
@@ -745,7 +650,6 @@ export const useReduxPayroll = (): PayrollContextType => {
       dispatch(setSelectedPayroll(payroll)),
     setSelectedDeleteId: (id: string | null) =>
       dispatch(setSelectedDeleteId(id)),
-    refetchPayrolls,
     clearPayrollCache: () => dispatch(clearPayrollCache()),
   };
 };

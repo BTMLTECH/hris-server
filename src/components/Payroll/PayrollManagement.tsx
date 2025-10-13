@@ -120,6 +120,7 @@ const PayrollManagement: React.FC = () => {
     reverseSinglePayroll,
     processBulkPayroll,
     totalPages,
+    shouldShowSkeleton,
   } = useReduxPayroll();
   const {
     handleCalculateClass,
@@ -274,30 +275,30 @@ const PayrollManagement: React.FC = () => {
 
   const downloadClassLevelTemplate = () => {
     const csvContent = `data:text/csv;charset=utf-8,
-Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
-2025,1,1.0,90000,49500,22500,18000
-2025,1,1.1,100000,55000,25000,20000
-2025,1,1.2,125000,68750,31250,25000
-2025,1,1.3,156250,85937.5,39062.5,31250
-2025,2,2.1,203125,111718.75,50781.25,40625
-2025,2,2.2,253906.25,139648.44,63476.56,50781.25
-2025,2,2.3,317382.81,174560.55,79345.7,63476.56
-2025,3,3.1,412597.66,226928.71,103149.42,82519.53
-2025,3,3.2,453857.42,249621.58,113464.36,90771.48
-2025,3,3.3,499243.16,274583.74,124810.79,99848.63
-2025,4,4.1,549167.48,302042.11,137291.87,109833.5
-2025,4,4.2,604084.23,332246.33,151021.06,120816.85
-2025,4,4.3,664492.65,365471.96,166123.16,132898.53
-2025,5,5.1,730941.92,402018.06,182735.48,146188.38
-2025,5,5.2,804036.11,442219.86,201009.03,160807.22
-2025,5,5.3,884439.72,486441.85,221109.93,176887.94
-2025,6,6.1,972883.69,535085.03,243220.92,194576.74
-2025,6,6.2,1070172.06,588444.63,267543.02,214344.41
-2025,6,6.3,1177189.27,647454.1,294297.32,235437.85
-2025,7,7.1,1550000,852500,387500,310000
-2025,7,7.2,2200000,1210000,550000,440000
-2025,7,7.3,2420000,1331000,605000,484000
-`;
+    Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
+    2025,1,1.0,90000,49500,22500,18000
+    2025,1,1.1,100000,55000,25000,20000
+    2025,1,1.2,125000,68750,31250,25000
+    2025,1,1.3,156250,85937.5,39062.5,31250
+    2025,2,2.1,203125,111718.75,50781.25,40625
+    2025,2,2.2,253906.25,139648.44,63476.56,50781.25
+    2025,2,2.3,317382.81,174560.55,79345.7,63476.56
+    2025,3,3.1,412597.66,226928.71,103149.42,82519.53
+    2025,3,3.2,453857.42,249621.58,113464.36,90771.48
+    2025,3,3.3,499243.16,274583.74,124810.79,99848.63
+    2025,4,4.1,549167.48,302042.11,137291.87,109833.5
+    2025,4,4.2,604084.23,332246.33,151021.06,120816.85
+    2025,4,4.3,664492.65,365471.96,166123.16,132898.53
+    2025,5,5.1,730941.92,402018.06,182735.48,146188.38
+    2025,5,5.2,804036.11,442219.86,201009.03,160807.22
+    2025,5,5.3,884439.72,486441.85,221109.93,176887.94
+    2025,6,6.1,972883.69,535085.03,243220.92,194576.74
+    2025,6,6.2,1070172.06,588444.63,267543.02,214344.41
+    2025,6,6.3,1177189.27,647454.1,294297.32,235437.85
+    2025,7,7.1,1550000,852500,387500,310000
+    2025,7,7.2,2200000,1210000,550000,440000
+    2025,7,7.3,2420000,1331000,605000,484000
+    `;
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -910,9 +911,10 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                 </TableHeader>
 
                 <TableBody>
-                  {isFetchingPayrolls && sortedRecords.length === 0 ? (
+                  {/* 🦴 Show skeleton while searching/loading */}
+                  {shouldShowSkeleton ? (
                     Array.from({ length: 6 }).map((_, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} className="animate-pulse">
                         <TableCell>
                           <Skeleton className="h-6 w-20" />
                         </TableCell>
@@ -921,9 +923,6 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                         </TableCell>
                         <TableCell>
                           <Skeleton className="h-6 w-24" />
-                        </TableCell>
-                        <TableCell>
-                          <Skeleton className="h-6 w-20" />
                         </TableCell>
                         <TableCell>
                           <Skeleton className="h-6 w-20" />
@@ -944,6 +943,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                       </TableRow>
                     ))
                   ) : sortedRecords?.length === 0 ? (
+                    // 📭 No Data Found
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-8">
                         <div className="flex flex-col items-center space-y-2">
@@ -958,14 +958,17 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                       </TableCell>
                     </TableRow>
                   ) : (
+                    // ✅ Render Payroll Records
                     sortedRecords.map((record) => (
                       <TableRow key={record._id}>
                         <TableCell className="font-medium">
                           {record.user?.staffId}
                         </TableCell>
+
                         <TableCell className="font-medium">
                           {record.user?.firstName} {record.user?.lastName}
                         </TableCell>
+
                         <TableCell>
                           <div>
                             {record?.month} {record?.year}
@@ -977,18 +980,22 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                             </div>
                           )}
                         </TableCell>
+
                         <TableCell>
                           {getPayrollStatusBadge(record?.status)}
                         </TableCell>
+
                         <TableCell className="font-medium">
                           ₦{record.basicSalary?.toLocaleString()}
                         </TableCell>
+
                         <TableCell className="font-medium text-green-600">
                           ₦{record.grossSalary?.toLocaleString()}
                         </TableCell>
 
                         <TableCell>
                           <div className="flex space-x-2">
+                            {/* View & Download */}
                             <Button
                               variant="outline"
                               size="sm"
@@ -1003,11 +1010,13 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                             >
                               <Download className="h-4 w-4" />
                             </Button>
+
+                            {/* Payroll Actions */}
                             {canManagePayroll && (
                               <>
                                 {record.status !== "paid" && (
                                   <>
-                                    {/* Delete Button */}
+                                    {/* Delete */}
                                     <Button
                                       variant="outline"
                                       size="sm"
@@ -1029,7 +1038,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                                       )}
                                     </Button>
 
-                                    {/* Mark Draft Button */}
+                                    {/* Mark Draft */}
                                     {record.status === "pending" && (
                                       <Button
                                         variant="outline"
@@ -1052,6 +1061,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                                       </Button>
                                     )}
 
+                                    {/* Process & Reverse */}
                                     {record.status === "draft" && (
                                       <>
                                         <Button
@@ -1073,6 +1083,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                                           )}
                                           Process
                                         </Button>
+
                                         <Button
                                           variant="destructive"
                                           size="sm"
@@ -1097,7 +1108,7 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                                   </>
                                 )}
 
-                                {/* Pay Button */}
+                                {/* Pay */}
                                 {record.status === "processed" && (
                                   <Button
                                     variant="success"
@@ -1131,21 +1142,29 @@ Year,Level,PayGrade,GrossSalary,BasicSalary,HousingAllowance,TransportAllowance
                 loadingPdf={loadingPdf}
               />
 
-              {totalPages > 1 && (
-                <PaginationNav
-                  page={payrollPagination?.page}
-                  totalPages={payrollPagination.pages}
-                  onPageChange={(newPage) =>
-                    dispatch(
-                      setPayrollPagination({
-                        ...payrollPagination,
-                        page: newPage,
-                      })
-                    )
-                  }
-                  className="mt-6"
-                />
-              )}
+              <PaginationNav
+                page={payrollPagination?.page}
+                totalPages={totalPages}
+                pageSize={payrollPagination?.limit || 20}
+                onPageChange={(newPage) =>
+                  dispatch(
+                    setPayrollPagination({
+                      ...payrollPagination,
+                      page: newPage,
+                    })
+                  )
+                }
+                onPageSizeChange={(newSize) =>
+                  dispatch(
+                    setPayrollPagination({
+                      ...payrollPagination,
+                      page: 1,
+                      limit: newSize,
+                    })
+                  )
+                }
+                className="mt-6"
+              />
             </CardContent>
           </Card>
         </TabsContent>

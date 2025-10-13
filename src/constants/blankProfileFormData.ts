@@ -82,6 +82,7 @@ export const blankProfileFormData: ProfileFormData = {
   sendInvite: false,
   departmentName: "",
   requirements: [],
+
   selectedDepartment: firstDept,
   classlevels: [],
 };

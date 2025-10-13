@@ -26,7 +26,6 @@ export const useReduxAttendance = (): AttendanceContextType => {
     (state) => state.attendance
   );
   const page = attendancePagination?.page;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cachedRecords = attendanceCache[page] ?? [];
 
   const {

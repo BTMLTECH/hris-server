@@ -42,7 +42,14 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = (await login(email, password)) as unknown as LoginResponse;
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const result = (await login(
+      normalizedEmail,
+      password
+    )) as unknown as LoginResponse;
+
     if (result) {
       setShow2FA(true);
     }
@@ -50,7 +57,8 @@ const Login: React.FC = () => {
 
   const handle2FAVerification = async (code: string) => {
     try {
-      const success = await verify2fa(email, code);
+      const normalizedEmail = email.trim().toLowerCase();
+      const success = await verify2fa(normalizedEmail, code);
 
       if (success) {
         setShow2FA(false);

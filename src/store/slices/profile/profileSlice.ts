@@ -7,7 +7,9 @@ import {
   IBirthdayAnalytics,
   IClassLevel,
   IDepartment,
+  PaginatedProfilesResponse,
   ProfileFormData,
+  ProfileResponse,
   ProfileState,
 } from "@/types/user";
 import { profileApi } from "./profileApi";
@@ -36,7 +38,7 @@ const initialState: ProfileState = {
   isEditMode: false,
   isDeleteDialogOpen: false,
   selectedDeleteId: "",
-  profilePagination: { total: 0, page: 1, limit: 30, pages: 0 },
+  profilePagination: { total: 0, page: 1, limit: 20, pages: 0 },
   departmentsPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   classlevelPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   profileCache: {},
@@ -237,7 +239,7 @@ const profileSlice = createSlice({
 
     clearEmployeeCache(state) {
       state.profileCache = {};
-      state.profilePagination = { page: 1, limit: 10, total: 0, pages: 0 };
+      state.profilePagination = { page: 1, limit: 20, total: 0, pages: 0 };
     },
     removeEmployee: (state, action: PayloadAction<string>) => {
       state.bulkEmployees = state.bulkEmployees.filter(
@@ -297,6 +299,17 @@ const profileSlice = createSlice({
         ];
       } else {
         state.analytics.birthdayAnalytics.push(action.payload);
+      }
+    },
+
+    restoreProfileFromCache: (
+      state,
+      action: PayloadAction<PaginatedProfilesResponse>
+    ) => {
+      const { data } = action.payload;
+      if (data) {
+        state.profileCache = data;
+        state.profilePagination = data?.pagination;
       }
     },
 
@@ -384,10 +397,10 @@ const profileSlice = createSlice({
     builder
       .addMatcher(
         profileApi.endpoints.getAllProfile.matchFulfilled,
-        (state, action) => {
+        (state, action: PayloadAction<PaginatedProfilesResponse>) => {
           const users: ProfileFormData[] = action.payload.data.data;
           const pagination = action.payload.data.pagination;
-          const page = pagination.page;
+          const page = pagination?.page;
           state.profileCache[page] = users;
           state.profilePagination = pagination;
           state.bulkEmployees = users;
@@ -483,5 +496,6 @@ export const {
   updateBirthdayAnalytics,
   setStatusFilter,
   resetCompanyFormData,
+  restoreProfileFromCache,
 } = profileSlice.actions;
 export default profileSlice.reducer;

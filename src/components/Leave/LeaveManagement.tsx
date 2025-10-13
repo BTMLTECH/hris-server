@@ -219,7 +219,6 @@ const LeaveManagement: React.FC = () => {
       });
       return;
     }
-
     if (!uploadedFile) {
       toast({
         title: "No File Uploaded",

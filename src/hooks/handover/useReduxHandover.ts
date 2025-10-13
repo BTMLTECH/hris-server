@@ -5,7 +5,6 @@ import {
   useDeleteHandoverByIdMutation,
   useGetMyHandoverReportQuery,
   useTeamGetHandoverReportByDepartmentQuery,
-
 } from "@/store/slices/handover/handoverApi";
 
 import { toast } from "../use-toast";
@@ -25,7 +24,7 @@ export const useReduxHandover = (): HandoverContextType => {
 
   const [createHandoverMutation] = useCreateHandoverMutation();
 
-const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
+  const [deleteHandoverById] = useDeleteHandoverByIdMutation();
 
   const {
     data: myReports,
@@ -33,6 +32,7 @@ const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
     refetch: refetchMyReports,
   } = useGetMyHandoverReportQuery(undefined, {
     skip: !user || user?.role !== "employee",
+    refetchOnMountOrArgChange: true,
   });
 
   const {
@@ -42,7 +42,6 @@ const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
   } = useTeamGetHandoverReportByDepartmentQuery(undefined, {
     skip: !user,
   });
-
 
   const createHandover = async (formData: any): Promise<boolean> => {
     dispatch(setIsLoading(true));
@@ -54,7 +53,10 @@ const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
       });
       return true;
     } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, 'Failed to submit handover report');      
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to submit handover report"
+      );
       toast({
         title: "Submit Error",
         description: errorMessage,
@@ -66,30 +68,31 @@ const [deleteHandoverById] =   useDeleteHandoverByIdMutation();
     }
   };
 
+  const deleteHandover = async (id: string): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+    try {
+      await deleteHandoverById(id).unwrap();
+      toast({
+        title: "Deleted",
+        description: "Handover report deleted successfully.",
+      });
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to delete handover report"
+      );
 
-const deleteHandover = async (id: string): Promise<boolean> => {
-  dispatch(setIsLoading(true));
-  try {
-    await deleteHandoverById(id).unwrap();
-    toast({
-      title: 'Deleted',
-      description: 'Handover report deleted successfully.',
-    });
-    return true;
-  } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, 'Failed to delete handover report');      
-
-    toast({
-      title: 'Delete Error',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-    return false;
-  } finally {
-    dispatch(setIsLoading(false));
-  }
-};
-
+      toast({
+        title: "Delete Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setIsLoading(false));
+    }
+  };
 
   return {
     createHandover,

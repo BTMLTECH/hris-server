@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FeedbackAnswer, PaginatedTrainingsResponse, Training } from "@/types/training";
+import {
+  FeedbackAnswer,
+  PaginatedTrainingsResponse,
+  Training,
+} from "@/types/training";
 import { apiSlice } from "../auth/apiSlice";
 
 export const trainingApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-
     // Create a new training
     createTraining: builder.mutation<Training, Partial<Training>>({
       query: (body) => ({

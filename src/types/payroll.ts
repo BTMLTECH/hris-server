@@ -161,7 +161,6 @@ export interface cachedInitialType {
     data: IPayroll[];
     pagination: PayrollPagination;
   };
-
   timestamp: number;
 }
 
@@ -181,6 +180,7 @@ export interface PayrollResponse {
 }
 
 export interface PayrollContextType {
+  shouldShowSkeleton: boolean;
   totalPages: number;
   cachedPayrolls: IPayroll[] | any;
   // cachedPayrollData: PayrollResponse;
@@ -216,6 +216,6 @@ export interface PayrollContextType {
   setIsDeleteDialogOpen: (open: boolean) => void;
   setSelectedPayroll: (payroll: IPayroll | null) => void;
   setSelectedDeleteId: (id: string | null) => void;
-  refetchPayrolls: () => void;
+  // refetchPayrolls: () => void;
   clearPayrollCache: () => void;
 }

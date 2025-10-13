@@ -99,26 +99,6 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // getAllProfile: builder.query<
-    //   PaginatedProfilesResponse,
-    //   { page: number; limit: number, search: string }
-    // >({
-    //   query: ({ page = 1, limit = 20, search: string }) => ({
-    //     url: `user/users?page=${page}&limit=${limit}`,
-    //     method: "GET",
-    //   }),
-    //   providesTags: (result) =>
-    //     result
-    //       ? [
-    //           ...result.data.data.map(({ _id }) => ({
-    //             type: "Profiles" as const,
-    //             _id,
-    //           })),
-    //           { type: "Profiles", id: "LIST" },
-    //         ]
-    //       : [{ type: "Profiles", id: "LIST" }],
-    // }),
-
     getAllProfile: builder.query<
       PaginatedProfilesResponse,
       {

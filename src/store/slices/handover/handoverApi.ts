@@ -13,6 +13,7 @@ export const handoverApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
         headers: {},
       }),
+      invalidatesTags: ["Handover"],
     }),
 
     // Get My Reports
@@ -22,6 +23,7 @@ export const handoverApi = apiSlice.injectEndpoints({
         method: "GET",
         credentials: "include" as const,
       }),
+      providesTags: ["Handover"],
     }),
 
     // team get by department  Reports
@@ -41,6 +43,7 @@ export const handoverApi = apiSlice.injectEndpoints({
         method: "DELETE",
         credentials: "include" as const,
       }),
+      invalidatesTags: ["Handover"],
     }),
   }),
 });
