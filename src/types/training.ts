@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Match your Mongoose schema
 
 export type FeedbackResponse =
@@ -23,7 +24,7 @@ export interface Feedback {
   department: string;
   answers: FeedbackAnswer[];
   additionalComments?: string;
-  submittedAt?: string; 
+  submittedAt?: string;
   status: "pending" | "submitted";
 }
 
@@ -31,7 +32,7 @@ export interface Training {
   _id: string;
   title: string;
   date: string | Date;
-  trainer: string;
+  facilitators: { name: string; email?: string }[];
   department: string;
   noOfTrainees: number;
   participants?: {
@@ -49,9 +50,8 @@ export interface Training {
   participantEmails?: string[];
   questions: string[];
   feedbacks?: any[];
-  status?: string
+  status?: string;
 }
-
 
 export interface TrainingPagination {
   total: number;
@@ -68,9 +68,6 @@ export interface PaginatedTrainingsResponse {
     count: number;
   };
 }
-
-
-
 
 export interface TrainingContextType {
   isTrainingLoading: boolean;

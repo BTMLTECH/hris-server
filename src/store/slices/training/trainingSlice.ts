@@ -1,11 +1,15 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { trainingApi } from "../training/trainingApi";
-import { FeedbackResponse, PaginatedTrainingsResponse, Training } from "@/types/training";
+import {
+  FeedbackResponse,
+  PaginatedTrainingsResponse,
+  Training,
+} from "@/types/training";
 
 interface TrainingFormData {
   title: string;
   date: string;
-  trainer: string;
+  facilitators: { name: string; email?: string }[];
   department: string;
   noOfTrainees: number;
   participantEmails: string[];
@@ -54,7 +58,7 @@ const initialState: TrainingState = {
   trainingFormData: {
     title: "",
     date: "",
-    trainer: "",
+    facilitators: [{ name: "", email: "" }],
     department: "",
     noOfTrainees: 0,
     participantEmails: [],
@@ -112,7 +116,7 @@ const trainingSlice = createSlice({
       state.trainingPagination = action.payload;
     },
 
-       setFeedbackAnswers(
+    setFeedbackAnswers(
       state,
       action: PayloadAction<Record<string, FeedbackResponse>>
     ) {
@@ -127,18 +131,18 @@ const trainingSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-
     builder.addMatcher(
       trainingApi.endpoints.getAllTrainings.matchFulfilled,
       (state, action: PayloadAction<PaginatedTrainingsResponse>) => {
+        console.log("action", action);
         const trainings = action.payload.data.data;
+        console.log("trainings", trainings);
         const pagination = action.payload.data.pagination;
         const page = pagination.page;
         state.trainingCache[page] = trainings;
         state.trainingPagination = pagination;
       }
     );
-
 
     builder.addMatcher(
       trainingApi.endpoints.getMyTrainings.matchFulfilled,
@@ -147,20 +151,15 @@ const trainingSlice = createSlice({
       }
     );
 
-
     builder.addMatcher(
       trainingApi.endpoints.createTraining.matchFulfilled,
       (state, action: PayloadAction<Training>) => {
         if (state.trainingCache[1]) {
-          state.trainingCache[1] = [
-            action.payload,
-            ...state.trainingCache[1],
-          ];
+          state.trainingCache[1] = [action.payload, ...state.trainingCache[1]];
         }
       }
     );
 
- 
     builder.addMatcher(
       trainingApi.endpoints.submitFeedback.matchFulfilled,
       (state, action: PayloadAction<Training>) => {
@@ -196,7 +195,7 @@ export const {
   setTrainingPagination,
   setFeedbackAnswers,
   setFeedbackComments,
-  resetFeedback
+  resetFeedback,
 } = trainingSlice.actions;
 
 export default trainingSlice.reducer;

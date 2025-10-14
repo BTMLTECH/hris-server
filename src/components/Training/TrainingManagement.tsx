@@ -72,26 +72,66 @@ const TrainingManagement: React.FC = () => {
   const { createTraining, submitFeedback } = useReduxTraining();
 
   // Handle create training
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   const payload = {
+  //     ...trainingFormData,
+  //     trainer: `${currentUser.firstName} ${currentUser.lastName}`,
+  //     department: `${currentUser.department}`,
+  //   };
+
+  //   const success = await createTraining(payload);
+
+  //   if (success) {
+  //     dispatch(setIsDialogOpen(false));
+  //     // reset form
+  //     dispatch(
+  //       setTrainingFormData({
+  //         title: "",
+  //         date: "",
+  //         trainer: `${currentUser.firstName} ${currentUser.lastName}`,
+  //         department: `${currentUser.department}`,
+  //         noOfTrainees: 0,
+  //         participantEmails: [],
+  //       })
+  //     );
+  //   }
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const payload = {
       ...trainingFormData,
-      trainer: `${currentUser.firstName} ${currentUser.lastName}`,
-      department: `${currentUser.department}`,
+      facilitators: trainingFormData.facilitators?.length
+        ? trainingFormData.facilitators
+        : [
+            {
+              name: `${currentUser.firstName} ${currentUser.lastName}`,
+              email: currentUser.email || "",
+            },
+          ],
+      department: currentUser.department || "",
     };
 
     const success = await createTraining(payload);
 
     if (success) {
       dispatch(setIsDialogOpen(false));
-      // reset form
+
+      // ✅ Reset form with a default facilitator
       dispatch(
         setTrainingFormData({
           title: "",
           date: "",
-          trainer: `${currentUser.firstName} ${currentUser.lastName}`,
-          department: `${currentUser.department}`,
+          facilitators: [
+            {
+              name: `${currentUser.firstName} ${currentUser.lastName}`,
+              email: currentUser.email || "",
+            },
+          ],
+          department: currentUser.department || "",
           noOfTrainees: 0,
           participantEmails: [],
         })
@@ -105,6 +145,8 @@ const TrainingManagement: React.FC = () => {
     dispatch(setSelectedActionType(null));
     dispatch(resetFeedback());
   };
+
+  console.log("trainingCache", trainingCache);
 
   return (
     <div className="space-y-6">
@@ -186,56 +228,144 @@ const TrainingManagement: React.FC = () => {
                       })
                     )
                   }
-                  // min={new Date().toISOString().split("T")[0]}
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="trainer">Trainer</Label>
-                <Input
-                  id="trainer"
-                  type="text"
-                  value={
-                    trainingFormData?.trainer ||
-                    `${currentUser.firstName} ${currentUser.lastName}`
-                  }
-                  required
-                />
+                <Label>Facilitators</Label>
+
+                {/* Render facilitator fields */}
+                {trainingFormData.facilitators.map((facilitator, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row gap-2 mb-2"
+                  >
+                    <Input
+                      type="text"
+                      placeholder="Facilitator name"
+                      value={facilitator.name}
+                      required
+                      onChange={(e) => {
+                        const updated = [...trainingFormData.facilitators];
+                        updated[index] = {
+                          ...updated[index],
+                          name: e.target.value,
+                        };
+                        dispatch(
+                          setTrainingFormData({
+                            ...trainingFormData,
+                            facilitators: updated,
+                          })
+                        );
+                      }}
+                    />
+
+                    <Input
+                      type="email"
+                      placeholder="Facilitator email (optional)"
+                      value={facilitator.email || ""}
+                      onChange={(e) => {
+                        const updated = [...trainingFormData.facilitators];
+                        updated[index] = {
+                          ...updated[index],
+                          email: e.target.value,
+                        };
+                        dispatch(
+                          setTrainingFormData({
+                            ...trainingFormData,
+                            facilitators: updated,
+                          })
+                        );
+                      }}
+                    />
+
+                    {trainingFormData.facilitators.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = trainingFormData.facilitators.filter(
+                            (_, i) => i !== index
+                          );
+                          dispatch(
+                            setTrainingFormData({
+                              ...trainingFormData,
+                              facilitators: updated,
+                            })
+                          );
+                        }}
+                        className="text-red-500 text-sm hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                {/* Add new facilitator */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    dispatch(
+                      setTrainingFormData({
+                        ...trainingFormData,
+                        facilitators: [
+                          ...trainingFormData.facilitators,
+                          { name: "", email: "" },
+                        ],
+                      })
+                    );
+                  }}
+                  className="text-primary text-sm font-medium mt-1 hover:underline"
+                >
+                  + Add Facilitator
+                </button>
               </div>
 
               {/* Participants */}
               <div>
-                <Label htmlFor="participants">Participants</Label>
+                <Label className="text-gray-800 text-sm font-semibold mb-2 block">
+                  Participants
+                </Label>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      variant="outline"
-                      className="w-full justify-between"
+                      variant="ghost"
+                      className="w-full justify-between 
+          rounded-2xl px-4 py-3 
+          bg-white/60 backdrop-blur-md 
+          border border-gray-200 shadow-sm
+          hover:bg-white/80 hover:shadow-md 
+          transition-all duration-300 
+          text-gray-700 font-medium"
                     >
                       {trainingFormData?.participantEmails?.length
                         ? `${trainingFormData?.participantEmails.length} selected`
                         : "Select participants"}
+                      <span className="text-gray-400 text-sm">⌄</span>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full max-w-sm p-2 max-h-60 overflow-y-auto">
-                    <div className="space-y-2">
-                      {cachedEmployees
-                        ?.filter(
-                          (emp) =>
-                            emp.role === "employee" &&
-                            emp.email !== currentUser.email
-                        )
-                        .map((emp: ProfileFormData) => {
-                          const isChecked =
-                            trainingFormData?.participantEmails?.includes(
-                              emp.email
-                            );
-                          return (
-                            <div
-                              key={emp._id}
-                              className="flex items-center space-x-2"
-                            >
+
+                  <PopoverContent
+                    className="w-full max-w-sm p-3 rounded-2xl bg-white/80 backdrop-blur-lg 
+                 border border-gray-200 shadow-lg max-h-64 overflow-y-auto"
+                  >
+                    <div className="space-y-3">
+                      {cachedEmployees.map((emp: ProfileFormData) => {
+                        const isChecked =
+                          trainingFormData?.participantEmails?.includes(
+                            emp.email
+                          );
+
+                        return (
+                          <div
+                            key={emp._id}
+                            className="flex items-center justify-between rounded-xl 
+                         px-3 py-2 bg-gray-50/60 hover:bg-gray-100/70 
+                         transition-all duration-200"
+                          >
+                            <div className="flex items-center space-x-3">
                               <Checkbox
                                 checked={isChecked}
                                 onCheckedChange={(checked) => {
@@ -252,22 +382,29 @@ const TrainingManagement: React.FC = () => {
                                     setTrainingFormData({
                                       ...trainingFormData,
                                       participantEmails: updated,
-                                      noOfTrainees: updated.length, // 🔥 auto-update trainees
+                                      noOfTrainees: updated.length,
                                     })
                                   );
                                 }}
                               />
-                              <span>
-                                {emp.firstName} {emp.lastName} ({emp.position})
-                              </span>
+                              <div className="flex flex-col">
+                                <span className="text-gray-800 text-sm font-medium">
+                                  {emp.firstName} {emp.lastName}
+                                </span>
+                                <span className="text-gray-500 text-xs">
+                                  {emp.position}
+                                </span>
+                              </div>
                             </div>
-                          );
-                        })}
+                          </div>
+                        );
+                      })}
                     </div>
                   </PopoverContent>
                 </Popover>
+
                 {trainingFormData?.participantEmails?.length === 0 && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500 mt-2">
                     Please select at least one participant
                   </p>
                 )}
@@ -346,7 +483,7 @@ const TrainingManagement: React.FC = () => {
                   <TableRow>
                     <TableHead>Title</TableHead>
                     <TableHead>Date</TableHead>
-                    <TableHead>Trainer</TableHead>
+                    <TableHead>Facilitators</TableHead>
                     <TableHead>No. of Trainees</TableHead>
                     <TableHead>Participants</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -362,7 +499,14 @@ const TrainingManagement: React.FC = () => {
                         <TableCell>
                           {new Date(training.date).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>{training.trainer}</TableCell>
+                        <TableCell>
+                          {training.facilitators
+                            ?.map((f) =>
+                              f.email ? `${f.name} (${f.email})` : f.name
+                            )
+                            .join(", ")}
+                        </TableCell>
+
                         <TableCell>{training.noOfTrainees}</TableCell>
                         <TableCell>
                           {training?.participants
@@ -377,7 +521,9 @@ const TrainingManagement: React.FC = () => {
                               p.email === currentUser.email &&
                               p.status === "submitted"
                           ) ||
-                            (["teamlead", "hr"].includes(currentUser.role) &&
+                            (["teamlead", "hr", "employee", "admin"].includes(
+                              currentUser.role
+                            ) &&
                               training.status === "submitted")) && (
                             <Button
                               size="sm"

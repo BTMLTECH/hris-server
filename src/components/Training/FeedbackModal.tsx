@@ -49,7 +49,6 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
 }) => {
   if (!selectedTraining) return null;
 
-
   return (
     <Dialog open={isActionDialogOpen} onOpenChange={closeModal}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -65,7 +64,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-    
+        {/* SUBMIT FEEDBACK */}
         {selectedActionType === "feedback" && (
           <div className="space-y-6">
             {selectedTraining?.questions.map((q, idx) => (
@@ -75,7 +74,7 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
                   {responses.map((r) => (
                     <Button
                       key={r}
-                     className="px-3 py-1 text-xs rounded-md"
+                      className="px-3 py-1 text-xs rounded-md"
                       variant={feedbackAnswers[q] === r ? "default" : "outline"}
                       onClick={() => setFeedbackAnswers(q, r)}
                     >
@@ -94,34 +93,51 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({
             />
 
             <div className="flex justify-end">
-  <Button
-    onClick={async () => {
-      const answers: FeedbackAnswer[] = Object.entries(feedbackAnswers).map(
-        ([question, response]) => ({
-          question,
-          response,
-        })
-      );
-      await submitFeedback(selectedTraining._id, answers, feedbackComments);
-      closeModal();
-    }}
-    disabled={
-        isLoading ||
-        Object.values(feedbackAnswers).some((r) => !r) ||
-        !feedbackComments
-    }
-  >
-   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-    Submit Feedback
-  </Button>
-</div>
-
+              <Button
+                onClick={async () => {
+                  const answers: FeedbackAnswer[] = Object.entries(
+                    feedbackAnswers
+                  ).map(([question, response]) => ({
+                    question,
+                    response,
+                  }));
+                  await submitFeedback(
+                    selectedTraining._id,
+                    answers,
+                    feedbackComments
+                  );
+                  closeModal();
+                }}
+                disabled={
+                  isLoading ||
+                  Object.values(feedbackAnswers).some((r) => !r) ||
+                  !feedbackComments
+                }
+              >
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit Feedback
+              </Button>
+            </div>
           </div>
         )}
 
         {/* VIEW FEEDBACK (READ-ONLY) */}
         {selectedActionType === "view" && (
           <div className="space-y-6">
+            {/* 🔹 Facilitators section at top */}
+            {selectedTraining?.facilitators?.length > 0 && (
+              <div className="rounded-lg border p-4 shadow-sm bg-gray-50">
+                <p className="font-semibold mb-2">Facilitators:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  {selectedTraining.facilitators.map((f, idx) => (
+                    <li key={idx}>
+                      {f.email ? `${f.name} (${f.email})` : f.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {selectedTraining?.feedbacks?.length ? (
               selectedTraining.feedbacks.map((fb, idx) => (
                 <div key={idx} className="rounded-lg border p-4 shadow-sm">

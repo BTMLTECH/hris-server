@@ -14,7 +14,11 @@ import {
   setTrainingCache,
   setTrainingPagination,
 } from "@/store/slices/training/trainingSlice";
-import { TrainingContextType, Training, FeedbackAnswer } from "@/types/training";
+import {
+  TrainingContextType,
+  Training,
+  FeedbackAnswer,
+} from "@/types/training";
 
 export const useReduxTraining = (): TrainingContextType => {
   const dispatch = useAppDispatch();
@@ -25,11 +29,17 @@ export const useReduxTraining = (): TrainingContextType => {
   const [submitFeedbackMutation] = useSubmitFeedbackMutation();
 
   const { data: allTrainingsData, isLoading: allTrainingsLoading } =
-    useGetAllTrainingsQuery({
-      page: trainingPagination.page,
-      limit: trainingPagination.limit,
-    });
-
+    useGetAllTrainingsQuery(
+      {
+        page: trainingPagination.page,
+        limit: trainingPagination.limit,
+      },
+      {
+        refetchOnMountOrArgChange: true,
+        refetchOnReconnect: true,
+        refetchOnFocus: true,
+      }
+    );
 
   useEffect(() => {
     if (allTrainingsData?.data?.data) {
@@ -42,15 +52,19 @@ export const useReduxTraining = (): TrainingContextType => {
     }
   }, [allTrainingsData, dispatch]);
 
-
-  const createTraining = async (training: Partial<Training>): Promise<boolean> => {
+  const createTraining = async (
+    training: Partial<Training>
+  ): Promise<boolean> => {
     dispatch(setLoading(true));
     try {
       await createTrainingMutation(training).unwrap();
       toast({ title: "Training created successfully" });
       return true;
     } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, "Failed to create training");
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to create training"
+      );
       toast({
         title: "Create Training Error",
         description: errorMessage,
@@ -69,11 +83,18 @@ export const useReduxTraining = (): TrainingContextType => {
   ): Promise<boolean> => {
     dispatch(setLoading(true));
     try {
-      await submitFeedbackMutation({ id, answers, additionalComments }).unwrap();
+      await submitFeedbackMutation({
+        id,
+        answers,
+        additionalComments,
+      }).unwrap();
       toast({ title: "Feedback submitted successfully" });
       return true;
     } catch (error: any) {
-      const errorMessage = extractErrorMessage(error, "Failed to submit feedback");
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to submit feedback"
+      );
       toast({
         title: "Feedback Error",
         description: errorMessage,
@@ -86,7 +107,7 @@ export const useReduxTraining = (): TrainingContextType => {
   };
 
   return {
-    isTrainingLoading: isLoading || allTrainingsLoading ,
+    isTrainingLoading: isLoading || allTrainingsLoading,
     trainingError: error,
     trainingCache,
     trainingPagination,
