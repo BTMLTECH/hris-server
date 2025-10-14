@@ -146,8 +146,6 @@ const TrainingManagement: React.FC = () => {
     dispatch(resetFeedback());
   };
 
-  console.log("trainingCache", trainingCache);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -236,7 +234,7 @@ const TrainingManagement: React.FC = () => {
                 <Label>Facilitators</Label>
 
                 {/* Render facilitator fields */}
-                {trainingFormData.facilitators.map((facilitator, index) => (
+                {trainingFormData?.facilitators?.map((facilitator, index) => (
                   <div
                     key={index}
                     className="flex flex-col sm:flex-row gap-2 mb-2"
@@ -280,13 +278,14 @@ const TrainingManagement: React.FC = () => {
                       }}
                     />
 
-                    {trainingFormData.facilitators.length > 1 && (
+                    {trainingFormData?.facilitators?.length > 1 && (
                       <button
                         type="button"
                         onClick={() => {
-                          const updated = trainingFormData.facilitators.filter(
-                            (_, i) => i !== index
-                          );
+                          const updated =
+                            trainingFormData?.facilitators?.filter(
+                              (_, i) => i !== index
+                            );
                           dispatch(
                             setTrainingFormData({
                               ...trainingFormData,

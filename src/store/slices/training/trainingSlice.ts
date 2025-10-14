@@ -134,9 +134,7 @@ const trainingSlice = createSlice({
     builder.addMatcher(
       trainingApi.endpoints.getAllTrainings.matchFulfilled,
       (state, action: PayloadAction<PaginatedTrainingsResponse>) => {
-        console.log("action", action);
         const trainings = action.payload.data.data;
-        console.log("trainings", trainings);
         const pagination = action.payload.data.pagination;
         const page = pagination.page;
         state.trainingCache[page] = trainings;

@@ -23,8 +23,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
         ? (result.error.data as { message?: string }).message
         : "";
 
-    console.log("errorMessage", errorMessage);
-
     const authErrorMessages = [
       "No token provided",
       "Invalid token",
