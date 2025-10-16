@@ -27,7 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Loader2, Eye, MessageSquare } from "lucide-react";
+import { Plus, Loader2, Eye, MessageSquare, Search, Users } from "lucide-react";
 import React from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useReduxAuth } from "@/hooks/auth/useReduxAuth";
@@ -49,10 +49,13 @@ import {
 } from "@/store/slices/training/trainingSlice";
 import { PaginationNav } from "../ui/paginationNav";
 import FeedbackModal from "./FeedbackModal";
+import { setSearchTerm } from "@/store/slices/profile/profileSlice";
+import { EmployeeSelector } from "../ui/employee-selector";
 
 const TrainingManagement: React.FC = () => {
   const { user: currentUser } = useAppSelector((state) => state.auth);
-  const { cachedEmployees } = useReduxAuth();
+  const { searchTerm } = useAppSelector((state) => state.profile);
+  const { cachedEmployees, shouldShowSkeleton } = useReduxAuth();
   const dispatch = useAppDispatch();
   const canManageEmployees = currentUser?.role === "teamlead";
 
@@ -322,93 +325,25 @@ const TrainingManagement: React.FC = () => {
               </div>
 
               {/* Participants */}
-              <div>
-                <Label className="text-gray-800 text-sm font-semibold mb-2 block">
-                  Participants
-                </Label>
+              {/* THE CODE IN NODEPAD  */}
 
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between 
-          rounded-2xl px-4 py-3 
-          bg-white/60 backdrop-blur-md 
-          border border-gray-200 shadow-sm
-          hover:bg-white/80 hover:shadow-md 
-          transition-all duration-300 
-          text-gray-700 font-medium"
-                    >
-                      {trainingFormData?.participantEmails?.length
-                        ? `${trainingFormData?.participantEmails.length} selected`
-                        : "Select participants"}
-                      <span className="text-gray-400 text-sm">⌄</span>
-                    </Button>
-                  </PopoverTrigger>
-
-                  <PopoverContent
-                    className="w-full max-w-sm p-3 rounded-2xl bg-white/80 backdrop-blur-lg 
-                 border border-gray-200 shadow-lg max-h-64 overflow-y-auto"
-                  >
-                    <div className="space-y-3">
-                      {cachedEmployees.map((emp: ProfileFormData) => {
-                        const isChecked =
-                          trainingFormData?.participantEmails?.includes(
-                            emp.email
-                          );
-
-                        return (
-                          <div
-                            key={emp._id}
-                            className="flex items-center justify-between rounded-xl 
-                         px-3 py-2 bg-gray-50/60 hover:bg-gray-100/70 
-                         transition-all duration-200"
-                          >
-                            <div className="flex items-center space-x-3">
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  let updated =
-                                    trainingFormData?.participantEmails || [];
-                                  if (checked) {
-                                    updated = [...updated, emp.email];
-                                  } else {
-                                    updated = updated.filter(
-                                      (e) => e !== emp.email
-                                    );
-                                  }
-                                  dispatch(
-                                    setTrainingFormData({
-                                      ...trainingFormData,
-                                      participantEmails: updated,
-                                      noOfTrainees: updated.length,
-                                    })
-                                  );
-                                }}
-                              />
-                              <div className="flex flex-col">
-                                <span className="text-gray-800 text-sm font-medium">
-                                  {emp.firstName} {emp.lastName}
-                                </span>
-                                <span className="text-gray-500 text-xs">
-                                  {emp.position}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                {trainingFormData?.participantEmails?.length === 0 && (
-                  <p className="text-sm text-red-500 mt-2">
-                    Please select at least one participant
-                  </p>
-                )}
-              </div>
-
+              <EmployeeSelector
+                label="Participants"
+                selectedEmails={trainingFormData?.participantEmails || []}
+                onSelectionChange={(emails) =>
+                  dispatch(
+                    setTrainingFormData({
+                      ...trainingFormData,
+                      participantEmails: emails,
+                      noOfTrainees: emails.length,
+                    })
+                  )
+                }
+                employees={cachedEmployees}
+                searchTerm={searchTerm}
+                onSearchChange={(term) => dispatch(setSearchTerm(term))}
+                shouldShowSkeleton={shouldShowSkeleton}
+              />
               {/* Number of trainees (auto-calculated, read-only) */}
               <div>
                 <Label htmlFor="noOfTrainees">Number of Trainees</Label>

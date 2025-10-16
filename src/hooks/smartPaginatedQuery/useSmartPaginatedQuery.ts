@@ -180,8 +180,6 @@ export function useSmartPaginatedResource<T, Params = any>({
             : {}),
         };
 
-    console.log("🔹 Fetching backend (no local matches)", searchParams);
-
     triggerServerSearch(searchParams);
   }, [
     debouncedSearch,

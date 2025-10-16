@@ -51,6 +51,8 @@ import { CreateCompanyDTO, IBirthdayAnalytics } from "@/types/user";
 import { io, Socket } from "socket.io-client";
 import { useDebounce } from "../payroll/useDebounce";
 import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
+import { persistor } from "@/store/store";
+import { baseApi } from "@/store/slices/baseApi";
 let socket: Socket | null = null;
 
 export const connectNotificationSocket = (userId: string) => {
@@ -687,11 +689,15 @@ export const useReduxAuth = (): AuthContextType => {
       dispatch(clearActivityCache()),
         dispatch(clearEmployeeCache()),
         dispatch(clearAttenadanceCache()),
-        toast({
-          title: "Logged Out",
-          description:
-            response?.message || "You have been successfully logged out.",
-        });
+        // Purge persisted storage (this clears redux-persist cache)
+        dispatch(baseApi.util.resetApiState());
+      await persistor.purge();
+
+      toast({
+        title: "Logged Out",
+        description:
+          response?.message || "You have been successfully logged out.",
+      });
     } catch (error) {
       const errorMessage = extractErrorMessage(error, "Logout failed");
       toast({

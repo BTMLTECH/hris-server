@@ -40,3 +40,18 @@
 .read-the-docs {
   color: #888;
 }
+
+/* FIX: Mouse wheel scrolls ONLY the participant list */
+.scrollable-list {
+  scroll-behavior: smooth;
+}
+
+/* CRITICAL: Prevent parent from stealing scroll */
+.scrollable-list * {
+  overscroll-behavior: contain;
+}
+
+/* Ensure nested scroll works */
+.scrollable-list:focus-within {
+  outline: none;
+}

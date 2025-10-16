@@ -87,12 +87,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
+import { EmployeeSelector } from "../ui/employee-selector";
+import { setSearchTerm } from "@/store/slices/profile/profileSlice";
 
 const LeaveManagement: React.FC = () => {
   const { user: userLeaveManagement, leave } = useCombinedContext();
   const { user } = userLeaveManagement;
   const { user: currentUser } = useAppSelector((state) => state.auth);
-  const { cachedEmployees } = useReduxAuth();
+  const { searchTerm } = useAppSelector((state) => state.profile);
+  const { cachedEmployees, shouldShowSkeleton } = useReduxAuth();
   const { isLocalLoading, setLocalLoading, clearLocalLoading } =
     useLoadingState();
   const [leaveBalanceOpen, setLeaveBalanceOpen] = useState(false);
@@ -567,7 +570,7 @@ const LeaveManagement: React.FC = () => {
               )}
 
               {/* Relievers */}
-              <div>
+              {/* <div>
                 <Label htmlFor="relievers">Relievers (Select 2 or 3)</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -631,7 +634,24 @@ const LeaveManagement: React.FC = () => {
                     Please select at least 2 relievers
                   </p>
                 )}
-              </div>
+              </div> */}
+
+              <EmployeeSelector
+                label="Relievers (Select 2 or 3)"
+                selectedEmails={formData.relievers || []}
+                onSelectionChange={(emails) =>
+                  dispatch(setFormData({ ...formData, relievers: emails }))
+                }
+                employees={cachedEmployees}
+                searchTerm={searchTerm}
+                onSearchChange={(term) => dispatch(setSearchTerm(term))}
+                shouldShowSkeleton={shouldShowSkeleton}
+                maxSelections={3}
+                employeeFilter={(emp) =>
+                  emp.role === "employee" && emp.email !== currentUser.email
+                }
+                requiredMin={2}
+              />
 
               {/* Allowance & Reason */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

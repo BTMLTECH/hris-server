@@ -38,7 +38,7 @@ const initialState: ProfileState = {
   isEditMode: false,
   isDeleteDialogOpen: false,
   selectedDeleteId: "",
-  profilePagination: { total: 0, page: 1, limit: 40, pages: 0 },
+  profilePagination: { total: 0, page: 1, limit: 20, pages: 0 },
   departmentsPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   classlevelPagination: { total: 0, page: 1, limit: 30, pages: 0 },
   profileCache: {},
