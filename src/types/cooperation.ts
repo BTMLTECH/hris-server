@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // features/cooperative/types.ts
 
 export type CooperativeCache = Record<number, ICooperativeContributionInput[]>;
@@ -10,11 +11,10 @@ export interface Pagination {
 }
 
 interface UserContribution {
-  staffId?: string
-  firstName? : string
-  lastName ?:string
-  department?:string
-
+  staffId?: string;
+  firstName?: string;
+  lastName?: string;
+  department?: string;
 }
 
 export interface ICooperativeContributionInput {
@@ -30,7 +30,8 @@ export interface ICooperativeContributionInput {
   amount?: number;
 }
 
-export interface ICooperativeContribution extends ICooperativeContributionInput {
+export interface ICooperativeContribution
+  extends ICooperativeContributionInput {
   _id: string;
   createdAt: string;
   updatedAt: string;
@@ -50,7 +51,6 @@ export interface IPaginatedCooperativeContributionResponse {
   };
 }
 
-
 export interface ICooperativeContributionListResponse {
   success: boolean;
   message: string;
@@ -63,12 +63,8 @@ export interface ContributionContextType {
   error: any;
   contributions: ICooperativeContribution[];
   allContributions?: ICooperativeContribution[];
-  handleHrContribution: (
-    input: FormData
-  ) => Promise<boolean>;
-  handleCreateContribution: (
-  contributionId: string
-  ) => Promise<boolean>;
+  handleHrContribution: (input: FormData) => Promise<boolean>;
+  handleCreateContribution: (contributionId: string) => Promise<boolean>;
 
   handleUpdateContribution: (
     id: string,

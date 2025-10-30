@@ -72,7 +72,7 @@ import {
 } from "@/store/slices/leave/leaveSlice";
 import { calculateWorkingDays, getHolidaysInRange } from "@/utils/holidays";
 import { useReduxAuth } from "@/hooks/auth/useReduxAuth";
-import { ProfileFormData } from "@/types/user";
+import { ProfileFormData, TeamLeadDepartmentProfile } from "@/types/user";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Checkbox } from "../ui/checkbox";
 import { useLoadingState } from "@/hooks/useLoadingState";
@@ -136,7 +136,7 @@ const LeaveManagement: React.FC = () => {
     user?.role === "hr" ||
     user?.role === "employee";
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const { profilePagination } = useAppSelector((state) => state.profile);
+  const { profilePagination, teamleads } = useAppSelector((state) => state.profile);
   const { cachedApprovedLeave } = useReduxLeave();
   const canView = user?.role === "admin" || user?.role === "hr";
   const currentLeavePage = activityFeedPagination?.page ?? 1;
@@ -476,7 +476,7 @@ const LeaveManagement: React.FC = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Select team lead" />
                     </SelectTrigger>
-                    <SelectContent>
+                    {/* <SelectContent>
                       {cachedEmployees
                         ?.filter((emp) => emp.role === "teamlead")
                         .map((lead) => (
@@ -484,6 +484,17 @@ const LeaveManagement: React.FC = () => {
                             {lead.firstName} {lead.lastName} ({lead.position})
                           </SelectItem>
                         ))}
+                    </SelectContent> */}
+                    <SelectContent>
+                      {teamleads?.length ? (
+                        teamleads.map((lead: TeamLeadDepartmentProfile) => (
+                          <SelectItem key={lead._id} value={lead._id}>
+                            {lead.firstName} {lead.lastName} ({lead.position})
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-gray-400 text-sm">No team leads available</div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -519,7 +530,7 @@ const LeaveManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Leave Calculation */}
+            
               {dateCalculation && (
                 <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4">
@@ -569,72 +580,7 @@ const LeaveManagement: React.FC = () => {
                 </Card>
               )}
 
-              {/* Relievers */}
-              {/* <div>
-                <Label htmlFor="relievers">Relievers (Select 2 or 3)</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between"
-                    >
-                      {formData.relievers?.length
-                        ? `${formData.relievers.length} selected`
-                        : "Select relievers"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full max-w-sm p-2 max-h-60 overflow-y-auto">
-                    <div className="space-y-2">
-                      {cachedEmployees
-                        ?.filter(
-                          (emp) =>
-                            emp.role === "employee" &&
-                            emp.email !== currentUser.email
-                        )
-                        .map((emp: ProfileFormData) => {
-                          const isChecked = formData.relievers?.includes(
-                            emp.email
-                          );
-                          return (
-                            <div
-                              key={emp._id}
-                              className="flex items-center space-x-2"
-                            >
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  let updated = formData.relievers || [];
-                                  if (checked) {
-                                    if (updated.length < 3)
-                                      updated = [...updated, emp.email];
-                                  } else {
-                                    updated = updated.filter(
-                                      (e) => e !== emp.email
-                                    );
-                                  }
-                                  dispatch(
-                                    setFormData({
-                                      ...formData,
-                                      relievers: updated,
-                                    })
-                                  );
-                                }}
-                              />
-                              <span>
-                                {emp.firstName} {emp.lastName} ({emp.position})
-                              </span>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                {formData.relievers?.length < 2 && (
-                  <p className="text-sm text-red-500 mt-1">
-                    Please select at least 2 relievers
-                  </p>
-                )}
-              </div> */}
+             
 
               <EmployeeSelector
                 label="Relievers (Select 2 or 3)"

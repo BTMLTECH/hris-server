@@ -27,7 +27,6 @@ import { toast } from "@/hooks/use-toast";
 import { AuthContextType, PasswordConfig, User } from "@/types/auth";
 import {
   clearEmployeeCache,
-  restoreProfileFromCache,
   setBulkEmployees,
   setFormData,
   setLoading,
@@ -43,6 +42,7 @@ import {
   useGetLastStaffIdQuery,
   useGetProfileQuery,
   useLazyGetAllProfileQuery,
+  useGetTeamleadQuery
 } from "@/store/slices/profile/profileApi";
 import { extractErrorMessage } from "@/utils/errorHandler";
 import { clearActivityCache } from "@/store/slices/appraisal/appraisalSlice";
@@ -283,7 +283,6 @@ export const useReduxAuth = (): AuthContextType => {
     setPagination: setProfilePagination,
     setCache: setProfileCache,
     searchTerm,
-
     filtersApplied:
       !!searchTerm || filterDepartment !== "all" || !!statusFilter,
 
@@ -320,7 +319,6 @@ export const useReduxAuth = (): AuthContextType => {
     },
   });
 
-  console.log("statusFilter", statusFilter);
   // const {
   //   finalData: finalProfiles,
   //   totalPages,
@@ -397,7 +395,26 @@ export const useReduxAuth = (): AuthContextType => {
   // }),
   // });
 
-  console.log("filterDepartment", filterDepartment);
+
+  // const {} = useGetDepartmentsQuery(
+  //   { page: currentDepartmentPage, limit: departmentsPagination.limit },
+  //   { skip: shouldSkip }
+  // );
+
+  // const {} = useGetClassLevelQuery(
+  //   { page: currentClasslevelPage, limit: classlevelPagination.limit },
+  //   { skip: shouldSkip }
+  // );
+
+  const {  } = useGetLastStaffIdQuery(undefined, {
+    skip: shouldSkip,
+  });
+  const { } = useGetProfileQuery(
+    undefined,
+    {
+      skip: shouldSkip,
+    }
+  );
 
   const {} = useGetDepartmentsQuery(
     { page: currentDepartmentPage, limit: departmentsPagination.limit },
@@ -406,6 +423,11 @@ export const useReduxAuth = (): AuthContextType => {
 
   const {} = useGetClassLevelQuery(
     { page: currentClasslevelPage, limit: classlevelPagination.limit },
+    { skip: shouldSkip }
+  );
+
+  const {} = useGetTeamleadQuery(
+    undefined,
     { skip: shouldSkip }
   );
 

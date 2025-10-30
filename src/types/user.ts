@@ -289,6 +289,7 @@ export interface ProfileState {
   isActionDialogOpen: boolean;
   isManageDialogOpen: boolean;
   companyFormData: CreateCompanyDTO;
+  teamleads: TeamLeadDepartmentProfile[];
 }
 
 export interface ProfileResponse {
@@ -299,10 +300,10 @@ export interface ProfileResponse {
   };
 }
 export interface PaginatedProfilesResponse {
-  success: boolean;
+  success?: boolean;
   data: {
     data: ProfileFormData[];
-    pagination: {
+    pagination?: {
       total: number;
       page: number;
       limit: number;
@@ -311,8 +312,26 @@ export interface PaginatedProfilesResponse {
       department: string;
       status: string;
     };
-    count: number;
+    count?: number;
   };
+}
+
+export interface TeamLeadDepartmentProfile {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  company: string;
+  position: string;
+  role: "teamlead" | "employee";
+  status: "active" | "inactive" | "terminated";
+}
+
+export interface GetEmployeesByTeamLeadDepartmentResponse {
+  success: boolean;
+  cached: boolean;
+  data: TeamLeadDepartmentProfile[];
 }
 
 export interface ProfileContextType {

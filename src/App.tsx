@@ -10,6 +10,10 @@ import { Provider } from "react-redux";
 import { persistor, store } from "./store/store";
 import { PersistGate } from "redux-persist/integration/react";
 import SetPassword from "./components/Auth/SetPassword";
+import CreateComms from "./components/Report/CreateComms";
+import CreateITReport from "./components/Report/CreateITReport";
+import CreateOperations from "./components/Report/CreateOperations";
+import CreateQuality from "./components/Report/CreateQuality";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +34,12 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/set-password" element={<SetPasswordWithToken />} />
+
+            {/* ✅ Create Report Routes */}
+            <Route path="/create-quality" element={<CreateQuality />} />
+            <Route path="/create-operations" element={<CreateOperations />} />
+            <Route path="/create-comms" element={<CreateComms />} />
+            <Route path="/create-it-report" element={<CreateITReport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CombinedProvider>

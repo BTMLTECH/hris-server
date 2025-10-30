@@ -1,5 +1,6 @@
 import { PaginatedProfilesResponse, ProfileFormData } from "@/types/user";
 import { apiSlice } from "../auth/apiSlice";
+import { createPaginatedQuery } from "../createPaginatedQuery";
 
 export const profileApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -99,42 +100,59 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    getAllProfile: builder.query<
-      PaginatedProfilesResponse,
+    // getAllProfile: builder.query<
+    //   PaginatedProfilesResponse,
+    //   {
+    //     page?: number;
+    //     limit?: number;
+    //     search?: string;
+    //     department?: string;
+    //     status?: string;
+    //   }
+    // >({
+    //   query: ({ page = 1, limit = 20, search, department, status }) => {
+    //     const params = new URLSearchParams({
+    //       page: page.toString(),
+    //       limit: limit.toString(),
+    //     });
+
+    //     if (search) params.append("search", search);
+    //     if (department && department !== "all")
+    //       params.append("department", department);
+    //     if (status) params.append("status", status);
+
+    //     return {
+    //       url: `user/users?${params.toString()}`,
+    //       method: "GET",
+    //     };
+    //   },
+    //   providesTags: (result) =>
+    //     result
+    //       ? [
+    //           ...result.data.data.map(({ _id }) => ({
+    //             type: "Profiles" as const,
+    //             id: _id,
+    //           })),
+    //           { type: "Profiles", id: "LIST" },
+    //         ]
+    //       : [{ type: "Profiles", id: "LIST" }],
+    // }),
+
+    getAllProfile: createPaginatedQuery<
+      ProfileFormData,
       {
-        page?: number;
-        limit?: number;
         search?: string;
         department?: string;
         status?: string;
+        startDate?: string;
+        page?: number;
+        limit?: number;
       }
-    >({
-      query: ({ page = 1, limit = 20, search, department, status }) => {
-        const params = new URLSearchParams({
-          page: page.toString(),
-          limit: limit.toString(),
-        });
-
-        if (search) params.append("search", search);
-        if (department && department !== "all")
-          params.append("department", department);
-        if (status) params.append("status", status);
-
-        return {
-          url: `user/users?${params.toString()}`,
-          method: "GET",
-        };
-      },
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.data.map(({ _id }) => ({
-                type: "Profiles" as const,
-                id: _id,
-              })),
-              { type: "Profiles", id: "LIST" },
-            ]
-          : [{ type: "Profiles", id: "LIST" }],
+    >(builder, {
+      baseUrl: "user/users",
+      tagType: "Profiles",
+      filterKeys: ["search", "department", "status", "startDate"],
+      extraOptions: { credentials: "include" as const },
     }),
 
     getLastStaffId: builder.query({
@@ -166,6 +184,15 @@ export const profileApi = apiSlice.injectEndpoints({
       invalidatesTags: [{ type: "Profiles", id: "LIST" }],
     }),
 
+    getTeamlead: builder.query({
+      query: () => ({
+        url: "user/get-teamlead",
+        method: "GET",
+        credentials: "include" as const,
+      }),
+    }),
+
+
     activateProfile: builder.mutation({
       query: (id) => ({
         url: `user/${id}/activate`,
@@ -189,5 +216,6 @@ export const {
   useTerminateProfileMutation,
   useActivateProfileMutation,
   useGetAnalyticsQuery,
+  useGetTeamleadQuery,
   useLazyGetAllProfileQuery,
 } = profileApi;
