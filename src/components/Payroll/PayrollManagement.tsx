@@ -189,12 +189,15 @@ const PayrollManagement: React.FC = () => {
     if (!sortedRecords.length) return "none";
 
     const currentRecords = sortedRecords.filter(
-      (r) => Number(r.month) === currentMonth && Number(r.year) === currentYear
+      (r) =>
+        (Number(r.month) === currentMonth && Number(r.year) === currentYear) ||
+        (Number(r.month) === currentMonth - 1 && Number(r.year) === currentYear)
     );
 
     if (!currentRecords.length) return "none";
 
     const statuses = currentRecords.map((r) => r.status);
+    console.log("statuses", statuses);
 
     if (statuses.every((s) => s === "pending")) return "pending";
     if (statuses.every((s) => s === "draft")) return "draft";

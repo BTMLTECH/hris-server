@@ -25,7 +25,10 @@ export function createPaginatedQuery<
   } = options;
 
   return builder.query<
-    { data: { data: TData[]; pagination?: any } },
+    {
+      success?: boolean;
+      data: { data: TData[]; pagination?: any; count?: number };
+    },
     TParams & { page?: number; limit?: number }
   >({
     query: (params) => {

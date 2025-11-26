@@ -3,6 +3,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import {
   CreateCompanyDTO,
+  GetEmployeesByTeamLeadDepartmentResponse,
   IAnalytics,
   IBirthdayAnalytics,
   IClassLevel,
@@ -11,6 +12,7 @@ import {
   ProfileFormData,
   ProfileResponse,
   ProfileState,
+  TeamLeadDepartmentProfile,
 } from "@/types/user";
 import { profileApi } from "./profileApi";
 import {
@@ -52,6 +54,7 @@ const initialState: ProfileState = {
   analytics: null,
   nextStaffId: "",
   companyFormData: blankCompanyFormData,
+  teamleads: [],
 };
 
 const profileSlice = createSlice({
@@ -406,6 +409,16 @@ const profileSlice = createSlice({
           state.bulkEmployees = users;
         }
       )
+
+      .addMatcher(
+        profileApi.endpoints.getTeamlead.matchFulfilled,
+        (state, action: PayloadAction<GetEmployeesByTeamLeadDepartmentResponse>) => {
+          const teamleads: TeamLeadDepartmentProfile[] = action.payload.data;   
+          state.teamleads = teamleads;
+        }
+      )
+
+      
 
       .addMatcher(
         profileApi.endpoints.getAllProfile.matchRejected,

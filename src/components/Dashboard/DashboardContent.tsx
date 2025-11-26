@@ -17,6 +17,7 @@ import LoanManagement from "../Loan/LoanManagement";
 import AppraisalManagement from "../Appraisal/AppraisalManagement";
 import UserProfile from "../Profile/UserProfile";
 import { Cooperative } from "../Contribution/ContributionManagement";
+import { ConsultantReport } from "./ConsultantReport";
 
 interface DashboardContentProps {
   activeItem: string;
@@ -62,6 +63,8 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
       return <Analytics />;
     case "reports":
       return <Reports />;
+    case "creports":
+      return <ConsultantReport />;
     // case 'settings':
     //   return <SystemSettings />;
     case "profile":
