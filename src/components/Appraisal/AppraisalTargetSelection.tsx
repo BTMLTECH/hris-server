@@ -114,6 +114,7 @@ const resetForm = () => {
   dispatch(setSelectedTargets([]));
 };
 
+console.log("dueDate:", formData.dueDate);
 const handleSubmit = async () => {
   if (!formData.title || !formData.dueDate || selectedTargets.length === 0) return;
 
@@ -216,6 +217,7 @@ const handleClose = (open: boolean) => {
               <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <Button
+                    type="button"
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
@@ -223,7 +225,7 @@ const handleClose = (open: boolean) => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(new Date(formData.dueDate), "PPP") : "Pick a date"}
+                    {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -293,7 +295,7 @@ const handleClose = (open: boolean) => {
                 <div><strong>Title:</strong> {formData.title}</div>
                 {/* <div><strong>Employee:</strong> {employees.find(e => e.id === formData.employeeId)?.name}</div> */}
                 <div><strong>Period:</strong> {formData.period}</div>
-                <div><strong>Due Date:</strong> {formData.dueDate ? format(new Date(formData.dueDate), "PPP") : 'Not set'}</div>
+                <div><strong>Due Date:</strong> {formData.dueDate ? format(new Date(new Date(formData.dueDate)), "PPP")   : 'Not set'}</div>
                 <div><strong>Total Score:</strong> {getTotalScore()}/100 marks</div>
               </CardContent>
             </Card>
