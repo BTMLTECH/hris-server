@@ -114,7 +114,6 @@ const resetForm = () => {
   dispatch(setSelectedTargets([]));
 };
 
-console.log("dueDate:", formData.dueDate);
 const handleSubmit = async () => {
   if (!formData.title || !formData.dueDate || selectedTargets.length === 0) return;
 
@@ -225,7 +224,9 @@ const handleClose = (open: boolean) => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a date"}
+              
+                    {formData.dueDate ? format(new Date(formData.dueDate), "PPP") : "Pick a date"}
+
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
