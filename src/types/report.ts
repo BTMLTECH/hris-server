@@ -43,6 +43,9 @@ export interface GenerateReportDTO {
   generatedBy: string;
 }
 
+export type ReportTypes = 'quality' | 'operations' | 'comms' | 'it';
+
+
 export interface ReportUIState {
   reportTitles: Array<string>;
   selectedReport:
@@ -105,6 +108,8 @@ export interface IReport {
   company: string;
   createdAt: string;
 }
+
+
 
 export interface IQualityAssurance {
   _id: string;
@@ -175,10 +180,11 @@ export interface ReportContextType {
   // data: any | null;
   isLoading: boolean;
   // error: any;
-  createQuality: (data: IQualityAssurance) => void;
-  createOperation: (data: IOperationReport) => void;
-  createComms: (data: IComms) => void;
-  createITReport: (data: IReport) => void;
+  generateLinkReport: (data: ReportTypes) => void;
+  createQuality: (data: Partial<IQualityAssurance>) => void;
+  createOperation: (data: Partial<IOperationReport>) => void;
+  createComms: (data: Partial<IComms>) => void;
+  createITReport: (data: Partial<IReport>) => void;
   handleSetSelectedReport: (value: string) => void;
   handleSetDateRange: (value: string) => void;
   handleSetDepartment: (value: string) => void;

@@ -56,11 +56,11 @@ export const baseApi = createApi({
     "Notifications",
     "Trainings",
     "Contribution",
-    "Handover",
-    "Quality",
-    "Operations",
-    "Comms",
-    "ITReport",
+    "Handover"
+    // "Quality",
+    // "Operations",
+    // "Comms",
+    // "ITReport",
   ],
   endpoints: () => ({}),
 });

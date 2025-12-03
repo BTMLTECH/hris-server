@@ -70,12 +70,14 @@ import {
 import { useReduxHandover } from "@/hooks/handover/useReduxHandover";
 import { DeleteConfirmationDialog } from "../ui/deleteDialog";
 import { useReduxAuth } from "@/hooks/auth/useReduxAuth";
+import { TeamLeadDepartmentProfile } from "@/types/user";
 
 const HandoverManagement: React.FC = () => {
   const dispatch = useAppDispatch();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { cachedEmployees } = useReduxAuth();
   const { user } = useAppSelector((state) => state.auth);
+  const { teamleads } = useAppSelector((state) => state.profile);
   const { reports, ui, isLoading } = useAppSelector((state) => state.handover);
 
   const formData = ui.formData;
@@ -353,7 +355,7 @@ const HandoverManagement: React.FC = () => {
                       <SelectTrigger>
                         <SelectValue placeholder="Select team lead" />
                       </SelectTrigger>
-                      <SelectContent>
+                      {/* <SelectContent>
                         {cachedEmployees
                           ?.filter((emp) => emp.role === "teamlead")
                           .map((lead) => (
@@ -361,7 +363,18 @@ const HandoverManagement: React.FC = () => {
                               {lead.firstName} {lead.lastName} ({lead.position})
                             </SelectItem>
                           ))}
-                      </SelectContent>
+                      </SelectContent> */}
+                      <SelectContent>
+                                            {teamleads?.length ? (
+                                              teamleads.map((lead: TeamLeadDepartmentProfile) => (
+                                                <SelectItem key={lead._id} value={lead._id}>
+                                                  {lead.firstName} {lead.lastName} ({lead.position})
+                                                </SelectItem>
+                                              ))
+                                            ) : (
+                                              <div className="p-2 text-gray-400 text-sm">No team leads available</div>
+                                            )}
+                                          </SelectContent>
                     </Select>
                   </div>
 

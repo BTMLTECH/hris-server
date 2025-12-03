@@ -299,7 +299,7 @@ o Act as leave reliever for the Managing Director
 ]
   },
 
-  ac: {
+  account: {
     financial: [ {
     id: 'unit-objective-hr-admin',
     category: 'FINANCIAL',
@@ -437,7 +437,7 @@ measurementTracker: `"HR: Design and show SMART goals and performance tracking c
 ]
   },
 
-  opt :{
+  operation :{
   financial: [
     {
       id: 'unit-objective-fulfilment-sales',
@@ -570,7 +570,7 @@ measurementTracker: `"HR: Design and show SMART goals and performance tracking c
   ]
        },
 
-  su : {
+  operationsbu : {
     financial: [
       {
         id: 'unit-objective-visa-admin',
@@ -771,7 +771,7 @@ measurementTracker: `"HR: Design and show SMART goals and performance tracking c
       }
     ]
   },
-  mk :{
+  marketing :{
     financial: [
       {
         id: 'unit-objective-marketing',
@@ -904,7 +904,7 @@ measurementTracker: `"HR: Design and show SMART goals and performance tracking c
     ]
   },
 
-  ch : {
+  channel : {
     financial: [
       {
         id: 'unit-objective-retail-channel',
@@ -1033,7 +1033,7 @@ measurementTracker: `"HR: Design and show SMART goals and performance tracking c
     ]
   },
 
-  cb : {
+  corporate : {
   financial: [
     {
       id: 'unit-objective-corporate-sales',
@@ -1158,7 +1158,7 @@ Evidence of training feedback form of all scheduled trainings`
   ]
 },
 
-apghi : {
+roaghi : {
   financial: [
     {
       id: 'unit-objective-manifest-fulfilment',
@@ -1263,7 +1263,7 @@ Alternatively, share evidence of degree completed, professional certification at
   ]
 },
 
-rogh : {
+rgogh : {
   financial: [
     {
       id: 'ghana-revenue-target',

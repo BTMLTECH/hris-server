@@ -88,11 +88,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
           { id: "analytics", label: "Analytics Management", icon: BarChart },
           { id: "reports", label: "Reports Management", icon: FileText },
-          // {
-          //   id: "creports",
-          //   label: "Consultant Report Management",
-          //   icon: FileText,
-          // },
+          {
+            id: "creports",
+            label: "Consultant Management",
+            icon: FileText,
+          },
           // { id: 'settings', label: 'System Settings', icon: Settings },
         ];
 

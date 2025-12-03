@@ -27,12 +27,17 @@ interface ReportState extends ReportUIState {
   qualityPagination: Pagination;
   itReportPagination: Pagination;
   activeTab: "quality" | "operations" | "comms" | "it";
+  reportType: "quality" | "operations" | "comms" | "it";
   selectedDate: Date | null;
   qualityForm: Partial<IQualityAssurance>;
   operationsForm: Partial<IOperationReport>;
   commsForm: Partial<IComms>;
-  itForm: Partial<IReport>;
+  itForm: Partial<IReport>;  
+  createLinkReport: string;
+  reportIsLoading: boolean;
 }
+
+
 
 const initialState: ReportState = {
   reportTitles: [
@@ -47,6 +52,7 @@ const initialState: ReportState = {
   dateRange: undefined,
   department: "all",
   isGenerating: false,
+  reportIsLoading: false,
   showCustomDatePicker: false,
   customStartDate: null,
   customEndDate: null,
@@ -98,6 +104,8 @@ const initialState: ReportState = {
     task: "",
     company: "",
   },
+  reportType: 'quality',
+  createLinkReport: "",
 };
 
 const reportSlice = createSlice({
@@ -129,6 +137,9 @@ const reportSlice = createSlice({
     setIsGenerating(state, action: PayloadAction<boolean>) {
       state.isGenerating = action.payload;
     },
+    setReportIsLoading(state, action: PayloadAction<boolean>) {
+      state.reportIsLoading = action.payload;
+    },
     setCustomStartDate(state, action: PayloadAction<string | null>) {
       state.customStartDate = action.payload;
     },
@@ -138,6 +149,9 @@ const reportSlice = createSlice({
     // ✅ Add new reducers
     setActiveTab(state, action: PayloadAction<ReportState["activeTab"]>) {
       state.activeTab = action.payload;
+    },
+    setReportType(state, action: PayloadAction<ReportState["reportType"]>) {
+      state.reportType = action.payload;
     },
     setSelectedDate(state, action: PayloadAction<Date | null>) {
       state.selectedDate = action.payload;
@@ -174,6 +188,12 @@ const reportSlice = createSlice({
       state.isLoading = false;
       state.isGenerating = false;
     },
+
+    setCreateReportLink(state, action: PayloadAction<string>) {
+      state.createLinkReport = action.payload;
+    },
+
+    // ----- Quality Assurance -----
 
     setQualityCache: (
       state,
@@ -268,14 +288,13 @@ const reportSlice = createSlice({
         state.error = action.error?.message || "Failed to generate report";
       }
     );
+
     builder.addMatcher(
       reportApi.endpoints.getAllQuality.matchFulfilled,
       (state, action) => {
         const response = action.payload as PaginatedResponse<IQualityAssurance>;
-
         // Destructure safely
         const { pagination, data } = response.data;
-
         if (pagination) {
           state.qualityCache[pagination.page] = data;
           state.qualityPagination = pagination;
@@ -283,7 +302,35 @@ const reportSlice = createSlice({
       }
     );
 
-    // ✅ QUALITY ASSURANCE REPORT
+
+
+    // ✅ Create Report Link
+    builder.addMatcher(
+      reportApi.endpoints.createReportLink.matchPending,
+      (state) => {
+        state.isLoading = true; 
+        state.error = null;
+      }
+    );
+    
+    builder.addMatcher(
+      reportApi.endpoints.createReportLink.matchFulfilled,
+      (state, action) => {
+        const response = action.payload;
+        state.createLinkReport = response.data as string;
+
+        state.isLoading = false;
+      }
+    );
+
+    builder.addMatcher(
+      reportApi.endpoints.createReportLink.matchRejected,
+      (state, action) => {
+        state.isLoading = false;     
+        state.error = action.error?.message || "Failed to generate linl report";
+      }
+    );
+
     builder.addMatcher(
       reportApi.endpoints.getAllQuality.matchFulfilled,
       (state, action) => {
@@ -296,7 +343,7 @@ const reportSlice = createSlice({
         }
       }
     );
-
+    
     // ✅ OPERATIONS REPORT
     builder.addMatcher(
       reportApi.endpoints.getAllOperations.matchFulfilled,
@@ -316,6 +363,7 @@ const reportSlice = createSlice({
       reportApi.endpoints.getAllComms.matchFulfilled,
       (state, action) => {
         const response = action.payload as PaginatedResponse<IComms>;
+        console.log("Comms Response:", response);
         const { pagination, data } = response.data;
 
         if (pagination) {
@@ -363,6 +411,7 @@ export const {
   setExportFormat,
   clearReport,
   setActiveTab,
+  setReportType,
   setSelectedDate,
 
   setCommsCache,
@@ -379,7 +428,7 @@ export const {
   setITReportPagination,
   setOperationsPagination,
   setQualityPagination,
-
+  setCreateReportLink,
   setSearchTerm,
   resetCommsForm,
   resetITForm,
@@ -389,6 +438,7 @@ export const {
   setITForm,
   setOperationsForm,
   setQualityForm,
+  setReportIsLoading
 } = reportSlice.actions;
 
 export default reportSlice.reducer;

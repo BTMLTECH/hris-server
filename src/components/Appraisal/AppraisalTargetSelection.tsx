@@ -78,7 +78,7 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
   const handleNextStep = () => {
     if (step === 'basic') {
       // const selectedEmployee = employees.find(emp => emp.id === formData.employeeId);
-      const department = user?.department;
+      const department = user?.department.toLocaleLowerCase();
       const departmentTargets = groupedTargets[department]; 
 
       // Flatten targets
@@ -223,7 +223,7 @@ const handleClose = (open: boolean) => {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(formData.dueDate, "PPP") : "Pick a date"}
+                    {formData.dueDate ? format(new Date(formData.dueDate), "PPP") : "Pick a date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
@@ -293,7 +293,7 @@ const handleClose = (open: boolean) => {
                 <div><strong>Title:</strong> {formData.title}</div>
                 {/* <div><strong>Employee:</strong> {employees.find(e => e.id === formData.employeeId)?.name}</div> */}
                 <div><strong>Period:</strong> {formData.period}</div>
-                <div><strong>Due Date:</strong> {formData.dueDate ? format(formData.dueDate, "PPP") : 'Not set'}</div>
+                <div><strong>Due Date:</strong> {formData.dueDate ? format(new Date(formData.dueDate), "PPP") : 'Not set'}</div>
                 <div><strong>Total Score:</strong> {getTotalScore()}/100 marks</div>
               </CardContent>
             </Card>

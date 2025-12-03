@@ -5,6 +5,7 @@ import {
   useCreateITReportMutation,
   useCreateOperationMutation,
   useCreateQualityMutation,
+  useCreateReportLinkMutation,
   useGenerateEmploymentSummaryMutation,
   useGetAllCommsQuery,
   useGetAllITReportsQuery,
@@ -31,6 +32,7 @@ import {
   setOperationsCache,
   setCommsCache,
   setITReportCache,
+  setReportIsLoading,
 } from "@/store/slices/report/reportSlice";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -40,6 +42,7 @@ import {
   IQualityAssurance,
   IReport,
   ReportContextType,
+  ReportTypes,
 } from "@/types/report";
 import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 import { extractErrorMessage } from "@/utils/errorHandler";
@@ -67,6 +70,7 @@ export const useReduxReportContext = (): ReportContextType => {
   const [createOperationMutation] = useCreateOperationMutation();
   const [createCommsMutation] = useCreateCommsMutation();
   const [createITReportMutation] = useCreateITReportMutation();
+  const [createReportLink] = useCreateReportLinkMutation();
 
   const [generateReport, { isLoading }] =
     useGenerateEmploymentSummaryMutation();
@@ -273,14 +277,16 @@ export const useReduxReportContext = (): ReportContextType => {
   const handleCreate = async (
     mutationFn: any,
     data: any,
-    label: string
+    label?: string
   ): Promise<boolean> => {
     try {
+      dispatch(setReportIsLoading(true));
       await mutationFn(data).unwrap();
       toast({
         title: `${label} created successfully!`,
-        description: "Your record has been added to the system.",
+        // description: "Your record has been added to the system.",
       });
+
       return true;
     } catch (error) {
       const msg = extractErrorMessage(error, `Failed to create ${label}`);
@@ -290,21 +296,26 @@ export const useReduxReportContext = (): ReportContextType => {
         variant: "destructive",
       });
       return false;
+    }finally {
+      dispatch(setReportIsLoading(false));
     }
   };
 
   // 🧩 Specific Report Create Functions
-  const createQuality = (data: IQualityAssurance) =>
+  const generateLinkReport = (data: ReportTypes) =>
+        handleCreate(createReportLink, {data}, `${data}`); 
+
+  const createQuality = (data: Partial<IQualityAssurance>) =>
     handleCreate(createQualityMutation, data, "Quality");
 
-  const createOperation = (data: IOperationReport) =>
+  const createOperation = (data: Partial<IOperationReport>) =>
     handleCreate(createOperationMutation, data, "Operations");
 
-  const createComms = (data: IComms) =>
+  const createComms = (data: Partial<IComms>) =>
     handleCreate(createCommsMutation, data, "Comms");
 
-  const createITReport = (data: IReport) =>
-    handleCreate(createITReportMutation, data, "IT");
+  const createITReport = (data: Partial<IReport>) =>
+    handleCreate(createITReportMutation, data, "It");
 
   const handleSetDepartment = (value: string) => {
     dispatch(setDepartment(value));
@@ -351,6 +362,7 @@ export const useReduxReportContext = (): ReportContextType => {
     // showCustomDatePicker: report.showCustomDatePicker,
     // customStartDate: report.customStartDate,
     // customEndDate: report.customEndDate,
+    generateLinkReport,
     createQuality,
     createOperation,
     createComms,

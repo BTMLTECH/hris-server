@@ -36,10 +36,10 @@ const App = () => (
             <Route path="/set-password" element={<SetPasswordWithToken />} />
 
             {/* ✅ Create Report Routes */}
-            <Route path="/create-quality" element={<CreateQuality />} />
-            <Route path="/create-operations" element={<CreateOperations />} />
-            <Route path="/create-comms" element={<CreateComms />} />
-            <Route path="/create-it-report" element={<CreateITReport />} />
+            <Route path="/quality/:companyId" element={<CreateQuality />} />
+            <Route path="/operations/:companyId" element={<CreateOperations />} />
+            <Route path="/comms/:companyId" element={<CreateComms />} />
+            <Route path="/it/:companyId" element={<CreateITReport />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </CombinedProvider>

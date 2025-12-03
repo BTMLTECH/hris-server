@@ -141,7 +141,7 @@ export const reportApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-      invalidatesTags: [{ type: "Quality", id: "LIST" }],
+      // invalidatesTags: [{ type: "Quality", id: "LIST" }],
     }),
 
     createOperation: builder.mutation({
@@ -151,7 +151,7 @@ export const reportApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-      invalidatesTags: [{ type: "Operations", id: "LIST" }],
+      // invalidatesTags: [{ type: "Operations", id: "LIST" }],
     }),
 
     createComms: builder.mutation({
@@ -161,7 +161,7 @@ export const reportApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-      invalidatesTags: [{ type: "Comms", id: "LIST" }],
+      // invalidatesTags: [{ type: "Comms", id: "LIST" }],
     }),
 
     createITReport: builder.mutation({
@@ -171,7 +171,16 @@ export const reportApi = apiSlice.injectEndpoints({
         body,
         credentials: "include" as const,
       }),
-      invalidatesTags: [{ type: "ITReport", id: "LIST" }],
+      // invalidatesTags: [{ type: "ITReport", id: "LIST" }],
+    }),
+
+    createReportLink: builder.mutation({
+      query: (body) => ({
+        url: "reports/create-link",
+        method: "POST",
+        body,
+        credentials: "include" as const,
+      }),
     }),
   }),
 });
@@ -190,4 +199,5 @@ export const {
   useLazyGetAllITReportsQuery,
   useGetAllOperationsQuery,
   useLazyGetAllCommsQuery,
+  useCreateReportLinkMutation,
 } = reportApi;
