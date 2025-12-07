@@ -363,7 +363,6 @@ const reportSlice = createSlice({
       reportApi.endpoints.getAllComms.matchFulfilled,
       (state, action) => {
         const response = action.payload as PaginatedResponse<IComms>;
-        console.log("Comms Response:", response);
         const { pagination, data } = response.data;
 
         if (pagination) {

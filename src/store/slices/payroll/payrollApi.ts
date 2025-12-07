@@ -79,6 +79,15 @@ export const payrollApi = apiSlice.injectEndpoints({
       invalidatesTags: ["getAllPayrolls"],
     }),
 
+    generateBulkPayroll: builder.mutation({
+      query: ({ month, year }) => ({
+        url: "payroll/generate-bulk",
+        method: "POST",
+        credentials: "include" as const,
+      }),
+      invalidatesTags: ["getAllPayrolls"],
+    }),
+
     markPayrollsAsDraftBulk: builder.mutation({
       query: ({ month, year }) => ({
         url: "payroll/bulk-draft",
@@ -134,4 +143,5 @@ export const {
   useMarkPayrollsAsDraftBulkMutation,
   usePayrollsAsPaidBulkMutation,
   useLazyGetAllPayrollsQuery,
+  useGenerateBulkPayrollMutation,
 } = payrollApi;

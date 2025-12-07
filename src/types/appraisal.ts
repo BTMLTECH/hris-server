@@ -79,10 +79,11 @@ export interface IAppraisalReviewTrail {
   marksGiven?: number;
 }
 export interface Appraisal {
-  id?: string;
+  _id?: string;
   employeeId?: string;
   employeeName?: string;
   employeeLastName?: string;
+  department?: string;
   teamLeadId: string;
   teamLeadName: string;
   title: string;

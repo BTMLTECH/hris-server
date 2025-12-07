@@ -212,6 +212,7 @@ export interface PayrollContextType {
     month: string | number,
     year: string | number
   ) => Promise<boolean>;
+  bulkGeneratePayroll: () => Promise<boolean>;
   setIsDialogOpen: (open: boolean) => void;
   setIsDeleteDialogOpen: (open: boolean) => void;
   setSelectedPayroll: (payroll: IPayroll | null) => void;

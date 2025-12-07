@@ -76,7 +76,7 @@ export interface User {
   officeBranch?: string;
   employmentDate?: string;
   accountInfo: AccountInfo;
-  role: "md" | "teamlead" | "employee" | "admin" | "hr" | "qa";
+  role: "md" | "teamlead" | "employee" | "admin" | "hr" ;
   company: ICompany;
   status: "active" | "inactive" | "terminated";
   terminationDate?: string;

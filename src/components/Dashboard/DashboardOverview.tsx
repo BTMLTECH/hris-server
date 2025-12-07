@@ -97,7 +97,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         ];
 
       case "employee":
-      case "qa":
         return [
           {
             icon: Clock,
@@ -170,8 +169,6 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       case "teamlead":
         return `Welcome back, ${firstName}! Lead your team to success.`;
       case "employee":
-        return `Welcome back, ${firstName}! Your personal dashboard is ready.`;
-      case "qa":
         return `Welcome back, ${firstName}! Your personal dashboard is ready.`;
       default:
         return `Welcome back, ${firstName}! Your HRIS dashboard is ready.`;

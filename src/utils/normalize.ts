@@ -246,20 +246,42 @@ export const months = [
 
 export const years = ["2030", "2029", "2028", "2027", "2026", "2025", "2024"];
 
-export function mapAndCacheAppraisals(
-  state,
-  appraisals: any[],
-  pagination: { page: number }
-) {
-  const status = state.activityFilter;
-  const page = pagination?.page;
+// export function mapAndCacheAppraisals(
+//   state,
+//   appraisals: any[],
+//   pagination: { page: number }
+// ) {
+//   console.log("mapAndCacheAppraisals called with appraisals:", appraisals);
+//   console.log("mapAndCacheAppraisals called with pagination:", pagination);
+//   const status = state.activityFilter;
+//   const page = pagination?.page;
 
-  const mappedData = Array.isArray(appraisals)
-    ? appraisals.map((appraisal: any) => ({
+//   const mappedData = Array.isArray(appraisals)
+//     ? appraisals.map((appraisal: any) => ({
+//         ...appraisal,
+//         employeeId: appraisal.user?._id,
+//         employeeName: appraisal.user?.firstName,
+//         employeeLastName: appraisal.user?.lastName,
+//       }))
+//     : [];
+
+//   if (!state.activityCache[status]) state.activityCache[status] = {};
+//   state.activityCache[status][page] = mappedData;
+
+//   state.appraisalRequests = mappedData;
+// }
+export function mapAndCacheAppraisals(state: any, data: any) {
+  // data = { appraisals: [...], pagination: {...} }
+  const status = state.activityFilter;
+  const page = data?.pagination?.page ?? 1; // fallback to 1
+
+  const mappedData = Array.isArray(data?.appraisals)
+    ? data.appraisals.map((appraisal: any) => ({
         ...appraisal,
         employeeId: appraisal.user?._id,
         employeeName: appraisal.user?.firstName,
         employeeLastName: appraisal.user?.lastName,
+        department: appraisal.user?.department
       }))
     : [];
 
@@ -267,7 +289,9 @@ export function mapAndCacheAppraisals(
   state.activityCache[status][page] = mappedData;
 
   state.appraisalRequests = mappedData;
+
 }
+
 
 export function updateLeaveState(state: any, payload: any) {
   const { myRequests, approvals, allApproved, summary, balance, pagination } =

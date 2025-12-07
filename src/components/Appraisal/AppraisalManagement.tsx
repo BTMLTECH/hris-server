@@ -33,16 +33,26 @@ const AppraisalManagement: React.FC = () => {
   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();
     
   const { isLocalLoading: loading, setLocalLoading:setLoading, clearLocalLoading:clearLoading } = useLoadingState();
-  const {cachedPageData, isLoading,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest} = useReduxAppraisal()
+  const {cachedPageData, isLoading,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest, refetchActivity} = useReduxAppraisal()
   const { activityPagination, activityCache, activityFilter:filter, isLoading:appraisalLoading, isCreateDialogOpen, selectedAppraisal} = useAppSelector((state) => state.appraisal);
-  const safeAppraisalRequests = Array.isArray(cachedPageData) ? cachedPageData : [];
-     const [hrAdjustments, setHrAdjustments] = useState({
+  // const safeAppraisalRequests = Array.isArray(cachedPageData) ? cachedPageData : [];
+ const safeAppraisalRequests = Array.isArray(cachedPageData)
+  ? cachedPageData
+  : (cachedPageData && typeof cachedPageData === "object" && "appraisals" in cachedPageData &&
+      Array.isArray((cachedPageData as any).appraisals))
+    ? (cachedPageData as any).appraisals
+    : [];
+
+
+    
+  const [hrAdjustments, setHrAdjustments] = useState({
        innovation: false,
        commendation: false,
        query: false,
        majorError: false,
      });
- 
+
+
  
 
   const isPrivilegedReviewer =
@@ -58,7 +68,8 @@ const handleAppraisalUpdate = async (
   updatedAppraisal: Appraisal & { _id?: string},
   action: 'pending' | 'submitted' | 'approved' | 'needs_revision' | 'sent_to_employee' | 'rejected' | 'update'
 ) => {
-  const id = updatedAppraisal._id ?? updatedAppraisal.id;
+  const id = updatedAppraisal._id ?? updatedAppraisal._id;
+
   
   if (!id) {
 
@@ -66,7 +77,7 @@ const handleAppraisalUpdate = async (
   }
 
   // Strip _id/id out to avoid conflicts, BUT preserve hrAdjustments explicitly
-  const { _id, id: ignoredId, ...rest } = updatedAppraisal;
+  const { _id, _id: ignoredId, ...rest } = updatedAppraisal;
 
   const payload: typeof rest & { status?: typeof action, hrAdjustments?: typeof hrAdjustments } = {
     ...rest,
@@ -93,6 +104,8 @@ const handleAppraisalUpdate = async (
     } else if (handledByUpdate.includes(action)) {
       await handleUpdateAppraisalRequest(id, payload);
     }
+
+    refetchActivity();
   } catch (error) {
   } finally {
     clearLoading(id, action);
@@ -107,26 +120,53 @@ const handleAppraisalUpdate = async (
     }));
   };
 
+if (selectedAppraisal) {
+  const handleBackAndRefresh = () => {
+    // Clear the selected appraisal to go back to the table
+    dispatch(setSelectedAppraisal(null));
+    
+    // Refetch activity so table is updated
+    refetchActivity();
+  };
+
+  return (
+    <AppraisalScoring
+      key={selectedAppraisal._id + (selectedAppraisal.updatedAt || "")}
+      appraisal={selectedAppraisal}
+      canReviewAppraisal={isPrivilegedReviewer}
+      isEmployee={isEmployee && selectedAppraisal.employeeId === user?._id}
+      onBack={handleBackAndRefresh}
+      onSubmit={handleAppraisalUpdate}
+      objectives={selectedAppraisal.objectives}
+      isLoading={appraisalLoading}
+      loading={loading}
+      hr={isHr}
+      teamlead={isTeamLeadOnly}
+      hrAdjustments={hrAdjustments}
+      setHrAdjustments={setHrAdjustments}
+    />
+  );
+}
 
 
-  if (selectedAppraisal) {
-    return (
-      <AppraisalScoring
-        appraisal={selectedAppraisal}
-        canReviewAppraisal={isPrivilegedReviewer}
-        isEmployee={isEmployee && selectedAppraisal.employeeId === user?._id}
-        onBack={() => dispatch(setSelectedAppraisal(null))}
-        onSubmit={handleAppraisalUpdate}
-        objectives={selectedAppraisal.objectives}
-        isLoading={appraisalLoading}
-        loading={loading}
-        hr={isHr}
-        teamlead={isTeamLeadOnly}
-         hrAdjustments={hrAdjustments}
-        setHrAdjustments={setHrAdjustments}
-      />
-    );
-  }
+  // if (selectedAppraisal) {
+  //   return (
+  //     <AppraisalScoring
+  //       appraisal={selectedAppraisal}
+  //       canReviewAppraisal={isPrivilegedReviewer}
+  //       isEmployee={isEmployee && selectedAppraisal.employeeId === user?._id}
+  //       onBack={() => dispatch(setSelectedAppraisal(null))}
+  //       onSubmit={handleAppraisalUpdate}
+  //       objectives={selectedAppraisal.objectives}
+  //       isLoading={appraisalLoading}
+  //       loading={loading}
+  //       hr={isHr}
+  //       teamlead={isTeamLeadOnly}
+  //        hrAdjustments={hrAdjustments}
+  //       setHrAdjustments={setHrAdjustments}
+  //     />
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -160,11 +200,11 @@ const handleAppraisalUpdate = async (
         dispatch(setActivityPagination({ ...activityPagination, page: 1 }));
       }}
     >
-      <TabsList className="mb-4">
+      {/* <TabsList className="mb-4">
         <TabsTrigger value="all">All</TabsTrigger>
         <TabsTrigger value="approved">Approved</TabsTrigger>
         <TabsTrigger value="rejected">Rejected</TabsTrigger>
-      </TabsList>
+      </TabsList> */}
     </Tabs>
 
     {isLoading.appraisaActivityLoading ? (
@@ -177,6 +217,7 @@ const handleAppraisalUpdate = async (
               {(isTeamLeadOnly || isAdmin || isHr || isMd) && (
                 <TableHead className="hidden sm:table-cell">Employee Name</TableHead>
               )}
+              <TableHead className="hidden sm:table-cell">Department</TableHead>
               <TableHead className="hidden sm:table-cell">Period</TableHead>
               <TableHead className="hidden sm:table-cell">Due Date</TableHead>
               <TableHead>Status</TableHead>
@@ -221,8 +262,11 @@ const handleAppraisalUpdate = async (
             <TableRow>
               <TableHead>Title</TableHead>
               {(isTeamLeadOnly || isHr || isMd || isAdmin) && (
+        
                 <TableHead className="hidden sm:table-cell">Employee Name</TableHead>
+       
               )}
+              <TableHead className="hidden sm:table-cell">Department</TableHead>
               <TableHead className="hidden sm:table-cell">Period</TableHead>
               <TableHead className="hidden sm:table-cell">Due Date</TableHead>
               <TableHead>Status</TableHead>
@@ -231,7 +275,7 @@ const handleAppraisalUpdate = async (
           </TableHeader>
 
           <TableBody>
-            {safeAppraisalRequests.map((appraisal, index) => {
+            {safeAppraisalRequests.map((appraisal: Appraisal, index:number) => {
               const trail = Array.isArray(appraisal.reviewTrail) ? appraisal.reviewTrail : [];
               const latestReview = trail.at(-1);
               const rejectedReview = trail.find((r) => r.action === 'rejected');
@@ -246,17 +290,19 @@ const handleAppraisalUpdate = async (
               const latestFinalReview = rejectedReview || hrApproved || latestReview;
 
               return (
-                <TableRow key={appraisal.id || `appraisal-${index}`}>
-                  <TableCell className="font-medium">{appraisal.title}</TableCell>
+                <TableRow key={appraisal._id || `appraisal-${index}`}>
+                  <TableCell className="font-medium">{appraisal.title?.toLocaleUpperCase()}</TableCell>
 
                   {(isTeamLeadOnly || isAdmin || isHr || isMd) && (
+                 
                     <TableCell className="font-medium">
-                      {appraisal.employeeName ?? 'N/A'} {appraisal.employeeLastName ?? ''}
+                    {appraisal.employeeName ?? 'N/A'} {appraisal.employeeLastName ?? ''}
                     </TableCell>
+                
                   )}
 
-                  <TableCell className="hidden sm:table-cell">{appraisal.period}</TableCell>
-
+                  <TableCell className="hidden sm:table-cell">{appraisal.department?.toLocaleUpperCase() ?? 'N/A'}</TableCell>              
+                  <TableCell className="hidden sm:table-cell">{appraisal.period?.toLocaleUpperCase()}</TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {appraisal.dueDate
                       ? new Date(appraisal.dueDate).toLocaleDateString()
@@ -279,7 +325,6 @@ const handleAppraisalUpdate = async (
                         )}
                         {latestFinalReview?.date && (
                           <div>
-                            on{' '}
                             <strong>
                               {new Date(latestFinalReview.date).toLocaleDateString()}
                             </strong>

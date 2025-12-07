@@ -31,7 +31,6 @@ export default function CreateQuality() {
       ...qualityForm,
       company: companyId!,   
     };
-console.log("Submitting Quality Form:", payload);
     await createQuality(payload);
     dispatch(resetQualityForm());
   };

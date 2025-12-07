@@ -13,7 +13,7 @@ export const appraisalApi = apiSlice.injectEndpoints({
         body: data,
         credentials: 'include' as const,
       }),
-      invalidatesTags: ['getAppraisalActivity'],
+       invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
     }),
 
     updateAppraisalRequest: builder.mutation({
@@ -23,7 +23,7 @@ export const appraisalApi = apiSlice.injectEndpoints({
         body: data, 
         credentials: 'include' as const,
       }),
-      invalidatesTags: ['getAppraisalActivity'],
+        invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
     }),
 
     approveAppraisalRequest: builder.mutation({
@@ -32,7 +32,7 @@ export const appraisalApi = apiSlice.injectEndpoints({
         method: 'POST',
         credentials: 'include' as const,
       }),
-      invalidatesTags: ['getAppraisalActivity'],
+        invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
     }),
 
     rejectAppraisalRequest: builder.mutation({
@@ -41,7 +41,7 @@ export const appraisalApi = apiSlice.injectEndpoints({
         method: 'POST',
         credentials: 'include' as const,
       }),
-      invalidatesTags: ['getAppraisalActivity']
+       invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
     }),
 
     
@@ -60,9 +60,11 @@ export const appraisalApi = apiSlice.injectEndpoints({
         method: 'GET',
         credentials: 'include' as const,
       }),
-       providesTags: (result) =>
-        result ? [{ type: 'getAppraisalActivity' }] : [],
-    }),
+        providesTags: (result) =>
+    result
+      ? [{ type: 'getAppraisalActivity', id: 'LIST' }]
+      : [{ type: 'getAppraisalActivity', id: 'LIST' }],
+}),
 
     getEmployeeByDepartment: builder.query({
       query: () => ({

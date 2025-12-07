@@ -319,6 +319,30 @@ const payrollSlice = createSlice({
         }
       );
 
+// Generate bulk payroll
+         builder
+      .addMatcher(
+        payrollApi.endpoints.generateBulkPayroll.matchPending,
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        payrollApi.endpoints.generateBulkPayroll.matchFulfilled,
+        (state) => {
+          state.isLoading = false;
+          state.isDialogOpen = false;
+        }
+      )
+      .addMatcher(
+        payrollApi.endpoints.generateBulkPayroll.matchRejected,
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.error?.message || "Failed to create payroll";
+        }
+      );
+
     // Edit payroll
     builder
       .addMatcher(

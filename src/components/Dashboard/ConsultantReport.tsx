@@ -54,7 +54,6 @@ export const ConsultantReport = () => {
   );
  
 
-  console.log("Generated Link:", createLinkReport);
 
 
   const handleConsultantLink = async () => {

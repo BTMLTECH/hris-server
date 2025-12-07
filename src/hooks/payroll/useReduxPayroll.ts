@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import {
   payrollApi,
   useDeletePayrollMutation,
+  useGenerateBulkPayrollMutation,
   useGetAllPayrollsQuery,
   useLazyGetAllPayrollsQuery,
   useMarkPayrollAsDraftMutation,
@@ -68,6 +69,7 @@ export const useReduxPayroll = (): PayrollContextType => {
   const [reverseBulkPayrollMutation] = useReverseBulkPayrollMutation();
   const [markPayrollsAsDraftBulk] = useMarkPayrollsAsDraftBulkMutation();
   const [payrollsAsPaidBulk] = usePayrollsAsPaidBulkMutation();
+  const [generateBulkPayroll] = useGenerateBulkPayrollMutation()
 
   // const currentPage = payrollPagination?.page ?? 1;
   // const pageSize = payrollPagination?.limit || 20;
@@ -505,6 +507,26 @@ export const useReduxPayroll = (): PayrollContextType => {
     }
   };
 
+  const bulkGeneratePayroll = async (): Promise<boolean> => {
+    try {
+      await generateBulkPayroll({}).unwrap();
+      toast({ title: "Payroll Generated Successfully" });
+      // refreshEndpoint(payrollApi.endpoints.getAllPayrolls, queryParams);
+
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(
+        error,
+        "Failed to generate payroll"
+      );
+      toast({
+        title: "Generate Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
   const reverseSinglePayroll = async (payrollId: string): Promise<boolean> => {
     try {
       await reverseSinglePayrollMutation(payrollId).unwrap();
@@ -641,6 +663,7 @@ export const useReduxPayroll = (): PayrollContextType => {
     processBulkPayroll,
     reverseBulkPayroll,
     payrollAsPayBulk,
+    bulkGeneratePayroll,
     paidPayroll,
     payrollsAsDraftBulk,
     setIsDialogOpen: (open: boolean) => dispatch(setIsDialogOpen(open)),

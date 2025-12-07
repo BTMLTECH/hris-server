@@ -26,13 +26,14 @@ import { connectNotificationSocket } from "../auth/useReduxAuth";
 
 export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state: RootState) => state.auth);
+    const { user, isAuthenticated } = useAppSelector((state: RootState) => state.auth);
+  
+    const shouldSkip =  !isAuthenticated || !user;
   const {
     activityPagination: pagination,
     activityFilter: filter,
     activityCache,
   } = useAppSelector((state: RootState) => state.appraisal);
-  const shouldSkip = !user;
   const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
   const {
     data: getEmployeeUnderTeamlead = [],
@@ -53,31 +54,41 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     }
   );
 
+  
   // Cache & pagination sync
   useEffect(() => {
+    
     if (appraisalActivityResponse?.pagination) {
       dispatch(setActivityPagination(appraisalActivityResponse.pagination));
     }
 
-    // if (
-    //   appraisalActivityResponse?.data &&
-    //   !activityCache[filter]?.[pagination.page]
-    // ) {
-    //   dispatch(
-    //     setActivityCache({
-    //       page: pagination.page,
-    //       status: filter,
-    //       data: appraisalActivityResponse.data,
-    //     })
-    //   );
-    // }
+    if (
+      appraisalActivityResponse?.data &&
+      !activityCache[filter]?.[pagination.page]
+    ) {
+      dispatch(
+        setActivityCache({
+          page: pagination.page,
+          status: filter,
+          data: appraisalActivityResponse.data,
+        })
+      );
+    }
     // filter, pagination.page, dispatch, activityCache
   }, [appraisalActivityResponse]);
 
   // Update appraisals from cache (immediate UI feedback)
   useEffect(() => {
-    const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
-    dispatch(setAppraisalRequests(cachedPageData));
+    // const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
+    // dispatch(setAppraisalRequests(cachedPageData));
+    const safeAppraisalRequests: Appraisal[] = Array.isArray(cachedPageData)
+  ? cachedPageData
+  : Array.isArray((cachedPageData as any)?.appraisals)
+    ? (cachedPageData as any).appraisals
+    : [];
+    
+dispatch(setAppraisalRequests(safeAppraisalRequests));
+
   }, [filter, pagination.page, activityCache, dispatch]);
 
   const appraisalActivity = appraisalActivityResponse?.data ?? [];
@@ -120,6 +131,7 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     dispatch(setIsLoading(true));
     try {
       await createAppraisalRequest(data).unwrap();
+      refetchActivity()
       toast({ title: "Appraisal Request Submitted" });
 
       return true;

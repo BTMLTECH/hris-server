@@ -5,6 +5,7 @@ import { appraisalApi } from "./appraisalApi";
 import { Appraisal, AppraisalObjective } from "@/types/appraisal";
 import { AppraisalTarget } from "@/data/appraisalTargets";
 import { mapAndCacheAppraisals } from "@/utils/normalize";
+import { stat } from "fs";
 
 interface AppraisalFormData {
   title: string;
@@ -22,7 +23,7 @@ interface AppraisalState {
   step: "basic" | "targets" | "preview";
   formData: AppraisalFormData;
   selectedTargets: AppraisalTarget[];
-  availableTargets: AppraisalTarget[];
+  availableTargets: AppraisalTarget[]
   objectives: AppraisalObjective[];
   activityPagination: {
     total: number;
@@ -117,7 +118,7 @@ const appraisalSlice = createSlice({
     ) {
       const { appraisal, actionType } = action.payload;
       const index = state.appraisalRequests.findIndex(
-        (a) => a.id === appraisal.id
+        (a:any) => a._id === appraisal._id
       );
 
       if (index !== -1) {
@@ -186,29 +187,55 @@ const appraisalSlice = createSlice({
       state.appraisalRequests = [];
     },
 
+    // setAppraisalObjectives(
+    //   state,
+    //   action: PayloadAction<{
+    //     appraisalId: string;
+    //     objectives: AppraisalObjective[];
+    //   }>
+    // ) {
+
+    //   const { appraisalId, objectives } = action.payload;
+      
+    //   console.log("setAppraisalObjectives action.payload:", action.payload);
+    //   // Update objectives inside the list
+    //   const appraisal = state.appraisalRequests.find(
+    //     (a) => a.id === appraisalId
+    //   );
+    //   if (appraisal) {
+    //     appraisal.objectives = objectives;
+    //   }
+
+    //   // Also update the currently selected appraisal
+    //   if (state.selectedAppraisal?.id === appraisalId) {
+    //     state.selectedAppraisal.objectives = objectives;
+    //   }
+    //   state.objectives = objectives;
+    // },
+
     setAppraisalObjectives(
-      state,
-      action: PayloadAction<{
-        appraisalId: string;
-        objectives: AppraisalObjective[];
-      }>
-    ) {
-      const { appraisalId, objectives } = action.payload;
+  state,
+  action: PayloadAction<{
+    appraisalId: string;
+    objectives: AppraisalObjective[];
+  }>
+) {
+  const { appraisalId, objectives } = action.payload;
+  
 
-      // Update objectives inside the list
-      const appraisal = state.appraisalRequests.find(
-        (a) => a.id === appraisalId
-      );
-      if (appraisal) {
-        appraisal.objectives = objectives;
-      }
+  // Match using _id
+  const appraisal = state.appraisalRequests.find((a:any) => a._id === appraisalId);
+  if (appraisal) {
+    // Replace objectives immutably
+    appraisal.objectives = objectives.map(obj => ({ ...obj }));
+  }
+  if (state.selectedAppraisal?._id === appraisalId) {
+    state.selectedAppraisal.objectives = objectives.map(obj => ({ ...obj }));
+  }
 
-      // Also update the currently selected appraisal
-      if (state.selectedAppraisal?.id === appraisalId) {
-        state.selectedAppraisal.objectives = objectives;
-      }
-      state.objectives = objectives;
-    },
+  state.objectives = objectives.map(obj => ({ ...obj }));
+},
+
 
     toggleTarget(state, action: PayloadAction<AppraisalTarget>) {
       const exists = state.selectedTargets.find(
@@ -225,7 +252,7 @@ const appraisalSlice = createSlice({
     updateAppraisalActivityFeed: (
       state,
       action: PayloadAction<{
-        appraisals: any[];
+        appraisals: Appraisal[];
         pagination: {
           page: number;
           total: number;
@@ -237,7 +264,7 @@ const appraisalSlice = createSlice({
       mapAndCacheAppraisals(
         state,
         action.payload.appraisals,
-        action.payload.pagination
+        // action.payload.pagination
       );
     },
     resetAppraisalForm: () => initialState,
@@ -263,7 +290,7 @@ const appraisalSlice = createSlice({
         };
 
         state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
-          appraisal.id === normalized.id ? normalized : appraisal
+          appraisal._id === normalized.id ? normalized : appraisal
         );
 
         state.isLoading = false;
@@ -304,7 +331,7 @@ const appraisalSlice = createSlice({
         };
 
         state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
-          appraisal.id === normalized.id ? normalized : appraisal
+          appraisal._id === normalized.id ? normalized : appraisal
         );
 
         state.isLoading = false;
@@ -325,7 +352,7 @@ const appraisalSlice = createSlice({
       (state, action) => {
         const approved = action.payload.data;
         state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
-          appraisal.id === approved.id ? approved : appraisal
+          appraisal._id === approved.id ? approved : appraisal
         );
       }
     );
@@ -336,7 +363,7 @@ const appraisalSlice = createSlice({
       (state, action) => {
         const rejected = action.payload.data;
         state.appraisalRequests = state.appraisalRequests.map((appraisal) =>
-          appraisal.id === rejected.id ? rejected : appraisal
+          appraisal._id === rejected.id ? rejected : appraisal
         );
       }
     );
@@ -347,7 +374,7 @@ const appraisalSlice = createSlice({
         mapAndCacheAppraisals(
           state,
           action.payload.data,
-          action.payload.pagination
+          // action.payload.pagination
         );
       }
     );

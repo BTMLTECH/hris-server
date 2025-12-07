@@ -119,6 +119,7 @@ const PayrollManagement: React.FC = () => {
     payrollsAsDraftBulk,
     reverseSinglePayroll,
     processBulkPayroll,
+    bulkGeneratePayroll,
     totalPages,
     shouldShowSkeleton,
   } = useReduxPayroll();
@@ -181,6 +182,7 @@ const PayrollManagement: React.FC = () => {
     });
   }, [filteredRecords, sortDirection]);
 
+
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
@@ -197,7 +199,6 @@ const PayrollManagement: React.FC = () => {
     if (!currentRecords.length) return "none";
 
     const statuses = currentRecords.map((r) => r.status);
-    console.log("statuses", statuses);
 
     if (statuses.every((s) => s === "pending")) return "pending";
     if (statuses.every((s) => s === "draft")) return "draft";
@@ -414,6 +415,12 @@ const PayrollManagement: React.FC = () => {
       payrollAsPayBulk(currentMonth, currentYear)
     );
 
+  const handleBulkGeneratePayroll = () =>
+    handleAction("bulk-generate", "bulk-generate", () =>
+      bulkGeneratePayroll()
+    );
+    
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -426,7 +433,7 @@ const PayrollManagement: React.FC = () => {
             {/* 🔹 Dropdown menu for payroll actions */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="flex items-center gap-2 cursor-pointer">
                   <Settings className="h-4 w-4" />
                   Manage Payroll
                 </Button>
@@ -436,16 +443,50 @@ const PayrollManagement: React.FC = () => {
                 {/* Bulk Upload */}
                 <DropdownMenuItem
                   onClick={() => dispatch(setIsBulkUploadOpen(true))}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <Upload className="h-4 w-4" />
                   Bulk Upload Class
                 </DropdownMenuItem>
 
+
+                {/* {GENERATE PAYROLL} */}
+                {/* <DropdownMenuItem
+                onClick={()=> handleBulkGeneratePayroll()}
+                  className="flex items-center gap-2 cursor-pointer"
+                  disabled={isLocalLoading("bulk-generate", "bulk-generate")}
+                >
+                  {isLocalLoading("bulk-generate", "bulk-generate") && (
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  )}                
+
+                  <Plus className="h-4 w-4" />
+                   Generate Payroll
+                </DropdownMenuItem> */}
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    if (isLocalLoading("bulk-generate", "bulk-generate")) {
+                      e.preventDefault(); // ⛔ DO NOT CLOSE DROPDOWN
+                      return;
+                    }
+                    handleBulkGeneratePayroll();
+                  }}
+                  className="flex items-center gap-2 cursor-pointer"
+                  disabled={isLocalLoading("bulk-generate", "bulk-generate")}
+                >
+                  {isLocalLoading("bulk-generate", "bulk-generate") && (
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  )}
+
+                  <Plus className="h-4 w-4" />
+                  Generate Payroll
+                </DropdownMenuItem>
+
+
                 {/* Delete Previous Class Levels */}
                 <DropdownMenuItem
                   onClick={() => dispatch(setIsBulkDeleteDialogOpen(true))}
-                  className="flex items-center gap-2 text-red-600"
+                  className="flex items-center gap-2 cursor-pointer text-red-600"
                 >
                   <Trash2 className="h-4 w-4" />
                   Delete Previous Class Levels
@@ -454,7 +495,7 @@ const PayrollManagement: React.FC = () => {
                 {/* Generate Pay Class */}
                 <DropdownMenuItem
                   onClick={() => dispatch(setIsBand(true))}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   Generate Pay Class
@@ -462,7 +503,7 @@ const PayrollManagement: React.FC = () => {
 
                 <DropdownMenuItem
                   onClick={() => dispatch(setIsDraftDialogOpen(true))}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 cursor-pointer"
                 >
                   <FileText className="h-4 w-4" />
                   View Draft Payrolls

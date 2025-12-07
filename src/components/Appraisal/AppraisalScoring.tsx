@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,14 +32,6 @@ const AppraisalScoring: React.FC<AppraisalScoringProps> = ({
   (isEmployee && ['pending', 'needs_revision'].includes(appraisal.status)) ||
   (canReviewAppraisal && ['submitted', 'needs_revision'].includes(appraisal.status));
 
-const updateObjective = (index: number, field: keyof AppraisalObjective, value: any) => {
-  const updatedObjectives = objectives.map((obj, i) =>
-    i === index ? { ...obj, [field]: value } : obj
-  );
-  dispatch(setAppraisalObjectives({ appraisalId: appraisal.id, objectives: updatedObjectives }));
-};
-
-
   const hrScoreMap: Record<'innovation' | 'commendation' | 'query' | 'majorError', number> = {
     innovation: 3,
     commendation: 3,
@@ -47,39 +39,61 @@ const updateObjective = (index: number, field: keyof AppraisalObjective, value: 
     majorError: -15,
   };
 
-const calculateTotalScore = () => {
-  const employeeTotal = objectives.reduce((sum, obj) => sum + obj.employeeScore, 0);
-  const teamLeadTotal = objectives.reduce((sum, obj) => sum + obj.teamLeadScore, 0);
+const totalScores = useMemo(() => {
 
-  // ✅ Use backend final if it exists
-  if (appraisal?.totalScore?.final !== undefined) {
+  // If appraisal already has final backend totals → USE THEM
+  if (appraisal.status === "approved" && appraisal.totalScore) {
     return {
-      employee: appraisal.totalScore.employee ?? employeeTotal,
-      teamLead: appraisal.totalScore.teamLead ?? teamLeadTotal,
+      employee: appraisal.totalScore.employee,
+      teamLead: appraisal.totalScore.teamLead,
       final: appraisal.totalScore.final,
     };
   }
 
+  // Otherwise fallback to calculated UI values
+  const employeeTotal = objectives.reduce((sum, obj) => sum + (obj.employeeScore || 0), 0);
+  const teamLeadTotal = objectives.reduce((sum, obj) => sum + (obj.teamLeadScore || 0), 0);
 
-  let finalTotal = teamLeadTotal;
+  let finalTotal = 0;
 
-  const hasHrAdjustments = Object.values(hrAdjustments).some(Boolean);
-  if (hasHrAdjustments) {
-    Object.keys(hrAdjustments).forEach((key) => {
-      if ((hrAdjustments as any)[key]) {
-        finalTotal += hrScoreMap[key as keyof typeof hrScoreMap];
+  if (hr) {
+    finalTotal = teamLeadTotal;
+
+    if (hrAdjustments) {
+      for (const key of Object.keys(hrAdjustments) as (keyof typeof hrScoreMap)[]) {
+        if (hrAdjustments[key]) {
+          finalTotal += hrScoreMap[key];
+        }
       }
-    });
+    }
+  } else if (teamlead) {
+    finalTotal = teamLeadTotal;
+  } else {
+    finalTotal = employeeTotal;
   }
 
-  return { employee: employeeTotal, teamLead: teamLeadTotal, final: finalTotal };
+  return {
+    employee: employeeTotal,
+    teamLead: teamLeadTotal,
+    final: finalTotal,
+  };
+}, [objectives, hrAdjustments, hr, teamlead, appraisal.status, appraisal.totalScore]);
+
+
+const updateObjective = (index: number, field: keyof AppraisalObjective, value: any) => {
+  const updatedObjectives = objectives.map((obj, i) =>
+    i === index ? { ...obj, [field]: value } : obj
+  );
+  dispatch(setAppraisalObjectives({ appraisalId: appraisal._id, objectives: updatedObjectives }));
 };
+
+
+
+
 
 const handleSubmit = async (
   action: 'submitted' | 'approved' | 'needs_revision' | 'sent_to_employee' | 'rejected' | 'update'
 ) => {
-  const totalScores = calculateTotalScore();
-
   const updatedAppraisal: Appraisal & { hrAdjustments?: typeof hrAdjustments } = {
     ...appraisal,
     objectives,
@@ -88,9 +102,8 @@ const handleSubmit = async (
     hrAdjustments: hr && hrAdjustments 
   };
 
-
-
   onSubmit(updatedAppraisal, action);
+  onBack?.();
 };
 
 
@@ -119,7 +132,7 @@ const getStatusColor = (status: string) => {
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">{appraisal.title}</h1>
+              <h1 className="text-sm font-bold">{appraisal.title?.toLocaleUpperCase()}</h1>
               {/* <p className="text-gray-600">{appraisal.employeeName} • {appraisal.period}</p> */}
             </div>
           </div>
@@ -243,7 +256,7 @@ const getStatusColor = (status: string) => {
             </Card>
           ))}
         </div>
-        {hr && (
+        {hr && appraisal.status !== "approved" && (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>HR Scoring Adjustments</CardTitle>
@@ -293,33 +306,43 @@ const getStatusColor = (status: string) => {
   <CardHeader>
     <CardTitle>Score Summary</CardTitle>
   </CardHeader>
-  <CardContent>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {/* Employee Total */}
-      <div className="text-center p-4 bg-blue-50 rounded-lg">
-        <div className="text-2xl font-bold text-blue-700">
-          {calculateTotalScore().employee.toFixed(1)}
-        </div>
-        <div className="text-sm text-blue-600">Employee Total</div>
-      </div>
 
-      {/* Team Lead Total */}
-      <div className="text-center p-4 bg-orange-50 rounded-lg">
-        <div className="text-2xl font-bold text-orange-700">
-          {calculateTotalScore().teamLead.toFixed(1)}
-        </div>
-        <div className="text-sm text-orange-600">Team Lead Total</div>
-      </div>
+<CardContent>
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-      {/* Final Total (includes HR adjustments) */}
-      <div className="text-center p-4 bg-green-50 rounded-lg">
-        <div className="text-2xl font-bold text-green-700">
-          {calculateTotalScore().final.toFixed(1)}
-        </div>
-        <div className="text-sm text-green-600">Final HR Score</div>
+    {/* Employee Total */}
+    <div className="text-center p-4 bg-blue-50 rounded-lg">
+      <div className="text-2xl font-bold text-blue-700">
+        {totalScores.employee.toFixed(1)}
+      </div>
+      <div className="text-sm text-blue-600">Employee Total</div>
+    </div>
+
+    {/* Team Lead Total */}
+    <div className="text-center p-4 bg-orange-50 rounded-lg">
+      <div className="text-2xl font-bold text-orange-700">
+        {totalScores.teamLead.toFixed(1)}
+      </div>
+      <div className="text-sm text-orange-600">Team Lead Total</div>
+    </div>
+
+    {/* Final Total (dynamic based on role) */}
+    <div className="text-center p-4 bg-green-50 rounded-lg">
+      <div className="text-2xl font-bold text-green-700">
+        {totalScores.final.toFixed(1)}
+      </div>
+      <div className="text-sm text-green-600">
+        {hr
+          ? "Final HR Score"
+          : teamlead
+          ? "Team Lead Score"
+          : "Final Score"}
       </div>
     </div>
-  </CardContent>
+
+  </div>
+</CardContent>
+
 </Card>
 
           {/* HR Adjustments (Only visible to HR) */}
@@ -345,9 +368,9 @@ const getStatusColor = (status: string) => {
                   size="sm"
                   variant="secondary"
                   onClick={() => onSubmit(appraisal, 'update')}
-                  disabled={loading(appraisal._id ?? appraisal.id, 'update')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'update')}
                 >
-                  {loading(appraisal._id ?? appraisal.id, 'update') && (
+                  {loading(appraisal._id ?? appraisal._id, 'update') && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   )}
                   Update Score
@@ -357,9 +380,9 @@ const getStatusColor = (status: string) => {
                   size="sm"
                   variant="default"
                   onClick={() => onSubmit(appraisal, 'approved')}
-                  disabled={loading(appraisal._id ?? appraisal.id, 'approved')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'approved')}
                 >
-                  {loading(appraisal._id ?? appraisal.id, 'approved') && (
+                  {loading(appraisal._id ?? appraisal._id, 'approved') && (
                   
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
            
@@ -371,9 +394,9 @@ const getStatusColor = (status: string) => {
                   size="sm"
                   variant="destructive"
                   onClick={() => onSubmit(appraisal, 'rejected')}
-                  disabled={loading(appraisal._id ?? appraisal.id, 'rejected')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'rejected')}
                 >
-                  {loading(appraisal._id ?? appraisal.id, 'rejected') && (
+                  {loading(appraisal._id ?? appraisal._id, 'rejected') && (
                         
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                
@@ -381,13 +404,16 @@ const getStatusColor = (status: string) => {
                   )}
                   Reject
                 </Button>
+                {
+                  teamlead && (
+
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => onSubmit(appraisal, 'needs_revision')}
-                  disabled={loading(appraisal._id ?? appraisal.id, 'needs_revision')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'needs_revision')}
                 >
-                  {loading(appraisal._id ?? appraisal.id, 'needs_revision') && (
+                  {loading(appraisal._id ?? appraisal._id, 'needs_revision') && (
                 
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   
@@ -395,6 +421,8 @@ const getStatusColor = (status: string) => {
                   )}
                   Need for Revision
                 </Button>
+                  )
+                }
               </>
             )}
           </div>
