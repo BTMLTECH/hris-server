@@ -38,12 +38,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { LeaveActivityFeedItem, LeaveRequest } from "@/types/leave";
 import {
   Check,
+  Delete,
+  Edit,
   Eye,
   Filter,
+  Hand,
   Info,
   Loader2,
   MoreHorizontal,
+  Notebook,
+  NotebookPen,
+  NotepadText,
   Plus,
+  Trash,
+  Trash2,
   Upload,
   X,
 } from "lucide-react";
@@ -89,12 +97,14 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { EmployeeSelector } from "../ui/employee-selector";
 import { setSearchTerm } from "@/store/slices/profile/profileSlice";
+import ApprovalSteps from "./ApprovalSteps";
+import { Appraisal } from "@/types/appraisal";
 
 const LeaveManagement: React.FC = () => {
   const { user: userLeaveManagement, leave } = useCombinedContext();
   const { user } = userLeaveManagement;
   const { user: currentUser } = useAppSelector((state) => state.auth);
-  const { searchTerm } = useAppSelector((state) => state.profile);
+  const { searchTerm, formData:leaveBalance } = useAppSelector((state) => state.profile);
   const { cachedEmployees, shouldShowSkeleton } = useReduxAuth();
   const { isLocalLoading, setLocalLoading, clearLocalLoading } =
     useLoadingState();
@@ -111,6 +121,7 @@ const LeaveManagement: React.FC = () => {
     handleApproveLeaveRequest,
     handleRejectLeaveRequest,
     handleUpdateLeaveBalance,
+    handleDeleteLeaveRequest
   } = leave;
   const {
     isDialogOpen,
@@ -129,6 +140,7 @@ const LeaveManagement: React.FC = () => {
     leaveDialog,
     selectedRequestId,
   } = useAppSelector((state) => state.leave);
+  
   const dispatch = useAppDispatch();
   const canApproveLeave =
     user?.role === "teamlead" ||
@@ -141,7 +153,6 @@ const LeaveManagement: React.FC = () => {
   const canView = user?.role === "admin" || user?.role === "hr";
   const currentLeavePage = activityFeedPagination?.page ?? 1;
   const cachedMyApproved = activityFeedCache?.[currentLeavePage] ?? [];
-
   const currentApprovalPage = approvalsPagination?.page ?? 1;
   const cachedApproval = approvalsCache?.[currentApprovalPage] ?? [];
 
@@ -150,6 +161,18 @@ const LeaveManagement: React.FC = () => {
   )
     ? cachedApprovedLeave
     : cachedMyApproved;
+
+
+
+const isLeaveExceedsBalance = () => {
+  const leaveBalances = leaveBalance.leaveBalance?.balances || {};
+
+  // Extract the available leave balance for the selected type
+  const balance = leaveBalances[formData.type] || 0;
+
+  // Check if the requested working days exceed the balance
+  return dateCalculation?.workingDays > balance;
+};
 
   const calculateDays = (start: string, end: string) => {
     if (!start || !end) return null;
@@ -163,6 +186,7 @@ const LeaveManagement: React.FC = () => {
     };
   };
 
+
   const handleDateChange = (field: "startDate" | "endDate", value: string) => {
     const newFormData = { ...formData, [field]: value };
     dispatch(setFormData(newFormData));
@@ -173,6 +197,15 @@ const LeaveManagement: React.FC = () => {
         newFormData.endDate
       );
       dispatch(setDateCalculation(calculation));
+       if (calculation.workingDays > leaveBalance.leaveBalance?.balances[formData.type]) {
+      // Trigger the error toast if working days exceed balance
+      toast({
+        title: "Leave Request Exceeds Balance",
+        description: `Your requested leave days of ${calculation.workingDays} exceed the available balance for ${formData.type} leave.`,
+        variant: "destructive", // This shows a red error message
+      });
+     }
+      
     } else {
       dispatch(setDateCalculation(null));
     }
@@ -284,6 +317,19 @@ const LeaveManagement: React.FC = () => {
   ): Promise<boolean> => {
     return handleRejectLeaveRequest(id, note);
   };
+
+
+
+    const handleDeleteRequest = async (
+    requestId: string,
+    action: string
+  ) => {
+    setLocalLoading(requestId, action);
+    const success = await handleDeleteLeaveRequest(requestId);
+    if (success) {
+      clearLocalLoading(requestId, action);
+    }
+  };
   const getStatusBadge = (status: LeaveRequest["status"]) => {
     const variants = {
       pending: "outline",
@@ -339,6 +385,9 @@ const LeaveManagement: React.FC = () => {
       setEditOpen(false);
     }
   };
+
+
+
 
   return (
     <div className="space-y-6">
@@ -437,6 +486,38 @@ const LeaveManagement: React.FC = () => {
                 excluding weekends and Nigerian public holidays.
               </DialogDescription>
             </DialogHeader>
+             {/* Display leave balances */}
+           
+            {/* Leave Balances Box */}
+            <div className="mt-4 p-3 border border-gray-200 rounded-lg shadow-sm bg-white">
+              <h3 className="text-sm sm:text-lg font-semibold text-gray-800 mb-3">Leave Balance</h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                {/* Annual Leave */}
+                <div className="flex justify-between items-center p-2 sm:p-3 border border-gray-300 rounded-lg shadow-sm">
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium">Annual</span>
+                  <span className="text-sm sm:text-base text-green-600 font-semibold">
+                    {leaveBalance.leaveBalance?.balances?.annual || 0}
+                  </span>
+                </div>
+                
+                {/* Compassionate Leave */}
+                <div className="flex justify-between items-center p-2 sm:p-3 border border-gray-300 rounded-lg shadow-sm">
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium">Compassionate</span>
+                  <span className="text-sm sm:text-base text-yellow-600 font-semibold">
+                    {leaveBalance.leaveBalance?.balances?.compassionate || 0}
+                  </span>
+                </div>
+
+                {/* Maternity Leave */}
+                <div className="flex justify-between items-center p-2 sm:p-3 border border-gray-300 rounded-lg shadow-sm">
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium">Maternity</span>
+                  <span className="text-sm sm:text-base text-pink-600 font-semibold">
+                    {leaveBalance.leaveBalance?.balances?.maternity || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
 
             {/* === Full Request Leave Form === */}
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -476,15 +557,7 @@ const LeaveManagement: React.FC = () => {
                     <SelectTrigger>
                       <SelectValue placeholder="Select team lead" />
                     </SelectTrigger>
-                    {/* <SelectContent>
-                      {cachedEmployees
-                        ?.filter((emp) => emp.role === "teamlead")
-                        .map((lead) => (
-                          <SelectItem key={lead._id} value={lead._id}>
-                            {lead.firstName} {lead.lastName} ({lead.position})
-                          </SelectItem>
-                        ))}
-                    </SelectContent> */}
+              
                     <SelectContent>
                       {teamleads?.length ? (
                         teamleads.map((lead: TeamLeadDepartmentProfile) => (
@@ -712,7 +785,7 @@ const LeaveManagement: React.FC = () => {
                     !formData.teamleadId ||
                     !formData.relievers ||
                     formData.relievers.length < 2 ||
-                    !uploadedFile
+                    !uploadedFile || isLeaveExceedsBalance()
                   }
                 >
                   {isLoading ? (
@@ -764,20 +837,34 @@ const LeaveManagement: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Staff Id</TableHead>
+                    <TableHead>Employee Name</TableHead>
+                    <TableHead>Department</TableHead>
+                    <TableHead>Allowance</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Dates</TableHead>
                     <TableHead>Days</TableHead>
                     <TableHead>Reason</TableHead>
-                    <TableHead>Relievers</TableHead>
+                    {/* <TableHead>Relievers</TableHead> */}
                     <TableHead>Status</TableHead>
                     <TableHead>Applied Date</TableHead>
-                    {["hr", "admin"].includes(user?.role ?? "") && (
-                      <TableHead>Action</TableHead>
-                    )}
+                    <TableHead>Handover</TableHead>
+                    <TableHead>Action</TableHead>
+         
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rowsToRender.map((request) => {
+                    let updatedRequest = {...request}
+
+                    if("teamleadId" in request){
+                      updatedRequest = {
+                                            ...updatedRequest,
+                                            typeIdentify: "leave"
+                                          } 
+                                      
+
+                    } 
                     const trail = Array.isArray(request.reviewTrail)
                       ? request.reviewTrail
                       : [];
@@ -800,6 +887,14 @@ const LeaveManagement: React.FC = () => {
 
                     return (
                       <TableRow key={request.id}>
+                        <TableCell>{request.staffId?.toLocaleUpperCase() || "NA"}</TableCell>
+                        <TableCell>{request.employeeName?.toLocaleUpperCase() || "NA"}</TableCell>
+                        <TableCell>{request.department?.toLocaleUpperCase() || "NA"}</TableCell>
+
+                        <TableCell>
+                          {request.allowance ? "Yes" : "No"}
+                        </TableCell>
+
                         {/* Leave type */}
                         <TableCell>
                           <Badge className={getLeaveTypeColor(request.type)}>
@@ -817,7 +912,6 @@ const LeaveManagement: React.FC = () => {
                               {new Date(request.startDate).toLocaleDateString()}
                             </div>
                             <div className="text-gray-500">
-                              to{" "}
                               {new Date(request.endDate).toLocaleDateString()}
                             </div>
                           </div>
@@ -831,7 +925,7 @@ const LeaveManagement: React.FC = () => {
                         </TableCell>
 
                         {/* Relievers */}
-                        <TableCell>
+                        {/* <TableCell>
                           {request.relievers?.length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {request.relievers.map((reliever, index) => (
@@ -847,7 +941,7 @@ const LeaveManagement: React.FC = () => {
                           ) : (
                             <span className="text-gray-400 text-sm">-</span>
                           )}
-                        </TableCell>
+                        </TableCell> */}
 
                         {/* Status & Approval trail */}
                         <TableCell>
@@ -860,7 +954,7 @@ const LeaveManagement: React.FC = () => {
                             {getStatusBadge(
                               finalStatus as "approved" | "pending" | "rejected"
                             )}
-                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                            {/* <div className="text-xs text-muted-foreground mt-1 space-y-1">
                               {latestFinalReview?.role && (
                                 <div>
                                   Last reviewed by{" "}
@@ -869,7 +963,6 @@ const LeaveManagement: React.FC = () => {
                               )}
                               {latestFinalReview?.date && (
                                 <div>
-                                  on{" "}
                                   <strong>
                                     {new Date(
                                       latestFinalReview.date
@@ -877,8 +970,8 @@ const LeaveManagement: React.FC = () => {
                                   </strong>
                                 </div>
                               )}
-                            </div>
-                            {/* <ApprovalSteps request={request} /> */}
+                            </div> */}
+                            <ApprovalSteps request={updatedRequest} />
                           </motion.div>
                         </TableCell>
 
@@ -887,8 +980,22 @@ const LeaveManagement: React.FC = () => {
                           {new Date(request.appliedDate).toLocaleString()}
                         </TableCell>
 
-                        {["hr", "admin"].includes(user?.role ?? "") && (
+                        {/* {["hr", "admin"].includes(user?.role ?? "") && (
+                          <>
                           <TableCell>
+                          
+                            <button
+                                className="p-2 rounded-full hover:bg-gray-100"
+                                onClick={() => window.open(
+                                  `${request?.url}`,
+                                  "_blank"
+                                )}
+                              >
+                                <Notebook className="w-5 h-5 text-gray-600" />
+                              </button>
+                          </TableCell>
+                          <TableCell>
+                          
                             <button
                               className="p-2 rounded-full hover:bg-gray-100"
                               onClick={() => handleViewRequest(request)}
@@ -896,7 +1003,52 @@ const LeaveManagement: React.FC = () => {
                               <Eye className="w-5 h-5 text-gray-600" />
                             </button>
                           </TableCell>
-                        )}
+                          </>
+                        )} */}
+                        {/* PDF OPEN BUTTON → SHOW FOR ALL USERS */}
+                        <TableCell>
+                          <button
+                            className="p-2 rounded-full hover:bg-gray-100"
+                            onClick={() => window.open(`${request?.url}`, "_blank")}
+                          >
+                            <NotepadText className="w-5 h-5 text-gray-600" />
+                          </button>
+                        </TableCell>
+
+                        {["hr", "admin"].includes(user?.role ?? "") && (
+                            <TableCell>
+                              <button
+                                className="p-2 rounded-full hover:bg-gray-100"
+                                onClick={() => handleViewRequest(request)}
+                              >
+                                <Eye className="w-5 h-5 text-gray-600" />
+                              </button>
+                            </TableCell>
+                          )}
+
+                          {user?.role === "employee" && request?.status === "pending" && (
+                              <>
+                     
+
+                                <TableCell>
+                                    <button
+                                      className="p-2 rounded-full hover:bg-gray-100"
+                                      onClick={() => handleDeleteRequest(request.id, "deleteLeave")}
+                                      disabled={isLocalLoading(request.id, "deleteLeave")}
+                                    >
+                                      {isLocalLoading(request.id, "deleteLeave") ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-5 h-5 text-red-600" />
+                                      )}
+                                    </button>
+                                  </TableCell>
+
+                              </>
+                            )}
+
+
+
                       </TableRow>
                     );
                   })}
@@ -981,7 +1133,9 @@ const LeaveManagement: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Staff Id</TableHead>
                       <TableHead>Employee</TableHead>
+                      <TableHead>Department</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Dates</TableHead>
                       <TableHead>Days</TableHead>
@@ -998,12 +1152,17 @@ const LeaveManagement: React.FC = () => {
                     {cachedApproval?.flat().map((request) => (
                       <TableRow key={request.id}>
                         <TableCell className="font-medium">
+                          {request.staffId}
+                        </TableCell>
+                        <TableCell className="font-medium">
                           {request.employeeName}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {request.department?.toLocaleUpperCase()}
                         </TableCell>
                         <TableCell>
                           <Badge className={getLeaveTypeColor(request.type)}>
-                            {request.type.charAt(0).toUpperCase() +
-                              request.type.slice(1)}
+                            {request.type?.toLocaleUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -1012,7 +1171,7 @@ const LeaveManagement: React.FC = () => {
                               {new Date(request.startDate).toLocaleDateString()}
                             </div>
                             <div className="text-gray-500">
-                              to{" "}
+                            
                               {new Date(request.endDate).toLocaleDateString()}
                             </div>
                           </div>

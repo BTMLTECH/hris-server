@@ -14,7 +14,8 @@ export const leaveApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
         headers: {},
       }),
-      invalidatesTags: ["LeaveActivityFeed", "LeaveApprovalQueue"],
+      invalidatesTags: ["LeaveActivityFeed", "LeaveApprovalQueue","Profiles"],
+
     }),
 
     // Approve leave request
@@ -46,6 +47,17 @@ export const leaveApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
       }),
       invalidatesTags: ["LeaveActivityFeed", "LeaveApprovalQueue"],
+    }),
+
+
+    // delete leave request
+    deleteLeaveRequest: builder.mutation({
+      query: ({ id }) => ({
+        url: `leaves/${id}/delete`,
+        method: "DELETE",
+        credentials: "include" as const,
+      }),
+      invalidatesTags: ["LeaveActivityFeed", "LeaveApprovalQueue", "Profiles"],
     }),
 
     // Get approval queue
@@ -100,4 +112,5 @@ export const {
   useGetTeamLeadQuery,
   useGetStatOverviewQuery,
   useUpdateLeaveBalanceMutation,
+  useDeleteLeaveRequestMutation,
 } = leaveApi;

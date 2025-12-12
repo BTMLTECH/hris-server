@@ -85,6 +85,7 @@ export interface UseReduxLeaveReturnType {
 
   handleCreateLeaveRequest: (data: any) => Promise<boolean>;
   handleApproveLeaveRequest: (id: string) => Promise<boolean>;
+  handleDeleteLeaveRequest: (id: string) => Promise<boolean>;
   handleRejectLeaveRequest: (id: string, note: string) => Promise<boolean>;
   handleUpdateLeaveBalance: (
     id: string,
@@ -111,8 +112,10 @@ export interface RelieverItem {
 
 export interface LeaveActivityFeedItem {
   id: string;
+  staffId: string,
   employeeId: string;
   employeeName: string;
+  department: string;
   type: "annual" | "maternity" | "compassionate";
   startDate: Date | string;
   endDate: Date | string;

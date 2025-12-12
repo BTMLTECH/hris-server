@@ -10,6 +10,7 @@ import {
   useGetTeamLeadQuery,
   useGetStatOverviewQuery,
   useUpdateLeaveBalanceMutation,
+  useDeleteLeaveRequestMutation,
 } from "@/store/slices/leave/leaveApi";
 
 import { toast } from "../use-toast";
@@ -49,6 +50,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
   const [rejectLeaveRequest, { isLoading: rejectingLeave }] =
     useRejectLeaveRequestMutation();
   const [updateLeaveBalance] = useUpdateLeaveBalanceMutation();
+  const [deleteYourLeaveRequest] = useDeleteLeaveRequestMutation();
 
   const {
     data: leaveApprovalQueue = [],
@@ -203,6 +205,28 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
       dispatch(setLoading(false));
     }
   };
+  const handleDeleteLeaveRequest = async (
+    id: string
+  ): Promise<boolean> => {
+    dispatch(setLoading(true));
+    try {
+      await deleteYourLeaveRequest({ id}).unwrap();
+      toast({ title: "Leave Deleted" });
+
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, "Delete Failed");
+
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setLoading(false));
+    }
+  };
 
   const handleUpdateLeaveBalance = async (
     id: string,
@@ -248,6 +272,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
       teamleadError,
     },
     handleCreateLeaveRequest,
+    handleDeleteLeaveRequest,
     handleApproveLeaveRequest,
     handleRejectLeaveRequest,
     refetchApprovalQueue,

@@ -28,6 +28,7 @@ const UserProfile: React.FC = () => {
   const { profile: userProfile } = useCombinedContext();
   const { profile: user } = userProfile;
   const { formData } = useAppSelector((state) => state.profile);
+  
 
   const RoleIcon = getRoleIcon(user?.role || "");
   return (

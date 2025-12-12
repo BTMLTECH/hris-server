@@ -79,8 +79,10 @@ export const normalizeLeaveRequest = (
 
     return {
       id: String(item.id || item._id || ""),
+      staffId: String(item.staffId || ""),
       employeeId: String(item.employeeId || ""),
       employeeName: String(item.employeeName || ""),
+      department: String(item.department || ""),
       type: (item.type as "annual" | "maternity" | "compassionate") ?? "annual",
       startDate: getDate(item.startDate),
       endDate: getDate(item.endDate),
@@ -294,6 +296,7 @@ export function mapAndCacheAppraisals(state: any, data: any) {
 
 
 export function updateLeaveState(state: any, payload: any) {
+  console.log("payload", payload)
   const { myRequests, approvals, allApproved, summary, balance, pagination } =
     payload.data;
 

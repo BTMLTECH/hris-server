@@ -276,6 +276,16 @@ if (selectedAppraisal) {
 
           <TableBody>
             {safeAppraisalRequests.map((appraisal: Appraisal, index:number) => {
+                    let updatedRequest = {...appraisal}
+
+                    if("teamLeadId" in appraisal){
+                      updatedRequest = {
+                                            ...updatedRequest,
+                                            typeIdentify: "appraisal"
+                                          } 
+                                      
+
+                    } 
               const trail = Array.isArray(appraisal.reviewTrail) ? appraisal.reviewTrail : [];
               const latestReview = trail.at(-1);
               const rejectedReview = trail.find((r) => r.action === 'rejected');
@@ -317,7 +327,7 @@ if (selectedAppraisal) {
                       transition={{ duration: 0.2 }}
                     >
                       {getAppraisalStatusBadge(appraisal, user?.role)}
-                      <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                      {/* <div className="text-xs text-muted-foreground mt-1 space-y-1">
                         {latestFinalReview?.role && (
                           <div>
                             Last reviewed by <strong>{latestFinalReview.role}</strong>
@@ -330,8 +340,8 @@ if (selectedAppraisal) {
                             </strong>
                           </div>
                         )}
-                      </div>
-                      <ApprovalSteps request={appraisal} />
+                      </div> */}
+                      <ApprovalSteps request={updatedRequest} />
                     </motion.div>
                   </TableCell>
 
