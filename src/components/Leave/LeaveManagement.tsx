@@ -99,6 +99,7 @@ import { EmployeeSelector } from "../ui/employee-selector";
 import { setSearchTerm } from "@/store/slices/profile/profileSlice";
 import ApprovalSteps from "./ApprovalSteps";
 import { Appraisal } from "@/types/appraisal";
+import { reverseDepartmentMap } from "@/types/report";
 
 const LeaveManagement: React.FC = () => {
   const { user: userLeaveManagement, leave } = useCombinedContext();
@@ -889,8 +890,8 @@ const isLeaveExceedsBalance = () => {
                       <TableRow key={request.id}>
                         <TableCell>{request.staffId?.toLocaleUpperCase() || "NA"}</TableCell>
                         <TableCell>{request.employeeName?.toLocaleUpperCase() || "NA"}</TableCell>
-                        <TableCell>{request.department?.toLocaleUpperCase() || "NA"}</TableCell>
-
+                        <TableCell>{reverseDepartmentMap[request?.department] || "NA"}</TableCell>
+                       
                         <TableCell>
                           {request.allowance ? "Yes" : "No"}
                         </TableCell>
@@ -1158,8 +1159,10 @@ const isLeaveExceedsBalance = () => {
                           {request.employeeName}
                         </TableCell>
                         <TableCell className="font-medium">
-                          {request.department?.toLocaleUpperCase()}
+                          {reverseDepartmentMap[request?.department]}
                         </TableCell>
+                      
+
                         <TableCell>
                           <Badge className={getLeaveTypeColor(request.type)}>
                             {request.type?.toLocaleUpperCase()}

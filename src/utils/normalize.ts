@@ -248,30 +248,7 @@ export const months = [
 
 export const years = ["2030", "2029", "2028", "2027", "2026", "2025", "2024"];
 
-// export function mapAndCacheAppraisals(
-//   state,
-//   appraisals: any[],
-//   pagination: { page: number }
-// ) {
-//   console.log("mapAndCacheAppraisals called with appraisals:", appraisals);
-//   console.log("mapAndCacheAppraisals called with pagination:", pagination);
-//   const status = state.activityFilter;
-//   const page = pagination?.page;
 
-//   const mappedData = Array.isArray(appraisals)
-//     ? appraisals.map((appraisal: any) => ({
-//         ...appraisal,
-//         employeeId: appraisal.user?._id,
-//         employeeName: appraisal.user?.firstName,
-//         employeeLastName: appraisal.user?.lastName,
-//       }))
-//     : [];
-
-//   if (!state.activityCache[status]) state.activityCache[status] = {};
-//   state.activityCache[status][page] = mappedData;
-
-//   state.appraisalRequests = mappedData;
-// }
 export function mapAndCacheAppraisals(state: any, data: any) {
   // data = { appraisals: [...], pagination: {...} }
   const status = state.activityFilter;
@@ -296,7 +273,6 @@ export function mapAndCacheAppraisals(state: any, data: any) {
 
 
 export function updateLeaveState(state: any, payload: any) {
-  console.log("payload", payload)
   const { myRequests, approvals, allApproved, summary, balance, pagination } =
     payload.data;
 

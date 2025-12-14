@@ -20,6 +20,7 @@ import { useCombinedContext } from "@/contexts/AuthContext";
 import { useAppSelector } from "@/store/hooks";
 import DashboardSkeleton from "./DashboardSkeleton";
 import BirthdayAnalytics from "./BirthdayAnalytics";
+import { LeaveListCard } from "./LeaveDashBoard";
 
 interface DashboardOverviewProps {
   onNavigate?: (section: string) => void;
@@ -31,6 +32,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const { user: useDashboardOverview } = useCombinedContext();
   const { user } = useDashboardOverview;
   const { analytics } = useAppSelector((state) => state.profile);
+
 
 
   if (!analytics) {
@@ -215,12 +217,13 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analytics.dashboardCards.activeLeave.value}
+              {analytics.dashboardCards.activeLeave.value?.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              {analytics.dashboardCards.activeLeave.trend}
+              {analytics.dashboardCards.activeLeave.trend?.length} pending
             </p>
           </CardContent>
+
         </Card>
 
         <Card>
@@ -289,6 +292,21 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           </CardContent>
         </Card>
       </div>
+      <LeaveListCard
+        title="Active Leaves"
+        description="Currently ongoing leaves"
+        leaves={analytics.dashboardCards.activeLeave.value}
+        userRole={user.role}
+      />
+
+      <LeaveListCard
+        title="Pending Leaves"
+        description="Leaves awaiting approval"
+        leaves={analytics.dashboardCards.activeLeave.trend}
+        userRole={user.role}
+
+      />
+
       <BirthdayAnalytics birthdays={analytics.birthdayAnalytics} />
     </div>
   );

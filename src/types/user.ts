@@ -1,4 +1,5 @@
 import { ICompany, IOnboardingRequirement, User } from "./auth";
+import { LeaveRequest } from "./leave";
 
 type DepartmentCache = Record<number, IDepartment[]>;
 type ClassLevelCache = Record<number, IClassLevel[]>;
@@ -125,10 +126,8 @@ export interface IDashboardCards {
     value: number;
     trend: string;
   };
-  activeLeave: {
-    value: number;
-    trend: string;
-  };
+  activeLeave: { value: LeaveRequest[]; trend: LeaveRequest[] };
+
   appraisalsDue: {
     value: number;
     trend: string;

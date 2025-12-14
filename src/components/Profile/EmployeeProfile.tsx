@@ -51,13 +51,13 @@ const EmployeeProfile: React.FC = () => {
     dispatch(setIsEditing(false));
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  // const getInitials = (name: string) => {
+  //   return name
+  //     .split(" ")
+  //     .map((n) => n[0])
+  //     .join("")
+  //     .toUpperCase();
+  // };
 
   const handleSubmit = () => {
     dispatch(setFormData({ ...formData, message: "" }));

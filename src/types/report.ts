@@ -14,6 +14,7 @@ export const departmentMap: Record<string, string> = {
   Sourcing: "sou",
   "Channel sales": "channel",
   "Retail Sales": "retail",
+  "Marketing": "marketing",
   "Regional Office": "roaghi",
   "Regional Office - Ghana": "rgogh",
 };

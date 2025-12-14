@@ -58,6 +58,7 @@ import {
 } from "@/utils/attendanceHelpers";
 import { useShiftClockStatus } from "@/hooks/useShiftClockStatus";
 import { PaginationNav } from "../ui/paginationNav";
+import { reverseDepartmentMap } from "@/types/report";
 
 const AttendanceManagement: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -333,7 +334,8 @@ const AttendanceManagement: React.FC = () => {
                             <TableCell>
                               {record?.employeeName || "N/A"}
                             </TableCell>
-                            <TableCell>{record?.department || "N/A"}</TableCell>
+                            <TableCell>{reverseDepartmentMap[record?.department] || record?.department || "N/A"}</TableCell>
+
                             <TableCell>
                               {new Date(record.date).toLocaleDateString()}
                             </TableCell>
