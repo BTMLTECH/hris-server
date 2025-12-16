@@ -67,19 +67,20 @@ export const NIGERIAN_BANKS = [
 ];
 
 export const PFA_COMPANIES = [
-  "ARM Pension Managers",
-  "AXA Mansard Pensions",
-  "CrusaderSterling Pensions",
-  "Fidelity Pension Managers",
-  "First Guarantee Pension",
-  "IEI-Anchor Pension",
-  "Leadway Pensure PFA",
-  "NLPC Pension Fund Administrators",
-  "OAK Pensions",
-  "Premium Pension Limited",
-  "Stanbic IBTC Pension Managers",
-  "Trustfund Pensions",
-  "Veritas Glanvills Pensions",
+  'ARM Pension Managers',
+  'AXA Mansard Pensions',
+  'CrusaderSterling Pensions',
+  'Fidelity Pension Managers',
+  'Guaranty Trust Pension',
+  'IEI-Anchor Pension',
+  'Leadway Pensure PFA',
+  'NLPC Pension Fund Administrators',
+  'OAK Pensions',
+  'Premium Pension Limited',
+  'Stanbic IBTC Pension Managers',
+  'Trustfund Pensions',
+  'Veritas Glanvills Pensions',
+  'Pensions Alliance Limited',,
 ];
 
 export const POSITIONS = [

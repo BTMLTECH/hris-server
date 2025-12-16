@@ -140,7 +140,8 @@ const EmployeeManagement: React.FC = () => {
     shouldSearch,
   } = useReduxAuth();
 
-  const mappedDepartment = departmentMap[formData?.department] || "all";
+  // const mappedDepartment = departmentMap[formData?.department];
+
 
   const isParentCompany = cachedEmployees?.some(
     (employee: ProfileFormData) => employee.company?.name
@@ -244,7 +245,6 @@ const EmployeeManagement: React.FC = () => {
       clearLocalLoading(employeeId, action);
     }
   };
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLocalLoading("editemployee", "editemployee");
@@ -292,6 +292,7 @@ const EmployeeManagement: React.FC = () => {
 
       let payload: any = {
         ...formData,
+        staffId: nextStaffId,
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         middleName: formData.middleName?.trim(),
@@ -307,11 +308,13 @@ const EmployeeManagement: React.FC = () => {
       } else {
         payload = {
           ...payload,
-          department: mappedDepartment,
+          department: formData?.department,
           requirements: formData.requirements,
         };
       }
 
+
+  
       let success = false;
       if (isEditMode) {
         success = await editProfile(payload);
