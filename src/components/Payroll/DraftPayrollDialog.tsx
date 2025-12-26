@@ -6,7 +6,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { DraftPayrollDialogProps, IPayroll } from "@/types/payroll";
 import { PaginationNav } from "../ui/paginationNav";
 import { setPayrollPagination } from "@/store/slices/payroll/payrollSlice";
@@ -18,11 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@radix-ui/react-dropdown-menu";
 
 export function DraftPayrollDialog({
   handleProcessPayroll,
   handleReversePayroll,
   handleBulkProcess,
+  handleDownloadPayrollBulk,
   handleBulkReverse,
   isLocalLoading,
   currentMonth,
@@ -59,28 +61,98 @@ export function DraftPayrollDialog({
 
         {/* Sticky Bulk Action Buttons */}
         {draftPayrolls.length > 0 && (
-          <div className="sticky top-0 z-10 bg-white flex gap-3 justify-between sm:justify-end p-3 border-b shadow-sm shadow-gray-200">
+          <div className="sticky top-0 z-10 bg-white flex gap-2 justify-between sm:justify-end p-2 border-b shadow-sm shadow-gray-200">
+            {/* <Button
+              onClick={handleDownloadPayrollBulk}
+              disabled={isLocalLoading("bulk-download", "bulk-download")}
+              className="w-full sm:w-auto h-8 text-sm"
+            >
+              {isLocalLoading("bulk-download", "bulk-download") && (
+                <Loader2 className="mr-2 h-2 w-2 animate-spin" />
+              )}
+              <Download className="h-2 w-2" />
+
+              Download
+            </Button> */}
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button
+      disabled={isLocalLoading("bulk-download", "bulk-download")}
+      className="w-full sm:w-auto h-8 text-sm flex items-center gap-2"
+    >
+      {isLocalLoading("bulk-download", "bulk-download") ? (
+        <Loader2 className="h-3 w-3 animate-spin" />
+      ) : (
+        <Download className="h-3 w-3" />
+      )}
+      Download
+    </Button>
+  </DropdownMenuTrigger>
+
+  <DropdownMenuContent
+    align="end"
+    className="
+      w-56
+      bg-white dark:bg-gray-900
+      border border-gray-200 dark:border-gray-800
+      shadow-lg
+      rounded-md
+      z-50
+    "
+  >
+    <DropdownMenuItem
+      className="flex gap-3 items-start cursor-pointer"
+      onClick={() => handleDownloadPayrollBulk('excel')}
+    >
+      <FileSpreadsheet className="h-5 w-5 text-green-600 mt-0.5" />
+      <div className="flex flex-col">
+        <span className="font-medium">Excel (.xlsx)</span>
+        <span className="text-xs text-muted-foreground">
+          Full payroll breakdown
+        </span>
+      </div>
+    </DropdownMenuItem>
+
+    <DropdownMenuSeparator />
+
+    <DropdownMenuItem
+      className="flex gap-3 items-start cursor-pointer"
+      onClick={() => handleDownloadPayrollBulk('pdf')}
+    >
+      <FileText className="h-5 w-5 text-red-600 mt-0.5" />
+      <div className="flex flex-col">
+        <span className="font-medium">PDF Summary</span>
+        <span className="text-xs text-muted-foreground">
+          Company totals only
+        </span>
+      </div>
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+
+
             <Button
               onClick={handleBulkProcess}
               disabled={isLocalLoading("bulk-process", "bulk-process")}
-              className="w-full sm:w-auto h-10 text-sm"
+              className="w-full sm:w-auto h-8 text-sm"
             >
               {isLocalLoading("bulk-process", "bulk-process") && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Process All Drafts
+              Process All
             </Button>
 
             <Button
               variant="destructive"
               onClick={handleBulkReverse}
               disabled={isLocalLoading("bulk-reverse", "bulk-reverse")}
-              className="w-full sm:w-auto h-10 text-sm"
+              className="w-full sm:w-auto h-8 text-sm"
             >
               {isLocalLoading("bulk-reverse", "bulk-reverse") && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Reverse All Drafts
+
+              Reverse All
             </Button>
           </div>
         )}

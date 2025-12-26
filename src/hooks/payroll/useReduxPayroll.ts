@@ -11,6 +11,7 @@ import {
   useMarkPayrollAsPaidMutation,
   useMarkPayrollsAsDraftBulkMutation,
   usePayrollsAsPaidBulkMutation,
+  usePayrollsDownloadMutation,
   useProcessBulkPayrollMutation,
   useProcessSinglePayrollMutation,
   useReverseBulkPayrollMutation,
@@ -70,6 +71,8 @@ export const useReduxPayroll = (): PayrollContextType => {
   const [markPayrollsAsDraftBulk] = useMarkPayrollsAsDraftBulkMutation();
   const [payrollsAsPaidBulk] = usePayrollsAsPaidBulkMutation();
   const [generateBulkPayroll] = useGenerateBulkPayrollMutation()
+  const [payrollsDownload] = usePayrollsDownloadMutation()
+  
 
   // const currentPage = payrollPagination?.page ?? 1;
   // const pageSize = payrollPagination?.limit || 20;
@@ -527,6 +530,50 @@ export const useReduxPayroll = (): PayrollContextType => {
       return false;
     }
   };
+  
+const downloadBulkPayroll = async (
+  type: "pdf" | "excel"
+): Promise<boolean> => {
+  try {
+    const blob = await payrollsDownload({ type }).unwrap();
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download =
+      type === "pdf" ? "Payroll_Summary.pdf" : "Payroll.xlsx";
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title:
+        type === "pdf"
+          ? "Payroll summary downloaded"
+          : "Payroll Excel downloaded",
+    });
+
+    return true;
+  } catch (error: any) {
+    const errorMessage = extractErrorMessage(
+      error,
+      "Failed to download payroll"
+    );
+
+    toast({
+      title: "Download Failed",
+      description: errorMessage,
+      variant: "destructive",
+    });
+
+    return false;
+  }
+};
+
+
+
   const reverseSinglePayroll = async (payrollId: string): Promise<boolean> => {
     try {
       await reverseSinglePayrollMutation(payrollId).unwrap();
@@ -656,6 +703,7 @@ export const useReduxPayroll = (): PayrollContextType => {
     isDeleteDialogOpen,
     selectedDeleteId,
     // cachedPayrollData,
+    downloadBulkPayroll,
     deletePayroll,
     draftPayroll,
     processSinglePayroll,

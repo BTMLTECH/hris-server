@@ -85,7 +85,7 @@ export const payrollApi = apiSlice.injectEndpoints({
         method: "POST",
         credentials: "include" as const,
       }),
-      invalidatesTags: ["getAllPayrolls"],
+      invalidatesTags: ["Profiles", "getAllPayrolls"],
     }),
 
     markPayrollsAsDraftBulk: builder.mutation({
@@ -118,6 +118,28 @@ export const payrollApi = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["getAllPayrolls"],
     }),
+    
+    // payrollsDownload: builder.mutation({
+    //   query: () => ({
+    //     url: "payroll/download-bulk",
+    //     method: "GET",
+    //     credentials: "include" as const,
+    //   }),
+    //   // invalidatesTags: ["getAllPayrolls"],
+    // }),
+
+    payrollsDownload: builder.mutation<
+      Blob,
+      { type: "pdf" | "excel" }
+    >({
+      query: ({ type }) => ({
+        url: `payroll/download-bulk?type=${type}`,
+        method: "GET",
+        credentials: "include",
+        responseHandler: (response: any) => response.blob(),
+      }),
+    }),
+
 
     // 🗑️ Delete a payroll
     deletePayroll: builder.mutation({
@@ -143,5 +165,6 @@ export const {
   useMarkPayrollsAsDraftBulkMutation,
   usePayrollsAsPaidBulkMutation,
   useLazyGetAllPayrollsQuery,
+  usePayrollsDownloadMutation,
   useGenerateBulkPayrollMutation,
 } = payrollApi;

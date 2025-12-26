@@ -86,6 +86,7 @@ export interface DraftPayrollDialogProps {
   handleBulkReverse: (recordId: string) => void;
   handleReversePayroll: (recordId: string) => void;
   handleBulkProcess: () => void;
+  handleDownloadPayrollBulk: (type: "pdf" | "excel") => void
   isLocalLoading: (key: string, actionType: string) => boolean;
   currentMonth: number;
   currentYear: number;
@@ -212,6 +213,7 @@ export interface PayrollContextType {
     month: string | number,
     year: string | number
   ) => Promise<boolean>;
+  downloadBulkPayroll: (type: "pdf" | "excel") => Promise<boolean>;
   bulkGeneratePayroll: () => Promise<boolean>;
   setIsDialogOpen: (open: boolean) => void;
   setIsDeleteDialogOpen: (open: boolean) => void;

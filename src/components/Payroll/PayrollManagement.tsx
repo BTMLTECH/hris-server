@@ -120,6 +120,7 @@ const PayrollManagement: React.FC = () => {
     reverseSinglePayroll,
     processBulkPayroll,
     bulkGeneratePayroll,
+    downloadBulkPayroll,
     totalPages,
     shouldShowSkeleton,
   } = useReduxPayroll();
@@ -182,12 +183,12 @@ const PayrollManagement: React.FC = () => {
     });
   }, [filteredRecords, sortDirection]);
 
-
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
-
+ 
   const allStatus = useMemo(() => {
+    
     if (!sortedRecords.length) return "none";
 
     const currentRecords = sortedRecords.filter(
@@ -207,6 +208,27 @@ const PayrollManagement: React.FC = () => {
 
     return "mixed";
   }, [sortedRecords, currentMonth, currentYear]);
+// const allStatus = useMemo(() => {
+//   if (!sortedRecords.length) return "none";
+
+//   // Filter records where the month is October (month 10)
+//   const currentRecords = sortedRecords.filter(
+//     (r) =>
+//       (Number(r.month) === 10 && Number(r.year) === currentYear) ||  // Checking for October of current year
+//       (Number(r.month) === 9 && Number(r.year) === currentYear)     // Checking for September of current year
+//   );
+
+//   if (!currentRecords.length) return "none";
+
+//   const statuses = currentRecords.map((r) => r.status);
+
+//   if (statuses.every((s) => s === "pending")) return "pending";
+//   if (statuses.every((s) => s === "draft")) return "draft";
+//   if (statuses.every((s) => s === "processed")) return "processed";
+//   if (statuses.every((s) => s === "paid")) return "paid";
+
+//   return "mixed";
+// }, [sortedRecords, currentYear]);
 
   const handleDeleteRecord = async (recordId: string, p0: string) => {
     const success = await deletePayroll(recordId);
@@ -366,6 +388,7 @@ const PayrollManagement: React.FC = () => {
     }
   };
 
+
   const handleAction = async (
     key: string,
     actionType: string,
@@ -419,6 +442,13 @@ const PayrollManagement: React.FC = () => {
     handleAction("bulk-generate", "bulk-generate", () =>
       bulkGeneratePayroll()
     );
+    
+
+  const bulkDownloadPayroll = (type) =>
+    handleAction("bulk-download", "bulk-download", () =>
+      downloadBulkPayroll(type)
+    );
+  
     
 
   return (
@@ -500,14 +530,14 @@ const PayrollManagement: React.FC = () => {
                   <Plus className="h-4 w-4" />
                   Generate Pay Class
                 </DropdownMenuItem>
-
+{/* 
                 <DropdownMenuItem
                   onClick={() => dispatch(setIsDraftDialogOpen(true))}
                   className="flex items-center gap-2 cursor-pointer"
                 >
                   <FileText className="h-4 w-4" />
                   View Draft Payrolls
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
 
                 {allStatus === "pending" && (
                   <DropdownMenuItem
@@ -547,6 +577,15 @@ const PayrollManagement: React.FC = () => {
                       )}
                       <Undo2 className="h-4 w-4" />
                       Reverse Payroll
+                    </DropdownMenuItem>
+
+                    
+                    <DropdownMenuItem
+                      onClick={() => dispatch(setIsDraftDialogOpen(true))}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <FileText className="h-4 w-4" />
+                      View Draft Payrolls
                     </DropdownMenuItem>
                   </>
                 )}
@@ -1454,6 +1493,7 @@ const PayrollManagement: React.FC = () => {
           handleBulkProcess={handleBulkProcess}
           handleBulkReverse={handleBulkReverse}
           isLocalLoading={isLocalLoading}
+          handleDownloadPayrollBulk={bulkDownloadPayroll}
           currentMonth={currentMonth}
           currentYear={currentYear}
           cachedPayrolls={sortedRecords}
