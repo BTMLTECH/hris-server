@@ -409,6 +409,7 @@ export const useReduxAuth = (): AuthContextType => {
   const {  } = useGetLastStaffIdQuery(undefined, {
     skip: shouldSkip,
   });
+
   const { } = useGetProfileQuery(
     undefined,
     {
@@ -426,10 +427,11 @@ export const useReduxAuth = (): AuthContextType => {
     { skip: shouldSkip }
   );
 
-  const {} = useGetTeamleadQuery(
+  const {data} = useGetTeamleadQuery(
     undefined,
     { skip: shouldSkip }
   );
+  // console.log("get-teamlead", data)
 
   useEffect(() => {
     if (!user?._id) return;

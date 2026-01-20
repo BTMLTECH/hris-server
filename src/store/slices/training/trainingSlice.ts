@@ -50,7 +50,7 @@ const initialState: TrainingState = {
   selectedActionType: null,
 
   trainingCache: {},
-  trainingPagination: { total: 0, page: 1, limit: 30, pages: 0 },
+  trainingPagination: { total: 0, page: 1, limit: 20, pages: 0 },
 
   myTrainings: [],
   feedbackAnswers: {},

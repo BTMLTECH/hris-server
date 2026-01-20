@@ -72,6 +72,7 @@ export interface PaginatedTrainingsResponse {
 export interface TrainingContextType {
   isTrainingLoading: boolean;
   trainingError: string | null;
+  totalPages: number;
   trainingCache: Record<number, Training[]>;
   trainingPagination: {
     total: number;

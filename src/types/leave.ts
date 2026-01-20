@@ -32,7 +32,7 @@ export interface LeaveRequest {
   relievers?: IReliever[];
   reviewTrail?: {
     reviewer: string;
-    role: "reliever" | "teamlead" | "hr";
+    role: "reliever" | "teamlead" | "hr" | "md";
     action: "approved" | "rejected";
     date: string;
     note?: string;
@@ -66,6 +66,8 @@ export interface UpdateLeaveBalanceBody {
 }
 export interface UseReduxLeaveReturnType {
   leaveApprovalQueue: LeaveActivityFeedItem[];
+  totalPages: number;
+
   cachedApprovedLeave: LeaveActivityFeedItem[];
   teamlead: TeamLeadResponse;
   isLoading: {
@@ -79,7 +81,7 @@ export interface UseReduxLeaveReturnType {
 
   error: {
     approvalQueueError: any;
-    activityFeedError: any;
+    // activityFeedError: any;
     teamleadError: any;
   };
 
@@ -97,7 +99,7 @@ export interface UseReduxLeaveReturnType {
 
 export interface ReviewTrailItem {
   reviewer: string;
-  role: string;
+  role: "reliever" | "teamlead" | "hr" | "md";
   action: "approved" | "rejected" | "pending" | "expired";
   date: string;
   note?: string;
@@ -128,7 +130,7 @@ export interface LeaveActivityFeedItem {
   teamleadName?: string;
   relievers?: RelieverItem[];
   reviewTrail?: ReviewTrailItem[];
-  currentReviewerRole?: "reliever" | "teamlead" | "hr" | null;
+  currentReviewerRole?: "reliever" | "teamlead" | "hr" | "md" | null;
   allowance: boolean;
   url: string;
   typeIdentify?: "leave";

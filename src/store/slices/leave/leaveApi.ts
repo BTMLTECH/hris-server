@@ -93,13 +93,13 @@ export const leaveApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    getStatOverview: builder.query({
-      query: () => ({
-        url: "leaves/status-overview",
-        method: "GET",
-        credentials: "include" as const,
-      }),
-    }),
+    // getStatOverview: builder.query({
+    //   query: () => ({
+    //     url: "leaves/status-overview",
+    //     method: "GET",
+    //     credentials: "include" as const,
+    //   }),
+    // }),
   }),
 });
 
@@ -110,7 +110,8 @@ export const {
   useGetLeaveApprovalQueueQuery,
   useGetLeaveActivityFeedQuery,
   useGetTeamLeadQuery,
-  useGetStatOverviewQuery,
+  // useGetStatOverviewQuery,
   useUpdateLeaveBalanceMutation,
   useDeleteLeaveRequestMutation,
+  useLazyGetLeaveActivityFeedQuery
 } = leaveApi;

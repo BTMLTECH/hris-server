@@ -18,6 +18,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { PaginationNav } from '../ui/paginationNav';
 import { getAppraisalStatusBadge } from '../getAppraisalBadge';
+import { reverseDepartmentMap } from '@/types/report';
 
 const AppraisalManagement: React.FC = () => {
   const dispatch =  useAppDispatch()
@@ -33,7 +34,7 @@ const AppraisalManagement: React.FC = () => {
   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();
     
   const { isLocalLoading: loading, setLocalLoading:setLoading, clearLocalLoading:clearLoading } = useLoadingState();
-  const {cachedPageData, isLoading,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest, refetchActivity} = useReduxAppraisal()
+  const {cachedPageData, isLoading, totalPages,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest, refetchActivity} = useReduxAppraisal()
   const { activityPagination, activityCache, activityFilter:filter, isLoading:appraisalLoading, isCreateDialogOpen, selectedAppraisal} = useAppSelector((state) => state.appraisal);
   // const safeAppraisalRequests = Array.isArray(cachedPageData) ? cachedPageData : [];
  const safeAppraisalRequests = Array.isArray(cachedPageData)
@@ -311,8 +312,13 @@ if (selectedAppraisal) {
                 
                   )}
 
-                  <TableCell className="hidden sm:table-cell">{appraisal.department?.toLocaleUpperCase() ?? 'N/A'}</TableCell>              
-                  <TableCell className="hidden sm:table-cell">{appraisal.period?.toLocaleUpperCase()}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{reverseDepartmentMap[appraisal?.department]}</TableCell>              
+                  <TableCell className="hidden sm:table-cell">
+                    {appraisal.period
+                      ? appraisal.period.charAt(0).toUpperCase() + appraisal.period.slice(1)
+                      : ""}
+                  </TableCell>
+
                   <TableCell className="hidden sm:table-cell">
                     {appraisal.dueDate
                       ? new Date(appraisal.dueDate).toLocaleDateString()
@@ -365,7 +371,7 @@ if (selectedAppraisal) {
     )}
 
     {/* ✅ Pagination always rendered below, if data exists */}
-    {activityPagination.pages > 1 && (
+    {/* {activityPagination.pages > 1 && (
       <PaginationNav
         page={activityPagination.page}
         totalPages={activityPagination.pages}
@@ -374,7 +380,35 @@ if (selectedAppraisal) {
         }
         className="mt-6"
       />
-    )}
+    )} */}
+
+          {activityPagination.pages > 1 && (
+
+     <PaginationNav
+                    page={activityPagination?.page}
+                    totalPages={totalPages}
+                    pageSize={activityPagination?.limit || 20}
+                    onPageChange={(newPage) =>
+                      dispatch(
+                        setActivityPagination({
+                          ...activityPagination,
+                          page: newPage,
+                        })
+                      )
+                    }
+                    onPageSizeChange={(newSize) =>
+                      dispatch(
+                        setActivityPagination({
+                          ...activityPagination,
+                          page: 1,
+                          limit: newSize,
+                        })
+                      )
+                    }
+                    className="mt-6"
+                  />
+              )}
+
   </CardContent>
 </Card>
 

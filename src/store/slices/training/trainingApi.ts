@@ -67,4 +67,5 @@ export const {
   useSubmitFeedbackMutation,
   useGetMyTrainingsQuery,
   useGetAllTrainingsQuery,
+  useLazyGetAllTrainingsQuery
 } = trainingApi;

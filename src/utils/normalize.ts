@@ -55,75 +55,158 @@ export const normalizeLeaveRequest = (
     return isNaN(d.getTime()) ? "" : d.toISOString();
   };
 
-  const normalizeFeedItem = (item: any): LeaveActivityFeedItem => {
-    let currentReviewerRole: "reliever" | "teamlead" | "hr" | null = null;
-    const nextReliever = item.relievers?.find(
-      (r: any) => r.status?.toLowerCase() === "pending"
+  // const normalizeFeedItem = (item: any): LeaveActivityFeedItem => {
+  //   let currentReviewerRole: "reliever" | "teamlead" | "hr" | "md" | null = null;
+  //   const nextReliever = item.relievers?.find(
+  //     (r: any) => r.status?.toLowerCase() === "pending"
+  //   );
+  //   if (nextReliever) {
+  //     currentReviewerRole = "reliever";
+  //   } else {
+  //     const teamleadApproved = item.reviewTrail?.some(
+  //       (r: any) =>
+  //         r.role === "teamlead" && r.action.toLowerCase() === "approved"
+  //     );
+  //     if (!teamleadApproved) {
+  //       currentReviewerRole = "teamlead";
+  //     } else {
+  //       const hrApproved = item.reviewTrail?.some(
+  //         (r: any) => r.role === "hr" && r.action.toLowerCase() === "approved"
+  //       );
+  //       if (!hrApproved) currentReviewerRole = "hr";
+  //     }
+  //   }
+
+  //   return {
+  //     id: String(item.id || item._id || ""),
+  //     staffId: String(item.staffId || ""),
+  //     employeeId: String(item.employeeId || ""),
+  //     employeeName: String(item.employeeName || ""),
+  //     department: String(item.department || ""),
+  //     type: (item.type as "annual" | "maternity" | "compassionate") ?? "annual",
+  //     startDate: getDate(item.startDate),
+  //     endDate: getDate(item.endDate),
+  //     appliedDate: getDate(item.appliedDate),
+  //     days: Number(item.days ?? 0),
+  //     reason: String(item.reason || ""),
+  //     status:
+  //       (item.status as "pending" | "approved" | "rejected" | "expired") ??
+  //       "pending",
+  //     teamleadId: item.teamleadId ? String(item.teamleadId) : undefined,
+  //     teamlead: item.teamleadName ? String(item.teamleadName) : undefined,
+  //     teamleadName: item.teamleadName ? String(item.teamleadName) : undefined,
+
+  //     relievers: Array.isArray(item.relievers)
+  //       ? item.relievers.map((r: any): RelieverItem & { status?: string } => ({
+  //           user: String(r.user || ""),
+  //           firstName: String(r.firstName || ""),
+  //           lastName: String(r.lastName || ""),
+  //           status: r.status?.toLowerCase() ?? "pending",
+  //         }))
+  //       : [],
+
+  //     reviewTrail: Array.isArray(item.reviewTrail)
+  //       ? item.reviewTrail.map(
+  //           (t: any): ReviewTrailItem => ({
+  //             reviewer: String(t.reviewer || ""),
+  //             role: String(t.role || ""),
+  //             action:
+  //               (t.action as "approved" | "rejected" | "pending" | "expired") ??
+  //               "pending",
+  //             date: getDate(t.date),
+  //             note: t.note ? String(t.note) : undefined,
+  //           })
+  //         )
+  //       : [],
+
+  //     currentReviewerRole,
+  //     allowance: item.allowance,
+  //     url: item.url,
+  //   };
+  // };
+const normalizeFeedItem = (item: any): LeaveActivityFeedItem => {
+  let currentReviewerRole: "reliever" | "teamlead" | "hr" | "md" | null = null;
+
+  // 1️⃣ Check pending relievers
+  const nextReliever = item.relievers?.find(
+    (r: any) => r.status?.toLowerCase() === "pending"
+  );
+  if (nextReliever) {
+    currentReviewerRole = "reliever";
+  } else {
+    // 2️⃣ Teamlead stage
+    const teamleadApproved = item.reviewTrail?.some(
+      (r: any) =>
+        r.role === "teamlead" && r.action.toLowerCase() === "approved"
     );
-    if (nextReliever) {
-      currentReviewerRole = "reliever";
+    if (!teamleadApproved) {
+      currentReviewerRole = "teamlead";
     } else {
-      const teamleadApproved = item.reviewTrail?.some(
-        (r: any) =>
-          r.role === "teamlead" && r.action.toLowerCase() === "approved"
+      // 3️⃣ HR stage
+      const hrApproved = item.reviewTrail?.some(
+        (r: any) => r.role === "hr" && r.action.toLowerCase() === "approved"
       );
-      if (!teamleadApproved) {
-        currentReviewerRole = "teamlead";
+      if (!hrApproved) {
+        currentReviewerRole = "hr";
       } else {
-        const hrApproved = item.reviewTrail?.some(
-          (r: any) => r.role === "hr" && r.action.toLowerCase() === "approved"
+        // 4️⃣ MD stage — only if MD is next reviewer
+        const mdApproved = item.reviewTrail?.some(
+          (r: any) => r.role === "md" && r.action.toLowerCase() === "approved"
         );
-        if (!hrApproved) currentReviewerRole = "hr";
+        if (!mdApproved && item.reviewLevels?.includes("md")) {
+          currentReviewerRole = "md";
+        }
       }
     }
+  }
 
-    return {
-      id: String(item.id || item._id || ""),
-      staffId: String(item.staffId || ""),
-      employeeId: String(item.employeeId || ""),
-      employeeName: String(item.employeeName || ""),
-      department: String(item.department || ""),
-      type: (item.type as "annual" | "maternity" | "compassionate") ?? "annual",
-      startDate: getDate(item.startDate),
-      endDate: getDate(item.endDate),
-      appliedDate: getDate(item.appliedDate),
-      days: Number(item.days ?? 0),
-      reason: String(item.reason || ""),
-      status:
-        (item.status as "pending" | "approved" | "rejected" | "expired") ??
-        "pending",
-      teamleadId: item.teamleadId ? String(item.teamleadId) : undefined,
-      teamlead: item.teamleadName ? String(item.teamleadName) : undefined,
-      teamleadName: item.teamleadName ? String(item.teamleadName) : undefined,
+  return {
+    id: String(item.id || item._id || ""),
+    staffId: String(item.staffId || ""),
+    employeeId: String(item.employeeId || ""),
+    employeeName: String(item.employeeName || ""),
+    department: String(item.department || ""),
+    type: (item.type as "annual" | "maternity" | "compassionate") ?? "annual",
+    startDate: getDate(item.startDate),
+    endDate: getDate(item.endDate),
+    appliedDate: getDate(item.appliedDate),
+    days: Number(item.days ?? 0),
+    reason: String(item.reason || ""),
+    status:
+      (item.status as "pending" | "approved" | "rejected" | "expired") ??
+      "pending",
+    teamleadId: item.teamleadId ? String(item.teamleadId) : undefined,
+    teamlead: item.teamleadName ? String(item.teamleadName) : undefined,
+    teamleadName: item.teamleadName ? String(item.teamleadName) : undefined,
 
-      relievers: Array.isArray(item.relievers)
-        ? item.relievers.map((r: any): RelieverItem & { status?: string } => ({
-            user: String(r.user || ""),
-            firstName: String(r.firstName || ""),
-            lastName: String(r.lastName || ""),
-            status: r.status?.toLowerCase() ?? "pending",
-          }))
-        : [],
+    relievers: Array.isArray(item.relievers)
+      ? item.relievers.map((r: any): RelieverItem & { status?: string } => ({
+          user: String(r.user || ""),
+          firstName: String(r.firstName || ""),
+          lastName: String(r.lastName || ""),
+          status: r.status?.toLowerCase() ?? "pending",
+        }))
+      : [],
 
-      reviewTrail: Array.isArray(item.reviewTrail)
-        ? item.reviewTrail.map(
-            (t: any): ReviewTrailItem => ({
-              reviewer: String(t.reviewer || ""),
-              role: String(t.role || ""),
-              action:
-                (t.action as "approved" | "rejected" | "pending" | "expired") ??
-                "pending",
-              date: getDate(t.date),
-              note: t.note ? String(t.note) : undefined,
-            })
-          )
-        : [],
+    reviewTrail: Array.isArray(item.reviewTrail)
+      ? item.reviewTrail.map(
+          (t: any): ReviewTrailItem => ({
+            reviewer: String(t.reviewer || ""),
+            role: (t.role || ""),
+            action:
+              (t.action as "approved" | "rejected" | "pending" | "expired") ??
+              "pending",
+            date: getDate(t.date),
+            note: t.note ? String(t.note) : undefined,
+          })
+        )
+      : [],
 
-      currentReviewerRole,
-      allowance: item.allowance,
-      url: item.url,
-    };
+    currentReviewerRole,
+    allowance: item.allowance,
+    url: item.url,
   };
+};
 
   const safePagination = (p: any): PaginationMeta | undefined => {
     if (!p) return undefined;

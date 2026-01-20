@@ -59,6 +59,7 @@ import {
 import { useShiftClockStatus } from "@/hooks/useShiftClockStatus";
 import { PaginationNav } from "../ui/paginationNav";
 import { reverseDepartmentMap } from "@/types/report";
+import { AttendanceTableSkeleton } from "./AttendanceTableSkeleton";
 
 const AttendanceManagement: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -74,13 +75,13 @@ const AttendanceManagement: React.FC = () => {
     isLoading,
     isClocking,
   } = useAppSelector((state) => state.attendance);
-  const { cachedRecords, handleManualCheckIn, handleManualCheckOut } =
+  const { cachedRecords, handleManualCheckIn, isBaseLoading, shouldShowSkeleton, handleManualCheckOut, totalPages } =
     useReduxAttendance();
   const { user } = useAppSelector((state) => state.auth);
   const newRecords = cachedRecords.length ? cachedRecords : records ?? [];
   const { canClockIn } = useShiftClockStatus(newRecords, selectedShift);
   const canManagePayroll = user?.role === "admin" || user?.role === "hr";
-
+ 
   const handleClockIn = async () => {
     const now = new Date();
     const timeString = now.toTimeString().slice(0, 5);
@@ -144,7 +145,7 @@ const AttendanceManagement: React.FC = () => {
       >
         <TabsList
           className={`grid w-full ${
-            canManagePayroll ? "grid-cols-2" : "grid-cols-3"
+            canManagePayroll ? "grid-cols-1" : "grid-cols-2"
           }`}
         >
           {!canManagePayroll && (
@@ -153,7 +154,7 @@ const AttendanceManagement: React.FC = () => {
           <TabsTrigger value="my-attendance">
             {canManagePayroll ? "All Attendance" : "My Attendance"}
           </TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+          {/* <TabsTrigger value="reports">Reports</TabsTrigger> */}
         </TabsList>
 
         {!canManagePayroll && (
@@ -317,84 +318,101 @@ const AttendanceManagement: React.FC = () => {
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {cachedRecords?.length ? (
-                    [...cachedRecords]
-                      .sort(
-                        (a, b) =>
-                          new Date(b.date).getTime() -
-                          new Date(a.date).getTime()
-                      ) // 🔁 Sort by latest first
-                      .map((record) => {
-                        const shiftInfo = getShiftInfo(record.shift);
-                        const ShiftIcon = shiftInfo.icon;
-                        return (
-                          <TableRow key={record.id}>
-                            <TableCell>{record?.staffId || "N/A"}</TableCell>
-                            <TableCell>
-                              {record?.employeeName || "N/A"}
-                            </TableCell>
-                            <TableCell>{reverseDepartmentMap[record?.department] || record?.department || "N/A"}</TableCell>
+ <TableBody>
+  {(shouldShowSkeleton ||
+    (isLoading && !cachedRecords?.length)) ? (
+    <AttendanceTableSkeleton
+      rows={attendancePagination?.limit || 6}
+    />
+  ) : cachedRecords?.length ? (
+    [...cachedRecords]
+      .sort(
+        (a, b) =>
+          new Date(b.date).getTime() -
+          new Date(a.date).getTime()
+      )
+      .map((record) => {
+        const shiftInfo = getShiftInfo(record.shift);
+        const ShiftIcon = shiftInfo.icon;
 
-                            <TableCell>
-                              {new Date(record.date).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={shiftInfo.color}>
-                                <ShiftIcon className="h-3 w-3 mr-1" />
-                                {record.shift}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {record.checkIn
-                                ? new Date(record.checkIn).toLocaleTimeString(
-                                    [],
-                                    { hour12: true }
-                                  )
-                                : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {record.checkOut
-                                ? new Date(record.checkOut).toLocaleTimeString(
-                                    [],
-                                    { hour12: true }
-                                  )
-                                : "-"}
-                            </TableCell>
-                            <TableCell>
-                              {record.hoursWorked ? record.hoursWorked : "-"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={getStatusColor(record.status)}>
-                                {record.status}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        No attendance records available.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
+        return (
+          <TableRow key={record.id}>
+            <TableCell>{record?.staffId || "N/A"}</TableCell>
+            <TableCell>{record?.employeeName || "N/A"}</TableCell>
+            <TableCell>
+              {reverseDepartmentMap[record?.department] ||
+                record?.department ||
+                "N/A"}
+            </TableCell>
+            <TableCell>
+              {new Date(record.date).toLocaleDateString()}
+            </TableCell>
+            <TableCell>
+              <Badge className={shiftInfo.color}>
+                <ShiftIcon className="h-3 w-3 mr-1" />
+                {record.shift}
+              </Badge>
+            </TableCell>
+            <TableCell>
+              {record.checkIn
+                ? new Date(record.checkIn).toLocaleTimeString([], {
+                    hour12: true,
+                  })
+                : "-"}
+            </TableCell>
+            <TableCell>
+              {record.checkOut
+                ? new Date(record.checkOut).toLocaleTimeString([], {
+                    hour12: true,
+                  })
+                : "-"}
+            </TableCell>
+            <TableCell>{record.hoursWorked ?? "-"}</TableCell>
+            <TableCell>
+              <Badge className={getStatusColor(record.status)}>
+                {record.status}
+              </Badge>
+            </TableCell>
+          </TableRow>
+        );
+      })
+  ) : (
+    <TableRow>
+      <TableCell colSpan={9} align="center">
+        No attendance records available.
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
+
+
               </Table>
-              {attendancePagination.pages > 1 && (
+
+                    {attendancePagination.pages > 1 && (
+
                 <PaginationNav
-                  page={attendancePagination.page}
-                  totalPages={attendancePagination.pages}
-                  onPageChange={(newPage) =>
-                    dispatch(
-                      setAttendancePagination({
-                        ...attendancePagination,
-                        page: newPage,
-                      })
-                    )
-                  }
-                  className="mt-6"
-                />
+                            page={attendancePagination?.page}
+                            totalPages={totalPages}
+                            pageSize={attendancePagination?.limit || 20}
+                            onPageChange={(newPage) =>
+                              dispatch(
+                                setAttendancePagination({
+                                  ...attendancePagination,
+                                  page: newPage,
+                                })
+                              )
+                            }
+                            onPageSizeChange={(newSize) =>
+                              dispatch(
+                                setAttendancePagination({
+                                  ...attendancePagination,
+                                  page: 1,
+                                  limit: newSize,
+                                })
+                              )
+                            }
+                            className="mt-6"
+                          />
               )}
             </CardContent>
           </Card>
@@ -402,7 +420,7 @@ const AttendanceManagement: React.FC = () => {
 
         {/* TODO canViewAllAttendance */}
 
-        <TabsContent value="reports">
+        {/* <TabsContent value="reports">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">
@@ -462,7 +480,7 @@ const AttendanceManagement: React.FC = () => {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent> */}
       </Tabs>
     </div>
   );

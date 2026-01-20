@@ -4,6 +4,7 @@ import {
   useCreateTrainingMutation,
   useSubmitFeedbackMutation,
   useGetAllTrainingsQuery,
+  useLazyGetAllTrainingsQuery,
 } from "@/store/slices/training/trainingApi";
 import { toast } from "../use-toast";
 
@@ -19,6 +20,7 @@ import {
   Training,
   FeedbackAnswer,
 } from "@/types/training";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 
 export const useReduxTraining = (): TrainingContextType => {
   const dispatch = useAppDispatch();
@@ -28,18 +30,53 @@ export const useReduxTraining = (): TrainingContextType => {
   const [createTrainingMutation] = useCreateTrainingMutation();
   const [submitFeedbackMutation] = useSubmitFeedbackMutation();
 
-  const { data: allTrainingsData, isLoading: allTrainingsLoading } =
-    useGetAllTrainingsQuery(
-      {
-        page: trainingPagination.page,
-        limit: trainingPagination.limit,
-      },
-      {
-        refetchOnMountOrArgChange: true,
-        refetchOnReconnect: true,
-        refetchOnFocus: true,
-      }
-    );
+  // const { data: allTrainingsData, isLoading: allTrainingsLoading } =
+  //   useGetAllTrainingsQuery(
+  //     {
+  //       page: trainingPagination.page,
+  //       limit: trainingPagination.limit,
+  //     },
+  //     {
+  //       refetchOnMountOrArgChange: true,
+  //       refetchOnReconnect: true,
+  //       refetchOnFocus: true,
+  //     }
+  //   );
+
+
+  const {
+    finalData: allTrainingsData,
+    totalPages,
+    isSearching,
+    isBaseLoading: allTrainingsLoading,
+    shouldShowSkeleton,
+    shouldSearch,
+    refetchBase: refetchTrainings,
+  } = useSmartPaginatedResource({
+    useBaseQuery: useGetAllTrainingsQuery as any,
+    useLazyQuery: useLazyGetAllTrainingsQuery,
+
+    cache: trainingCache,
+    pagination: trainingPagination,
+
+    setPagination: setTrainingPagination,
+    setCache: setTrainingCache,
+
+    // ❌ No search
+    searchTerm: undefined,
+
+    // ❌ No filters
+    filtersApplied: false,
+
+    // ✅ Include all
+    filterFn: () => true,
+
+    // ✅ Same params as original query
+    buildParams: (page, limit) => ({
+      page,
+      limit,
+    }),
+  });
 
   useEffect(() => {
     if (allTrainingsData?.data?.data) {
@@ -108,6 +145,7 @@ export const useReduxTraining = (): TrainingContextType => {
 
   return {
     isTrainingLoading: isLoading || allTrainingsLoading,
+    totalPages,
     trainingError: error,
     trainingCache,
     trainingPagination,

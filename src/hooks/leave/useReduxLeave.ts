@@ -8,9 +8,10 @@ import {
   useGetLeaveApprovalQueueQuery,
   useGetLeaveActivityFeedQuery,
   useGetTeamLeadQuery,
-  useGetStatOverviewQuery,
+  // useGetStatOverviewQuery,
   useUpdateLeaveBalanceMutation,
   useDeleteLeaveRequestMutation,
+  useLazyGetLeaveActivityFeedQuery,
 } from "@/store/slices/leave/leaveApi";
 
 import { toast } from "../use-toast";
@@ -27,6 +28,7 @@ import { extractErrorMessage } from "@/utils/errorHandler";
 import { useEffect } from "react";
 import { connectNotificationSocket } from "../auth/useReduxAuth";
 import { normalizeLeaveRequest } from "@/utils/normalize";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 
 export const useReduxLeave = (): UseReduxLeaveReturnType => {
   const dispatch = useAppDispatch();
@@ -61,16 +63,52 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     skip: isAuthorized,
   });
 
-  const {
-    data: leaveActivityFeedResponse,
-    isLoading: activityFeedLoading,
-    error: activityFeedError,
-  } = useGetLeaveActivityFeedQuery(
-    { page: currentLeavePage, limit: allApprovedPagination?.limit ?? 20 },
-    {
-      skip: !user,
-    }
-  );
+  // const {
+  //   data: leaveActivityFeedResponse,
+  //   isLoading: activityFeedLoading,
+  //   error: activityFeedError,
+  // } = useGetLeaveActivityFeedQuery(
+  //   { page: currentLeavePage, limit: allApprovedPagination?.limit ?? 20 },
+  //   {
+  //     skip: !user,
+  //   }
+  // );
+
+const {
+  finalData: leaveActivityFeedResponse,
+  totalPages,
+  isSearching,
+  isBaseLoading: activityFeedLoading,
+  shouldShowSkeleton,
+  shouldSearch,
+  refetchBase: refetchActivityFeed,
+} = useSmartPaginatedResource({
+  useBaseQuery: useGetLeaveActivityFeedQuery as any,
+  useLazyQuery: useLazyGetLeaveActivityFeedQuery,
+
+  cache: activityFeedCache,
+  pagination: allApprovedPagination,
+
+  setPagination: setAllLeavePagination,
+  setCache: setAllApprovedCache,
+
+  // ❌ No search term
+  searchTerm: undefined,
+
+  // ❌ No filters applied
+  filtersApplied: false,
+
+  // ✅ Include all records
+  filterFn: () => true,
+
+  // ✅ Build pagination params same as original
+  buildParams: (page, limit) => ({
+    page,
+    limit,
+  }),
+});
+
+
 
   const {
     data: teamlead = [],
@@ -81,9 +119,9 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     skip: isAuthorized,
   });
 
-  const {} = useGetStatOverviewQuery(undefined, {
-    skip: !user,
-  });
+  // const {} = useGetStatOverviewQuery(undefined, {
+  //   skip: !user,
+  // });
 
   useEffect(() => {
     if (!leaveActivityFeedResponse) return;
@@ -255,6 +293,8 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
 
   return {
     leaveApprovalQueue,
+    totalPages,
+
     // leaveActivityFeed,
     cachedApprovedLeave,
     teamlead,
@@ -268,7 +308,7 @@ export const useReduxLeave = (): UseReduxLeaveReturnType => {
     },
     error: {
       approvalQueueError,
-      activityFeedError,
+      // activityFeedError,
       teamleadError,
     },
     handleCreateLeaveRequest,

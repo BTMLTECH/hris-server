@@ -141,8 +141,6 @@ const EmployeeManagement: React.FC = () => {
   } = useReduxAuth();
 
   // const mappedDepartment = departmentMap[formData?.department];
-
-
   const isParentCompany = cachedEmployees?.some(
     (employee: ProfileFormData) => employee.company?.name
   );

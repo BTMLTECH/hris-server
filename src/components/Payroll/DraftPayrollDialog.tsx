@@ -34,6 +34,7 @@ export function DraftPayrollDialog({
   setIsDraftDialogOpen,
   dispatch,
   pagination,
+  totalPages
 }: DraftPayrollDialogProps & { handleBulkReverse?: () => void }) {
   const draftPayrolls =
     cachedPayrolls?.filter((p) => p.status === "draft") ?? [];
@@ -250,21 +251,29 @@ export function DraftPayrollDialog({
         </div>
 
         {/* Pagination */}
-        {pagination?.pages > 1 && (
-          <PaginationNav
-            page={pagination?.page}
-            totalPages={pagination?.pages}
-            onPageChange={(newPage) =>
-              dispatch(
-                setPayrollPagination({
-                  ...pagination,
-                  page: newPage,
-                })
-              )
-            }
-            className="mt-6"
-          />
-        )}
+        <PaginationNav
+                      page={pagination?.page}
+                      totalPages={totalPages}
+                      pageSize={pagination?.limit || 20}
+                      onPageChange={(newPage) =>
+                        dispatch(
+                          setPayrollPagination({
+                            ...pagination,
+                            page: newPage,
+                          })
+                        )
+                      }
+                      onPageSizeChange={(newSize) =>
+                        dispatch(
+                          setPayrollPagination({
+                            ...pagination,
+                            page: 1,
+                            limit: newSize,
+                          })
+                        )
+                      }
+                      className="mt-6"
+                    />
       </DialogContent>
     </Dialog>
   );

@@ -95,6 +95,7 @@ export interface DraftPayrollDialogProps {
   setIsDraftDialogOpen: (open: boolean) => void;
   dispatch: any;
   pagination: PayrollPagination;
+  totalPages: number
 }
 
 export interface TaxBand {

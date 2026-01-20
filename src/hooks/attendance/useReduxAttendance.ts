@@ -10,14 +10,18 @@ import {
   // useGetMyAttendanceStatsQuery,
   useGetCompanyAttendanceSummaryQuery,
   useExportAttendanceExcelQuery,
+  useLazyGetMyAttendanceHistoryQuery,
 } from "@/store/slices/attendance/attendanceApi";
 import { toast } from "../use-toast";
 import { AttendanceContextType } from "@/types/attendance";
 import {
+  setAttendancePagination,
+  setCachedAttendance,
   setIsLoading,
   setRecords,
 } from "@/store/slices/attendance/attendanceSlice";
 import { useEffect, useMemo } from "react";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 
 export const useReduxAttendance = (): AttendanceContextType => {
   const dispatch = useAppDispatch();
@@ -28,18 +32,41 @@ export const useReduxAttendance = (): AttendanceContextType => {
   const page = attendancePagination?.page;
   const cachedRecords = attendanceCache[page] ?? [];
 
+  // const {
+  //   data: attendanceRecords,
+  //   isLoading: historyLoading,
+  //   error: historyError,
+  //   refetch: refetchAttendanceHistory,
+  // } = useGetMyAttendanceHistoryQuery(
+  //   { page, limit: attendancePagination.limit },
+  //   {
+  //     refetchOnMountOrArgChange: true,
+  //     refetchOnFocus: true,
+  //   }
+  // );
+
   const {
-    data: attendanceRecords,
-    isLoading: historyLoading,
-    error: historyError,
-    refetch: refetchAttendanceHistory,
-  } = useGetMyAttendanceHistoryQuery(
-    { page, limit: attendancePagination.limit },
-    {
-      refetchOnMountOrArgChange: true,
-      refetchOnFocus: true,
-    }
-  );
+  finalData: attendanceRecords,
+  totalPages,
+  isSearching,
+  isBaseLoading,
+  shouldShowSkeleton,
+  shouldSearch,
+  refetchBase: refetchAttendanceHistory,
+} = useSmartPaginatedResource({
+  useBaseQuery: useGetMyAttendanceHistoryQuery,
+  useLazyQuery: useLazyGetMyAttendanceHistoryQuery,
+  cache: attendanceCache,
+  pagination: attendancePagination,
+  setPagination: setAttendancePagination,
+  setCache: setCachedAttendance,
+  searchTerm: undefined,  
+  filtersApplied: false,
+  filterFn: () => true,
+  buildParams: (page, limit) => {
+    return { page, limit };
+  },
+});
 
   const {
     data: companyAttendanceSummary,
@@ -160,12 +187,15 @@ export const useReduxAttendance = (): AttendanceContextType => {
 
   return {
     attendanceRecords,
+    totalPages,
+    shouldShowSkeleton,
     cachedRecords,
     companyAttendanceSummary,
     adminAttendanceReport,
     exportedAttendanceData,
+    isBaseLoading,
     isLoading: {
-      historyLoading,
+      // historyLoading,
       summaryLoading,
       adminReportLoading,
       exportLoading,
@@ -175,7 +205,7 @@ export const useReduxAttendance = (): AttendanceContextType => {
       manualCheckOutLoading,
     },
     error: {
-      historyError,
+      // historyError,
       summaryError,
       adminReportError,
       exportError,
@@ -185,6 +215,6 @@ export const useReduxAttendance = (): AttendanceContextType => {
     handleManualCheckIn,
     handleManualCheckOut,
     handleExportAttendance,
-    refetchAttendanceHistory,
+    // refetchAttendanceHistory,
   };
 };

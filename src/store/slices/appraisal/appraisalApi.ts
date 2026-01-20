@@ -3,6 +3,7 @@
 
 import { Appraisal } from "@/types/appraisal";
 import { apiSlice } from "../auth/apiSlice";
+import { useLazyGetLeaveActivityFeedQuery } from "../leave/leaveApi";
 
 export const appraisalApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -82,5 +83,6 @@ export const {
   useRejectAppraisalRequestMutation,
   useGetEmployeeByDepartmentQuery,
   useUpdateAppraisalRequestMutation,
-  useGetAppraisalActivityQuery
+  useGetAppraisalActivityQuery,
+  useLazyGetAppraisalActivityQuery
 } = appraisalApi;

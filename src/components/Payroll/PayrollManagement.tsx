@@ -1225,6 +1225,8 @@ const PayrollManagement: React.FC = () => {
                 loadingPdf={loadingPdf}
               />
 
+                    {payrollPagination.pages > 1 && (
+
               <PaginationNav
                 page={payrollPagination?.page}
                 totalPages={totalPages}
@@ -1248,6 +1250,8 @@ const PayrollManagement: React.FC = () => {
                 }
                 className="mt-6"
               />
+              )}
+
             </CardContent>
           </Card>
         </TabsContent>
@@ -1501,6 +1505,7 @@ const PayrollManagement: React.FC = () => {
           setIsDraftDialogOpen={setIsDraftDialogOpen}
           pagination={payrollPagination}
           dispatch={dispatch}
+          totalPages={totalPages}
         />
       </Dialog>
 

@@ -98,6 +98,8 @@ export interface Appraisal {
   | 'update';
   objectives: AppraisalObjective[];
   reviewLevel?:'teamlead' | 'hr' | 'relievers';
+  currentReviewerRole?: "teamlead" | "hr" | "md" | null;
+
   reviewTrail?: IAppraisalReviewTrail[]
   createdAt: string;
   updatedAt: string;
@@ -126,14 +128,15 @@ export interface AppraisalTemplate {
 export interface UseReduxAppraisalReturnType {
   // appraisalApprovalQueue: Appraisal[];
   getEmployeeUnderTeamlead:Appraisal[];
+  totalPages: number;
   appraisalActivity: Appraisal[];
   cachedPageData: Record<number, Appraisal[]>;
-  activityPagination: {
-    total: number;
-    page: number;
-    limit: number;
-    pages: number;
-  };
+  // activityPagination: {
+  //   total: number;
+  //   page: number;
+  //   limit: number;
+  //   pages: number;
+  // };
   isLoading: {
     // approvalQueueLoading: boolean;
     creatingAppraisal: boolean;

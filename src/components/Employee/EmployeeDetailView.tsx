@@ -54,6 +54,8 @@ const EmployeeDetailView: React.FC<EmployeeDetailViewProps> = ({
       .toUpperCase();
   };
 
+
+
   return (
     <form className="space-y-8 p-4 sm:p-6 lg:p-8">
       {/* Header */}

@@ -91,9 +91,9 @@ const attendanceSlice = createSlice({
     },
     setCachedAttendance(
       state,
-      action: PayloadAction<{ page: number; records: AttendanceRecord[] }>
+      action: PayloadAction<{ page: number; data: AttendanceRecord[] }>
     ) {
-      state.attendancePagination[action.payload.page] = action.payload.records;
+      state.attendancePagination[action.payload.page] = action.payload.data;
     },
 
     clearAttenadanceCache(state) {

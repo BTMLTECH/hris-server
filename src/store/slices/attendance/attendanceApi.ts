@@ -93,4 +93,5 @@ export const {
   useAdminAttendanceReportQuery,
   useGetCompanyAttendanceSummaryQuery,
   useExportAttendanceExcelQuery,
+  useLazyGetMyAttendanceHistoryQuery
 } = attendanceApi;

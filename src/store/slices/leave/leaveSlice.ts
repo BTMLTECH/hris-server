@@ -374,6 +374,7 @@ const leaveSlice = createSlice({
     builder.addMatcher(
       leaveApi.endpoints.getTeamLead.matchFulfilled,
       (state, action) => {
+
         state.isLoading = false;
         state.teamLead = action.payload;
       }
@@ -386,35 +387,35 @@ const leaveSlice = createSlice({
       }
     );
 
-    builder.addMatcher(
-      leaveApi.endpoints.getStatOverview.matchPending,
-      (state) => {
-        state.isLoading = true;
-        state.error = null;
-      }
-    );
+    // builder.addMatcher(
+    //   leaveApi.endpoints.getStatOverview.matchPending,
+    //   (state) => {
+    //     state.isLoading = true;
+    //     state.error = null;
+    //   }
+    // );
 
-    builder.addMatcher(
-      leaveApi.endpoints.getStatOverview.matchFulfilled,
-      (state, action) => {
-        state.isLoading = false;
-        state.statusOverview = {
-          pending: action.payload.data.pending,
-          approved: action.payload.data.approved,
-          rejected: action.payload.data.rejected,
-          expired: action.payload.data.expired,
-        };
-      }
-    );
+    // builder.addMatcher(
+    //   leaveApi.endpoints.getStatOverview.matchFulfilled,
+    //   (state, action) => {
+    //     state.isLoading = false;
+    //     state.statusOverview = {
+    //       pending: action.payload.data.pending,
+    //       approved: action.payload.data.approved,
+    //       rejected: action.payload.data.rejected,
+    //       expired: action.payload.data.expired,
+    //     };
+    //   }
+    // );
 
-    builder.addMatcher(
-      leaveApi.endpoints.getStatOverview.matchRejected,
-      (state, action) => {
-        state.isLoading = false;
-        state.error =
-          action.error?.message || "Failed to fetch leave status overview";
-      }
-    );
+    // builder.addMatcher(
+    //   leaveApi.endpoints.getStatOverview.matchRejected,
+    //   (state, action) => {
+    //     state.isLoading = false;
+    //     state.error =
+    //       action.error?.message || "Failed to fetch leave status overview";
+    //   }
+    // );
   },
 });
 

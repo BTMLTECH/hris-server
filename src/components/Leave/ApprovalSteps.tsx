@@ -1,57 +1,80 @@
+
+
+
 // import React from "react";
 // import { Eye } from "lucide-react";
-// import { LeaveActivityFeedItem, LeaveRequest } from "@/types/leave";
-// import { useAppSelector } from "@/store/hooks";
-// import { Appraisal } from "@/types/appraisal";
+// import { LeaveActivityFeedItem } from "@/types/leave";
+// import { Appraisal as AppraisalType } from "@/types/appraisal";
 
-// type ApprovalRequest = LeaveActivityFeedItem | Appraisal;
+// type ApprovalRequest = LeaveActivityFeedItem | AppraisalType;
 
 // interface ApprovalStepsProps {
 //   request: ApprovalRequest;
 // }
 
-// const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
+// type ApprovalStep = {
+//   label: string;
+//   reviewerId?: string;
+//   role?: string;
+// };
 
-//   console.log("request", request)
+// const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
+//   console.log('ApprovalSteps request', request);
+
 
 
 //   if (!request?.typeIdentify || !["appraisal", "leave"].includes(request.typeIdentify)) {
 //     return null;
 //   }
 
+
+
 //   // 🔹 Build review trail and relievers
 //   const trail = request.reviewTrail || [];
 //   const relievers = request.typeIdentify === "leave" ? request.relievers || [] : [];
 
-//   // 🔹 Approval flow: list relievers as individuals, then roles
-//   const approvalFlow: { label: string; reviewerId?: string; role?: string }[] = [
-//     ...relievers.map((r, idx) => ({
-//       label: `${r.firstName} ${r.lastName}`,
-//       reviewerId: r.user,
-//     })),
-//     { label: "Team Lead", role: "teamlead" },
-//     { label: "HR", role: "hr" }
-//   ];
+
+//    const isLeave = request.typeIdentify === "leave";
+//    const isAppraisal = request.typeIdentify === "appraisal";
+//   const isTeamLeadLeave = isLeave &&  request.teamleadId || isAppraisal && request.teamLeadId === request.employeeId;
+
+  
+
+//     const approvalFlow: ApprovalStep[] = [
+//       ...relievers.map((r) => ({
+//         label: `${r.firstName} ${r.lastName.charAt(0)}.`,
+//         reviewerId: r.user,
+//       })),
+
+//       // Team Lead only if not teamlead leave
+//       ...(!isTeamLeadLeave ? [{ label: "Team Lead", role: "teamlead" }] : []),
+//       { label: "HR", role: "hr" },
+//       // MD only if teamlead leave
+//       ...(isTeamLeadLeave ? [{ label: "MD", role: "md" }] : []),
+//     ];
+// console.log('approvalFlow', approvalFlow);
 
 //   let stopAt: number | null = null;
 
+//   // 🔹 Build the elements for approval steps
 //   const elements = approvalFlow.map((step, index) => {
-//     // Determine if step is approved or rejected
+//     // Find review for this step (check if it's reliever or role-based)
 //     const review = step.reviewerId
-//       ? trail.find((r) => r.reviewer === step.reviewerId)
-//       : trail.find((r) => r.role.toLowerCase() === step.role);
+//       ? trail.find((r) => r.reviewer === step.reviewerId) // For relievers, use `reviewerId`
+//       : trail.find((r) => r.role.toLowerCase() === step.role); // For Team Lead and HR, use `role`
 
 //     const isApproved = review?.action === "approved";
 //     const isRejected = review?.action === "rejected";
 
+//     // Stop at the first rejected review
 //     if (isRejected && stopAt === null) stopAt = index;
 
-//     const statusIcon = isApproved ? "✔" : isRejected ? "✖" : "⏳";
+//     const statusIcon = isApproved ? "✔" : isRejected ? "✖" : "⏳"; 
 //     const statusColor = isRejected
 //       ? "text-red-500"
 //       : isApproved
 //       ? "text-green-600"
-//       : "text-gray-400";
+//       : "text-gray-400"; 
 
 //     return (
 //       <React.Fragment key={step.reviewerId || step.role}>
@@ -81,8 +104,6 @@
 // };
 
 // export default ApprovalSteps;
-
-
 import React from "react";
 import { Eye } from "lucide-react";
 import { LeaveActivityFeedItem } from "@/types/leave";
@@ -102,49 +123,88 @@ type ApprovalStep = {
 
 const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
 
-
-
-  if (!request?.typeIdentify || !["appraisal", "leave"].includes(request.typeIdentify)) {
+  if (
+    !request?.typeIdentify ||
+    !["appraisal", "leave"].includes(request.typeIdentify)
+  ) {
     return null;
   }
 
+  // =========================
+  // BASIC FLAGS
+  // =========================
+  const isLeave = request.typeIdentify === "leave";
+  const isAppraisal = request.typeIdentify === "appraisal";
 
-
-  // 🔹 Build review trail and relievers
   const trail = request.reviewTrail || [];
-  const relievers = request.typeIdentify === "leave" ? request.relievers || [] : [];
+  const relievers = isLeave ? request.relievers || [] : [];
 
-  // 🔹 Approval flow: list relievers as individuals, then roles (Team Lead, HR)
+  const currentRole = request.currentReviewerRole?.toLowerCase();
+
+  // =========================
+  // TEAM LEAD VISIBILITY RULE
+  // =========================
+  const isTeamLeadLeave =
+    isLeave && request.employeeId === request.teamleadId;
+
+  const isTeamLeadAppraisal =
+    isAppraisal && request.employeeId === request.teamLeadId;
+
+  const isApplicantTeamLead = isTeamLeadLeave || isTeamLeadAppraisal;
+
+  /**
+   * Team Lead is shown ONLY if:
+   * - we are NOT already at HR or MD
+   * - applicant is NOT the team lead
+   */
+  const shouldShowTeamLead =
+    currentRole !== "hr" &&
+    currentRole !== "md" &&
+    !isApplicantTeamLead;
+
+  // =========================
+  // BUILD APPROVAL FLOW
+  // =========================
   const approvalFlow: ApprovalStep[] = [
-    ...relievers.map((r) => ({
-      label: `${r.firstName} ${r.lastName.charAt(0)}.`, // First name and last name initial
-      reviewerId: r.user, // Only relievers have `reviewerId`
-    })),
-    { label: "Team Lead", role: "teamlead" },
+    // Relievers (leave only)
+    ...(isLeave
+      ? relievers.map((r) => ({
+          label: `${r.firstName} ${r.lastName.charAt(0)}.`,
+          reviewerId: r.user,
+        }))
+      : []),
+
+    // Team Lead (state-aware)
+    ...(shouldShowTeamLead
+      ? [{ label: "Team Lead", role: "teamlead" }]
+      : []),
+
     { label: "HR", role: "hr" },
+    { label: "MD", role: "md" },
   ];
 
+
+  // =========================
+  // RENDER STEPS
+  // =========================
   let stopAt: number | null = null;
 
-  // 🔹 Build the elements for approval steps
   const elements = approvalFlow.map((step, index) => {
-    // Find review for this step (check if it's reliever or role-based)
     const review = step.reviewerId
-      ? trail.find((r) => r.reviewer === step.reviewerId) // For relievers, use `reviewerId`
-      : trail.find((r) => r.role.toLowerCase() === step.role); // For Team Lead and HR, use `role`
+      ? trail.find((r) => r.reviewer === step.reviewerId)
+      : trail.find((r) => r.role?.toLowerCase() === step.role);
 
     const isApproved = review?.action === "approved";
     const isRejected = review?.action === "rejected";
 
-    // Stop at the first rejected review
     if (isRejected && stopAt === null) stopAt = index;
 
-    const statusIcon = isApproved ? "✔" : isRejected ? "✖" : "⏳"; 
+    const statusIcon = isApproved ? "✔" : isRejected ? "✖" : "⏳";
     const statusColor = isRejected
       ? "text-red-500"
       : isApproved
       ? "text-green-600"
-      : "text-gray-400"; 
+      : "text-gray-400";
 
     return (
       <React.Fragment key={step.reviewerId || step.role}>
@@ -157,14 +217,17 @@ const ApprovalSteps: React.FC<ApprovalStepsProps> = ({ request }) => {
             </span>
           )}
         </div>
-        {index < approvalFlow.length - 1 && (!stopAt || index < stopAt) && (
-          <span className="text-gray-300">—</span>
-        )}
+
+        {index < approvalFlow.length - 1 &&
+          (!stopAt || index < stopAt) && (
+            <span className="text-gray-300">—</span>
+          )}
       </React.Fragment>
     );
   });
 
-  const visible = stopAt !== null ? elements.slice(0, stopAt * 2 + 1) : elements;
+  const visible =
+    stopAt !== null ? elements.slice(0, stopAt * 2 + 1) : elements;
 
   return (
     <div className="flex items-center flex-wrap gap-1 mt-2 text-xs font-medium">

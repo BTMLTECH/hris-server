@@ -51,14 +51,14 @@ import { PaginationNav } from "../ui/paginationNav";
 import FeedbackModal from "./FeedbackModal";
 import { setSearchTerm } from "@/store/slices/profile/profileSlice";
 import { EmployeeSelector } from "../ui/employee-selector";
+import { TrainingTableSkeleton } from "../Attendance/AttendanceTableSkeleton";
 
 const TrainingManagement: React.FC = () => {
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const { searchTerm } = useAppSelector((state) => state.profile);
-  const { cachedEmployees, shouldShowSkeleton } = useReduxAuth();
+  const { cachedEmployees, shouldShowSkeleton, totalPages } = useReduxAuth();
   const dispatch = useAppDispatch();
   const canManageEmployees = currentUser?.role === "teamlead";
-
   const {
     trainingFormData,
     isLoading,
@@ -71,7 +71,7 @@ const TrainingManagement: React.FC = () => {
     feedbackAnswers,
     feedbackComments,
   } = useAppSelector((state) => state.training);
-
+  
   const { createTraining, submitFeedback } = useReduxTraining();
 
   // Handle create training
@@ -424,78 +424,83 @@ const TrainingManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
 
-                <TableBody>
-                  {Object.values(trainingCache)
-                    .flat()
-                    .map((training) => (
-                      <TableRow key={training._id}>
-                        <TableCell>{training.title}</TableCell>
-                        <TableCell>
-                          {new Date(training.date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          {training.facilitators
-                            ?.map((f) =>
-                              f.email ? `${f.name} (${f.email})` : f.name
-                            )
-                            .join(", ")}
-                        </TableCell>
+               <TableBody>
+  {(shouldShowSkeleton ||
+    (isLoading && !Object.values(trainingCache).flat().length)) ? (
+    <TrainingTableSkeleton rows={trainingPagination?.limit || 6} />
+  ) : Object.values(trainingCache).flat().length ? (
+    Object.values(trainingCache)
+      .flat()
+      .map((training) => (
+        <TableRow key={training._id}>
+          <TableCell>{training.title}</TableCell>
+          <TableCell>
+            {new Date(training.date).toLocaleDateString()}
+          </TableCell>
+          <TableCell>
+            {training.facilitators
+              ?.map((f) =>
+                f.email ? `${f.name} (${f.email})` : f.name
+              )
+              .join(", ")}
+          </TableCell>
+          <TableCell>{training.noOfTrainees}</TableCell>
+          <TableCell>
+            {training?.participants
+              ?.map((p) => `${p.firstName} ${p.lastName}`)
+              .join(", ")}
+          </TableCell>
 
-                        <TableCell>{training.noOfTrainees}</TableCell>
-                        <TableCell>
-                          {training?.participants
-                            ?.map((p) => `${p.firstName} ${p.lastName}`)
-                            .join(", ")}
-                        </TableCell>
+          {/* ✅ Actions column */}
+          <TableCell className="flex gap-2 justify-end">
+            {(training.participants?.some(
+              (p) => p.email === currentUser.email && p.status === "submitted"
+            ) ||
+              (["teamlead", "hr", "employee", "admin"].includes(
+                currentUser.role
+              ) && training.status === "submitted")) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  dispatch(setSelectedTraining(training));
+                  dispatch(setSelectedActionType("view"));
+                  dispatch(setIsActionDialogOpen(true));
+                }}
+              >
+                <Eye className="h-4 w-4 mr-1" /> View
+              </Button>
+            )}
 
-                        {/* ✅ Actions column */}
-                        <TableCell className="flex gap-2 justify-end">
-                          {(training.participants?.some(
-                            (p) =>
-                              p.email === currentUser.email &&
-                              p.status === "submitted"
-                          ) ||
-                            (["teamlead", "hr", "employee", "admin"].includes(
-                              currentUser.role
-                            ) &&
-                              training.status === "submitted")) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                dispatch(setSelectedTraining(training));
-                                dispatch(setSelectedActionType("view"));
-                                dispatch(setIsActionDialogOpen(true));
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-1" /> View
-                            </Button>
-                          )}
+            {training.participants?.some(
+              (p) => p.email === currentUser.email && p.status === "pending"
+            ) && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  dispatch(setSelectedTraining(training));
+                  dispatch(setSelectedActionType("feedback"));
+                  dispatch(setIsActionDialogOpen(true));
+                }}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" /> Feedback
+              </Button>
+            )}
+          </TableCell>
+        </TableRow>
+      ))
+  ) : (
+    <TableRow>
+      <TableCell colSpan={6} align="center">
+        No training records available.
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
 
-                          {training.participants?.some(
-                            (p) =>
-                              p.email === currentUser.email &&
-                              p.status === "pending"
-                          ) && (
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                dispatch(setSelectedTraining(training));
-                                dispatch(setSelectedActionType("feedback"));
-                                dispatch(setIsActionDialogOpen(true));
-                              }}
-                            >
-                              <MessageSquare className="h-4 w-4 mr-1" />{" "}
-                              Feedback
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
               </Table>
 
-              {trainingPagination.pages > 1 && (
+              {/* {trainingPagination.pages > 1 && (
                 <PaginationNav
                   page={trainingPagination.page}
                   totalPages={trainingPagination.pages}
@@ -509,10 +514,38 @@ const TrainingManagement: React.FC = () => {
                   }
                   className="mt-6"
                 />
+              )} */}
+
+              {trainingPagination.pages > 1 && (
+
+                  <PaginationNav
+                   page={trainingPagination?.page}
+                    totalPages={totalPages}
+                     pageSize={trainingPagination?.limit || 20}
+                              onPageChange={(newPage) =>
+                                dispatch(
+                                  setTrainingPagination({
+                                    ...trainingPagination,
+                                    page: newPage,
+                                  })
+                                )
+                              }
+                              onPageSizeChange={(newSize) =>
+                                dispatch(
+                                  setTrainingPagination({
+                                    ...trainingPagination,
+                                    page: 1,
+                                    limit: newSize,
+                                  })
+                                )
+                              }
+                              className="mt-6"
+                            />
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+
+              </CardContent>
+            </Card>
+          </TabsContent>
 
         {/* Feedback modal mounted globally */}
 

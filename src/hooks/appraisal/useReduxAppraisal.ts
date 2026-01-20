@@ -8,6 +8,7 @@ import {
   useGetEmployeeByDepartmentQuery,
   useUpdateAppraisalRequestMutation,
   useGetAppraisalActivityQuery,
+  useLazyGetAppraisalActivityQuery,
 } from "@/store/slices/appraisal/appraisalApi";
 
 import { toast } from "../use-toast";
@@ -23,6 +24,7 @@ import { Appraisal, UseReduxAppraisalReturnType } from "@/types/appraisal";
 import { useEffect } from "react";
 import { RootState } from "@/store/store";
 import { connectNotificationSocket } from "../auth/useReduxAuth";
+import { useSmartPaginatedResource } from "../smartPaginatedQuery/useSmartPaginatedQuery";
 
 export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
   const dispatch = useAppDispatch();
@@ -35,6 +37,7 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
     activityCache,
   } = useAppSelector((state: RootState) => state.appraisal);
   const cachedPageData = activityCache[filter]?.[pagination.page] ?? [];
+
   const {
     data: getEmployeeUnderTeamlead = [],
     isLoading: queueLoading,
@@ -42,17 +45,61 @@ export const useReduxAppraisal = (): UseReduxAppraisalReturnType => {
   } = useGetEmployeeByDepartmentQuery(undefined, {
     skip: !user || user.role !== "teamlead",
   });
-  const {
-    data: appraisalActivityResponse,
-    isLoading: appraisaActivityLoading,
-    error: activityError,
-    refetch: refetchActivity,
-  } = useGetAppraisalActivityQuery(
-    { page: pagination.page, limit: pagination.limit, status: filter },
-    {
-      skip: shouldSkip,
-    }
-  );
+
+  // const {
+  //   data: appraisalActivityResponse,
+  //   isLoading: appraisaActivityLoading,
+  //   error: activityError,
+  //   refetch: refetchActivity,
+  // } = useGetAppraisalActivityQuery(
+  //   { page: pagination.page, limit: pagination.limit, status: filter },
+  //   {
+  //     skip: shouldSkip,
+  //   }
+  // );
+
+const {
+  finalData: appraisalActivityResponse,
+  totalPages,
+  isSearching,
+  isBaseLoading: appraisaActivityLoading,
+  shouldShowSkeleton,
+  shouldSearch,
+  refetchBase: refetchActivity,
+} = useSmartPaginatedResource({
+  useBaseQuery: useGetAppraisalActivityQuery as any,
+  useLazyQuery: useLazyGetAppraisalActivityQuery,
+
+  // ✅ Appraisal cache (scoped by filter)
+  cache: activityCache,
+
+  // ✅ Appraisal pagination
+  pagination,
+
+  // ✅ Appraisal pagination setter
+  setPagination: setActivityPagination,
+
+  // ✅ Appraisal cache setter
+  setCache: setActivityCache,
+
+  // ❌ No search
+  searchTerm: undefined,
+
+  // ❌ No filters
+  filtersApplied: false,
+
+  // ✅ Include everything
+  filterFn: () => true,
+
+  // ✅ Must include status (required by API)
+  buildParams: (page, limit) => ({
+    page,
+    limit,
+    status: filter,
+  }),
+  skip: shouldSkip,
+});
+
 
   
   // Cache & pagination sync
@@ -91,13 +138,13 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
 
   }, [filter, pagination.page, activityCache, dispatch]);
 
-  const appraisalActivity = appraisalActivityResponse?.data ?? [];
-  const activityPagination = appraisalActivityResponse?.pagination ?? {
-    total: 0,
-    page: 1,
-    limit: 10,
-    pages: 0,
-  };
+  // const appraisalActivity = appraisalActivityResponse?.data ?? [];
+  // const activityPagination = appraisalActivityResponse?.pagination ?? {
+  //   total: 0,
+  //   page: 1,
+  //   limit: 10,
+  //   pages: 0,
+  // };
 
   const [createAppraisalRequest, { isLoading: creatingAppraisal }] =
     useCreateAppraisalRequestMutation();
@@ -218,10 +265,11 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
 
   return {
     getEmployeeUnderTeamlead,
-    appraisalActivity,
-    activityPagination,
-    cachedPageData,
+    totalPages,
+    appraisalActivity: appraisalActivityResponse,
+    // activityPagination,
 
+    cachedPageData,
     isLoading: {
       creatingAppraisal,
       approvingAppraisal,

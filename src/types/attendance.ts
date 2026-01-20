@@ -47,6 +47,9 @@ export interface PaginatedAttendanceResponse {
 }
 export interface AttendanceContextType {
   attendanceRecords: PaginatedAttendanceResponse;
+  totalPages: number;
+  isBaseLoading: boolean;
+  shouldShowSkeleton: boolean;
   cachedRecords: AttendanceRecord[];
   // attendanceStats: AttendanceStats | null;
   companyAttendanceSummary: any | null;
@@ -54,7 +57,7 @@ export interface AttendanceContextType {
   exportedAttendanceData: any | null;
 
   isLoading: {
-    historyLoading: boolean;
+    // historyLoading: boolean;
     // statsLoading: boolean;
     summaryLoading: boolean;
     adminReportLoading: boolean;
@@ -66,13 +69,13 @@ export interface AttendanceContextType {
   };
 
   error: {
-    historyError:
-      | string
-      | null
-      | FetchBaseQueryError
-      | SerializedError
-      | FetchBaseQueryError
-      | SerializedError;
+    // historyError:
+    //   | string
+    //   | null
+    //   | FetchBaseQueryError
+    //   | SerializedError
+    //   | FetchBaseQueryError
+    //   | SerializedError;
     // statsError: string | null | FetchBaseQueryError | SerializedError;
     summaryError: string | null | FetchBaseQueryError | SerializedError;
     adminReportError: string | null | FetchBaseQueryError | SerializedError;
@@ -85,7 +88,7 @@ export interface AttendanceContextType {
   handleManualCheckOut: (data: any) => Promise<boolean>;
   handleExportAttendance: () => Promise<boolean>;
 
-  refetchAttendanceHistory: () => void;
+  // refetchAttendanceHistory: () => void;
   // refetchAttendanceStats: () => void;
   // refetchCompanySummary: () => void;
 }
