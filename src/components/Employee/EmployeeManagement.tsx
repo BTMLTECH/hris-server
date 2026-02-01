@@ -145,6 +145,7 @@ const EmployeeManagement: React.FC = () => {
     (employee: ProfileFormData) => employee.company?.name
   );
 
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -261,18 +262,18 @@ const EmployeeManagement: React.FC = () => {
 
       const { nextOfKin, accountInfo } = formData;
 
-      if (
-        !nextOfKin?.name?.trim() ||
-        !nextOfKin?.phone?.trim() ||
-        !nextOfKin?.email?.trim() ||
-        !nextOfKin?.relationship?.trim()
-      ) {
-        toast({
-          title: "Please fill all Next of Kin fields",
-          variant: "destructive",
-        });
-        return;
-      }
+      // if (
+      //   !nextOfKin?.name?.trim() ||
+      //   !nextOfKin?.phone?.trim() ||
+      //   !nextOfKin?.email?.trim() ||
+      //   !nextOfKin?.relationship?.trim()
+      // ) {
+      //   toast({
+      //     title: "Please fill all Next of Kin fields",
+      //     variant: "destructive",
+      //   });
+      //   return;
+      // }
 
       if (
         !accountInfo?.classLevel?.trim() ||
@@ -323,7 +324,7 @@ const EmployeeManagement: React.FC = () => {
       if (success) {
         dispatch(setIsDialogOpen(false));
         dispatch(setIsEditMode(false));
-        dispatch(resetFormData());
+        if (!isEditMode) { dispatch(resetFormData()); }
       }
     } catch (error) {
       toast({

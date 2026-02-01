@@ -85,7 +85,8 @@ export const payrollApi = apiSlice.injectEndpoints({
         method: "POST",
         credentials: "include" as const,
       }),
-      invalidatesTags: ["Profiles", "getAllPayrolls"],
+      // invalidatesTags: ["Profiles", "getAllPayrolls"],
+      invalidatesTags: ["getAllPayrolls"],
     }),
 
     markPayrollsAsDraftBulk: builder.mutation({
@@ -144,7 +145,7 @@ export const payrollApi = apiSlice.injectEndpoints({
     // 🗑️ Delete a payroll
     deletePayroll: builder.mutation({
       query: (payrollId: string) => ({
-        url: `payroll/${payrollId}`,
+        url: `payroll/${payrollId}/delete`,
         method: "DELETE",
         credentials: "include" as const,
       }),

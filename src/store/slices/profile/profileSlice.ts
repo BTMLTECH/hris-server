@@ -410,6 +410,25 @@ const profileSlice = createSlice({
         }
       )
 
+    // builder.addMatcher(
+    //   profileApi.endpoints.editProfile.matchPending,
+    //   (state) => {
+    //     state.isLoading = true;
+    //     state.error = null;
+    //   }
+    // );
+
+    // builder
+    //   .addMatcher(
+    //     profileApi.endpoints.editProfile.matchFulfilled,
+    //     (state, action: PayloadAction<PaginatedProfilesResponse>) => {
+    //       console.log('Edit Profile Fulfilled Action:', action);
+    //       const users: ProfileFormData[] = action.payload.data.data;
+    //       console.log('Updated Users:', users);
+    //       state.bulkEmployees = users;
+    //     }
+    //   )
+
       .addMatcher(
         profileApi.endpoints.getTeamlead.matchFulfilled,
         (state, action: PayloadAction<GetEmployeesByTeamLeadDepartmentResponse>) => {

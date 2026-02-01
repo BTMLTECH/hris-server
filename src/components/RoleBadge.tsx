@@ -1,8 +1,7 @@
+
 // import React from "react";
 // import { Badge } from "@/components/ui/badge";
-// import { User } from "@/types/auth";
 
-// //
 // const roleConfig = {
 //   admin: {
 //     label: "admin",
@@ -33,6 +32,18 @@
 
 // const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = "md" }) => {
 //   const config = roleConfig[role];
+//   console.log("RoleBadge config:", config);
+
+//   if (!config) {
+//     return null; // or some default badge
+//   }
+
+
+
+//   // Capitalize first letter of label
+//   const formattedLabel =
+//     config?.label.charAt(0).toUpperCase() +
+//     config?.label.slice(1).toLowerCase();
 
 //   return (
 //     <Badge
@@ -44,51 +55,82 @@
 //           : ""
 //       }`}
 //     >
-//       {config.label}
+//       {formattedLabel}
 //     </Badge>
 //   );
 // };
 
 // export default RoleBadge;
 
+
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 
-const roleConfig = {
+/**
+ * Allowed roles
+ */
+export type RoleType =
+  | "employee"
+  | "md"
+  | "teamlead"
+  | "admin"
+  | "hr";
+
+/**
+ * Role config (type-safe & complete)
+ */
+const roleConfig: Record<
+  RoleType,
+  {
+    label: string;
+    className: string;
+  }
+> = {
   admin: {
-    label: "admin",
+    label: "Admin",
     className: "bg-admin text-white hover:bg-admin/90",
   },
   hr: {
-    label: "hr",
+    label: "HR",
     className: "bg-hr text-white hover:bg-hr/90",
   },
   md: {
-    label: "md",
+    label: "MD",
     className: "bg-md text-white hover:bg-md/90",
   },
   teamlead: {
-    label: "teamlead",
+    label: "Team Lead",
     className: "bg-teamlead text-white hover:bg-teamlead/90",
   },
   employee: {
-    label: "employee",
+    label: "Employee",
     className: "bg-employee text-white hover:bg-employee/90",
   },
 };
 
 export interface RoleBadgeProps {
-  role: "employee" | "md" | "teamlead" | "admin" | "hr";
+  role?: string; // ← intentionally loose (API-safe)
   size?: "sm" | "md" | "lg";
 }
 
-const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = "md" }) => {
-  const config = roleConfig[role];
+const RoleBadge: React.FC<RoleBadgeProps> = ({
+  role,
+  size = "md",
+}) => {
+  // Normalize role safely
+  const normalizedRole = role?.toLowerCase() as RoleType | undefined;
+  const config = normalizedRole
+    ? roleConfig[normalizedRole]
+    : undefined;
 
-  // Capitalize first letter of label
-  const formattedLabel =
-    config?.label.charAt(0).toUpperCase() +
-    config?.label.slice(1).toLowerCase();
+  // 🚨 Fallback: unknown / missing role
+  if (!config) {
+    return (
+      <Badge className="bg-gray-400 text-white">
+        Unknown
+      </Badge>
+    );
+  }
 
   return (
     <Badge
@@ -100,7 +142,7 @@ const RoleBadge: React.FC<RoleBadgeProps> = ({ role, size = "md" }) => {
           : ""
       }`}
     >
-      {formattedLabel}
+      {config.label}
     </Badge>
   );
 };

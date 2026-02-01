@@ -2081,7 +2081,8 @@ const isLeaveExceedsBalance = () => {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select team lead" />
+                      <SelectValue placeholder={`Select ${user?.role === "teamlead" ? "HR" : "Team Lead"}`} />
+
                     </SelectTrigger>
               
                     <SelectContent>

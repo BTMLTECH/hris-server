@@ -127,18 +127,34 @@ export function PayslipWithTaxDialog({
 <TabsContent value="payslip" className="space-y-8 text-gray-800">
   {/* Summary */}
   <section className="flex flex-wrap justify-between bg-white rounded-lg p-5 shadow-sm gap-6">
-    <div className="min-w-[160px]">
-      <p>
+    {/* <div className="min-w-[160px]">
+     <p>
         <strong>Month:</strong>{" "}
-        {getPayrollStatusBadge(selectedPayslip.status)}
+        <span>{getPayrollStatusBadge(selectedPayslip.status)}</span>
       </p>
+
       <p className="mt-2">
         <strong>Created At:</strong>{" "}
         {selectedPayslip.createdAt
           ? new Date(selectedPayslip.createdAt).toLocaleDateString()
           : "—"}
       </p>
-    </div>
+    </div> */}
+    <div className="min-w-[160px]">
+  <div className="flex items-center gap-2">
+    <strong>Month:</strong>
+    {getPayrollStatusBadge(selectedPayslip.status)}
+  </div>
+
+  <p className="mt-2">
+    <strong>Created At:</strong>{" "}
+    {selectedPayslip.createdAt
+      ? new Date(selectedPayslip.createdAt).toLocaleDateString()
+      : "—"}
+  </p>
+</div>
+
+
     <div className="min-w-[160px] text-right">
       <p>
         <strong>Total Allowances:</strong>{" "}

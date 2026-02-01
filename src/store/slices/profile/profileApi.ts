@@ -14,7 +14,8 @@ export const profileApi = apiSlice.injectEndpoints({
           credentials: "include" as const,
         };
       },
-      invalidatesTags: [{ type: "Profiles", id: "LIST" }],
+      invalidatesTags: [{ type: "Profiles", id: "LIST" }, { type: "getAllPayrolls"}],
+      // invalidatesTags: [{ type: "getAllPayrolls"}],
     }),
 
     uploadProfile: builder.mutation({
@@ -170,7 +171,6 @@ export const profileApi = apiSlice.injectEndpoints({
         credentials: "include" as const,
       }),
       invalidatesTags: (result, error, id) => [
-        { type: "Profiles", id },
         { type: "Profiles", id: "LIST" },
       ],
     }),

@@ -230,12 +230,7 @@ const PayrollManagement: React.FC = () => {
 //   return "mixed";
 // }, [sortedRecords, currentYear]);
 
-  const handleDeleteRecord = async (recordId: string, p0: string) => {
-    const success = await deletePayroll(recordId);
-    if (success) {
-      dispatch(setIsDeleteDialogOpen(false));
-    }
-  };
+
   const handleOpenDeleteDialog = (recordId: string, action: string) => {
     setDeleteParams({ id: recordId, action });
     dispatch(setIsDeleteDialogOpen(true));
@@ -392,7 +387,7 @@ const PayrollManagement: React.FC = () => {
   const handleAction = async (
     key: string,
     actionType: string,
-    actionFn: () => Promise<boolean>
+    actionFn?: () => Promise<boolean>
   ) => {
     setLocalLoading(key, actionType);
     try {
@@ -448,6 +443,18 @@ const PayrollManagement: React.FC = () => {
     handleAction("bulk-download", "bulk-download", () =>
       downloadBulkPayroll(type)
     );
+
+    const handleDeleteRecord = (deletePayrollId: string) =>{
+      if (!deletePayrollId) return; 
+      handleAction(deletePayrollId, "deletePayroll", () => deletePayroll(deletePayrollId));
+    }
+
+  //     const handleDeleteRecord = async (recordId: string, p0: string) => {
+  //   const success = await deletePayroll(recordId);
+  //   if (success) {
+  //     dispatch(setIsDeleteDialogOpen(false));
+  //   }
+  // };
   
     
 
@@ -1531,10 +1538,15 @@ const PayrollManagement: React.FC = () => {
             </Button>
             <Button
               variant="destructive"
-              onClick={() => handleDeleteRecord(deleteParams.id, "delete")}
-              disabled={isLoading}
+                onClick={()=> handleDeleteRecord(
+                      deleteParams?.id,
+                
+                    )}
+              // onClick={() => handleDeleteRecord(deleteParams.id, "delete")}
+              // disabled={isLoading}
+              disabled={isLocalLoading(deleteParams?.id, "deletePayroll")}
             >
-              {isLoading && (
+              {isLocalLoading(deleteParams?.id, "deletePayroll") && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2 text-muted-foreground" />
               )}
               Confirm
