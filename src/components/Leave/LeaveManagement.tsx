@@ -1674,140 +1674,55 @@ const isLeaveExceedsBalance = () => {
     });
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   if (!formData.teamleadId) {
-  //     toast({
-  //       title: "Team Lead Required",
-  //       description: "Please select a team lead to review your leave request.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   const calculation = calculateDays(formData.startDate, formData.endDate);
-  //   if (!calculation) {
-  //     toast({
-  //       title: "Invalid Dates",
-  //       description: "Please select valid start and end dates.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-  //   if (!uploadedFile) {
-  //     toast({
-  //       title: "No File Uploaded",
-  //       description: "Please upload a supporting document.",
-  //       variant: "destructive",
-  //     });
-  //     return;
-  //   }
-
-  //   // ✅ Use FormData to include file
-  //   const formDataToSend = new FormData();
-  //   formDataToSend.append("file", uploadedFile);
-  //   formDataToSend.append("type", formData.type);
-  //   formDataToSend.append("startDate", formData.startDate);
-  //   formDataToSend.append("endDate", formData.endDate);
-  //   formDataToSend.append("days", calculation.workingDays.toString());
-  //   formDataToSend.append("reason", formData.reason);
-  //   formDataToSend.append("teamleadId", formData.teamleadId);
-  //   formDataToSend.append("typeIdentify", formData.typeIdentify);
-  //   formDataToSend.append("allowance", formData.allowance);
-  //   formData.relievers?.forEach((reliever) =>
-  //     formDataToSend.append("relievers", reliever)
-  //   );
-
-  //   const success = await handleCreateLeaveRequest(formDataToSend);
-
-  //   if (success) {
-  //     dispatch(setCreateIsDialogOpen(false));
-  //     setFormData({
-  //       type: "annual",
-  //       startDate: "",
-  //       endDate: "",
-  //       reason: "",
-  //       teamleadId: "",
-  //       days: 0,
-  //       typeIdentify: "leave",
-  //       allowance: "yes",
-  //       relievers: [],
-  //     });
-  //     setUploadedFile(null);
-  //     dispatch(setDateCalculation(null));
-  //   }
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Team lead selection is still required
-  if (!formData.teamleadId) {
-    toast({
-      title: "Team Lead Required",
-      description: "Please select a team lead to review your leave request.",
-      variant: "destructive",
-    });
-    return;
-  }
+    if (!formData.teamleadId) {
+      toast({
+        title: "Team Lead Required",
+        description: "Please select a team lead to review your leave request.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  // Relievers validation ONLY for non-teamlead users
-  if (
-    user?.role !== "teamlead" &&
-    (!formData.relievers || formData.relievers.length < 2)
-  ) {
-    toast({
-      title: "Relievers Required",
-      description: "Please select at least 2 relievers.",
-      variant: "destructive",
-    });
-    return;
-  }
+    const calculation = calculateDays(formData.startDate, formData.endDate);
+    if (!calculation) {
+      toast({
+        title: "Invalid Dates",
+        description: "Please select valid start and end dates.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!uploadedFile) {
+      toast({
+        title: "No File Uploaded",
+        description: "Please upload a supporting document.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const calculation = calculateDays(formData.startDate, formData.endDate);
-  if (!calculation) {
-    toast({
-      title: "Invalid Dates",
-      description: "Please select valid start and end dates.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  if (!uploadedFile) {
-    toast({
-      title: "No File Uploaded",
-      description: "Please upload a supporting document.",
-      variant: "destructive",
-    });
-    return;
-  }
-
-  // ✅ Use FormData to include file
-  const formDataToSend = new FormData();
-  formDataToSend.append("file", uploadedFile);
-  formDataToSend.append("type", formData.type);
-  formDataToSend.append("startDate", formData.startDate);
-  formDataToSend.append("endDate", formData.endDate);
-  formDataToSend.append("days", calculation.workingDays.toString());
-  formDataToSend.append("reason", formData.reason);
-  formDataToSend.append("teamleadId", formData.teamleadId);
-  formDataToSend.append("typeIdentify", formData.typeIdentify);
-  formDataToSend.append("allowance", formData.allowance);
-
-  // Append relievers ONLY if user is not teamlead
-  if (user?.role !== "teamlead") {
-    formData.relievers.forEach((reliever) =>
+    // ✅ Use FormData to include file
+    const formDataToSend = new FormData();
+    formDataToSend.append("file", uploadedFile);
+    formDataToSend.append("type", formData.type);
+    formDataToSend.append("startDate", formData.startDate);
+    formDataToSend.append("endDate", formData.endDate);
+    formDataToSend.append("days", calculation.workingDays.toString());
+    formDataToSend.append("reason", formData.reason);
+    formDataToSend.append("teamleadId", formData.teamleadId);
+    formDataToSend.append("typeIdentify", formData.typeIdentify);
+    formDataToSend.append("allowance", formData.allowance);
+    formData.relievers?.forEach((reliever) =>
       formDataToSend.append("relievers", reliever)
     );
-  }
 
-  const success = await handleCreateLeaveRequest(formDataToSend);
+    const success = await handleCreateLeaveRequest(formDataToSend);
 
-  if (success) {
-    dispatch(setCreateIsDialogOpen(false));
-    dispatch(
+    if (success) {
+      dispatch(setCreateIsDialogOpen(false));
       setFormData({
         type: "annual",
         startDate: "",
@@ -1818,12 +1733,98 @@ const isLeaveExceedsBalance = () => {
         typeIdentify: "leave",
         allowance: "yes",
         relievers: [],
-      })
-    );
-    setUploadedFile(null);
-    dispatch(setDateCalculation(null));
-  }
-};
+      });
+      setUploadedFile(null);
+      dispatch(setDateCalculation(null));
+    }
+  };
+
+//   const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
+//   console.log("Submitting form with data:", formData);
+
+//   // Team lead selection is still required
+//   if (!formData.teamleadId) {
+//     toast({
+//       title: "Team Lead Required",
+//       description: "Please select a team lead to review your leave request.",
+//       variant: "destructive",
+//     });
+//     return;
+//   }
+
+//   // Relievers validation ONLY for non-teamlead users
+//   if (
+//     user?.role !== "teamlead" &&
+//     (!formData.relievers || formData.relievers.length < 2)
+//   ) {
+//     toast({
+//       title: "Relievers Required",
+//       description: "Please select at least 2 relievers.",
+//       variant: "destructive",
+//     });
+//     return;
+//   }
+
+//   const calculation = calculateDays(formData.startDate, formData.endDate);
+//   if (!calculation) {
+//     toast({
+//       title: "Invalid Dates",
+//       description: "Please select valid start and end dates.",
+//       variant: "destructive",
+//     });
+//     return;
+//   }
+
+//   if (!uploadedFile) {
+//     toast({
+//       title: "No File Uploaded",
+//       description: "Please upload a supporting document.",
+//       variant: "destructive",
+//     });
+//     return;
+//   }
+
+//   // ✅ Use FormData to include file
+//   const formDataToSend = new FormData();
+//   formDataToSend.append("file", uploadedFile);
+//   formDataToSend.append("type", formData.type);
+//   formDataToSend.append("startDate", formData.startDate);
+//   formDataToSend.append("endDate", formData.endDate);
+//   formDataToSend.append("days", calculation.workingDays.toString());
+//   formDataToSend.append("reason", formData.reason);
+//   formDataToSend.append("teamleadId", formData.teamleadId);
+//   formDataToSend.append("typeIdentify", formData.typeIdentify);
+//   formDataToSend.append("allowance", formData.allowance);
+
+//   // Append relievers ONLY if user is not teamlead
+//   if (user?.role !== "teamlead") {
+//     formData.relievers.forEach((reliever) =>
+//       formDataToSend.append("relievers", reliever)
+//     );
+//   }
+
+//   const success = await handleCreateLeaveRequest(formDataToSend);
+
+//   if (success) {
+//     dispatch(setCreateIsDialogOpen(false));
+//     dispatch(
+//       setFormData({
+//         type: "annual",
+//         startDate: "",
+//         endDate: "",
+//         reason: "",
+//         teamleadId: "",
+//         days: 0,
+//         typeIdentify: "leave",
+//         allowance: "yes",
+//         relievers: [],
+//       })
+//     );
+//     setUploadedFile(null);
+//     dispatch(setDateCalculation(null));
+//   }
+// };
 
 
   const handleApproveLeaveRequestFlow = async (
@@ -2198,7 +2199,6 @@ const isLeaveExceedsBalance = () => {
                 }
                 requiredMin={2}
               /> */}
-              {user?.role !== "teamlead" && (
                 <EmployeeSelector
                   label="Relievers (Select 2 or 3)"
                   selectedEmails={formData.relievers || []}
@@ -2215,7 +2215,24 @@ const isLeaveExceedsBalance = () => {
                   }
                   requiredMin={2}
                 />
-              )}
+              {/* {user?.role !== "teamlead" && (
+                <EmployeeSelector
+                  label="Relievers (Select 2 or 3)"
+                  selectedEmails={formData.relievers || []}
+                  onSelectionChange={(emails) =>
+                    dispatch(setFormData({ ...formData, relievers: emails }))
+                  }
+                  employees={cachedEmployees}
+                  searchTerm={searchTerm}
+                  onSearchChange={(term) => dispatch(setSearchTerm(term))}
+                  shouldShowSkeleton={shouldShowSkeleton}
+                  maxSelections={3}
+                  employeeFilter={(emp) =>
+                    emp.role === "employee" && emp.email !== currentUser.email
+                  }
+                  requiredMin={2}
+                />
+              )} */}
 
 
               {/* Allowance & Reason */}
