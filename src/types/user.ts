@@ -178,6 +178,72 @@ export interface ILeaveBalanceResponse {
   };
 }
 
+// export interface ProfileFormData {
+//   _id?: string;
+//   staffId: string;
+//   title: string;
+//   firstName: string;
+//   middleName?: string;
+//   lastName: string;
+//   gender: string;
+//   dateOfBirth: string;
+//   stateOfOrigin: string;
+//   address: string;
+//   city: string;
+//   mobile: string;
+//   email: string;
+//   message?: string;
+//   biometryId?: string;
+//   profileImage?: string;
+//   position: string;
+//   officeBranch?: string;
+//   employmentDate: string;
+//   accountInfo: {
+//     classLevel: string;
+//     basicPay: number;
+//     allowances: number;
+//     bankAccountNumber: string;
+//     bankName: string;
+//     taxNumber?: string;
+//     pensionCompany?: string;
+//     pensionNumber?: string;
+//   };
+//   role: "md" | "teamlead" | "employee" | "admin" | "hr";
+//   company?: ICompany;
+//   status?: "active" | "inactive" | "terminated";
+//   terminationDate?: string;
+//   isActive?: boolean;
+//   failedLoginAttempts?: number;
+//   lockUntil?: string;
+//   resetRequested?: boolean;
+//   resetRequestedAt?: string;
+//   twoFactorEnabled?: boolean;
+//   twoFactorCode?: string;
+//   twoFactorExpiry?: string;
+//   resetToken?: string;
+//   resetTokenExpiry?: string;
+//   cooperative?: {
+//     monthlyContribution: number;
+//     totalContributed: number;
+//     lastContributionDate?: string;
+//   };
+//   createdAt?: string;
+//   nextOfKin: {
+//     name: string;
+//     phone: string;
+//     email: string;
+//     relationship: string;
+//   };
+//   sendInvite?: boolean;
+//   selectedDepartment: string;
+//   department: string;
+//   departmentName: string;
+//   departments: IDepartment[];
+//   classlevels: IClassLevel[];
+//   requirements: IOnboardingRequirement[];
+//   leaveBalance?: ILeaveBalanceResponse;
+// }
+
 export interface ProfileFormData {
   _id?: string;
   staffId: string;
@@ -188,9 +254,12 @@ export interface ProfileFormData {
   gender: string;
   dateOfBirth: string;
   stateOfOrigin: string;
+  lga?: string; // LGA - Local Government Area
+  town?: string; // TOWN
   address: string;
   city: string;
   mobile: string;
+  alternatePhoneNumber?: string; // ALTERNATE_PHONE_NUMBER
   email: string;
   message?: string;
   biometryId?: string;
@@ -198,6 +267,10 @@ export interface ProfileFormData {
   position: string;
   officeBranch?: string;
   employmentDate: string;
+  meansOfIdentification?: string; // MEANS_OF_IDENTIFICATION
+  meansOfIdentificationNumber?: string; // MEANS_OF_IDENTIFICATION_NUMBER
+  stateOfIssuance?: string; // STATE_OF_ISSUANCE
+  nationalIdNumber?: string; // NATIONAL_ID_NUMBER
   accountInfo: {
     classLevel: string;
     basicPay: number;
@@ -208,6 +281,9 @@ export interface ProfileFormData {
     pensionCompany?: string;
     pensionNumber?: string;
   };
+  numberOfPrimaryDependants?: number; // NUMBER_OF_PRIMARY_DEPENDANTS
+  totalMonthlyEarnings?: number; // TOTAL_MONTHLY_EARNINGS
+  kobo?: number; // KOBO
   role: "md" | "teamlead" | "employee" | "admin" | "hr";
   company?: ICompany;
   status?: "active" | "inactive" | "terminated";

@@ -158,4 +158,5 @@ export interface AuthContextType {
   createCompanyWithAdim: (data: CreateCompanyDTO) => Promise<boolean>;
   hasRole: (roles: string[]) => boolean;
   clearError: () => void;
+  triggerFetchAllProfiles: any
 }

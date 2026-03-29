@@ -29,16 +29,17 @@ export function createPaginatedQuery<
       success?: boolean;
       data: { data: TData[]; pagination?: any; count?: number };
     },
-    TParams & { page?: number; limit?: number }
+    TParams & { page?: number; limit?: number, }
   >({
     query: (params) => {
       const { page = 1, limit = defaultLimit, ...rest } = params;
+      const fetchAll = limit === -1;
 
       const queryParams = buildParams
         ? buildParams(params)
         : new URLSearchParams({
             page: page.toString(),
-            limit: limit.toString(),
+            limit: fetchAll ? '999999' : limit.toString(),
           });
 
       // ✅ Only append whitelisted filter keys if provided

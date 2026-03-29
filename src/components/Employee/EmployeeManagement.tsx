@@ -262,18 +262,7 @@ const EmployeeManagement: React.FC = () => {
 
       const { nextOfKin, accountInfo } = formData;
 
-      // if (
-      //   !nextOfKin?.name?.trim() ||
-      //   !nextOfKin?.phone?.trim() ||
-      //   !nextOfKin?.email?.trim() ||
-      //   !nextOfKin?.relationship?.trim()
-      // ) {
-      //   toast({
-      //     title: "Please fill all Next of Kin fields",
-      //     variant: "destructive",
-      //   });
-      //   return;
-      // }
+   
 
       if (
         !accountInfo?.classLevel?.trim() ||
@@ -399,7 +388,7 @@ const EmployeeManagement: React.FC = () => {
         onBack={handleBackToList}
         onSubmit={handleSubmit}
         formData={formData}
-        setFormData={(data) => dispatch(setFormData(data))}
+        setFormData={(data: ProfileFormData) => dispatch(setFormData(data))}
         isEditMode={isEditMode}
         isLocalLoading={isLocalLoading}
         dispatch={dispatch}

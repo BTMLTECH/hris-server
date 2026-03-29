@@ -38,53 +38,13 @@ export const useReduxProfile = (): ProfileContextType => {
 
   const { data } = useGetAnalyticsQuery({}, { skip: !user });
 
-  // const editProfile = async (profile: ProfileFormData): Promise<boolean> => {
-  //   dispatch(setLoading(true));
-
-  //   try {
-  //     const response = await editProfileMutation(profile).unwrap();
-  
-
-  //     if (response) {
-  //       dispatch(setSelectedEmployee(response));
-  //     }
-
-  //     toast({ title: "Profile updated successfully" });
-
-  //     dispatch(
-  //       setFormData({
-  //         ...formData,
-  //         ...profile,
-  //       })
-  //     );
-
-  //     return true;
-  //   } catch (error: any) {
-  //     const errorMessage = extractErrorMessage(error, "Profile Update Error");
-  //     toast({
-  //       title: "Profile Update Error",
-  //       description: errorMessage,
-  //       variant: "destructive",
-  //     });
-  //     return false;
-  //   } finally {
-  //     dispatch(setLoading(false));
-  //   }
-  // };
-
+ 
   const editProfile = async (profile: ProfileFormData): Promise<boolean> => {
   dispatch(setLoading(true));
 
   try {
    await editProfileMutation(profile).unwrap();
-    // console.log('Edit Profile Response:', response.data.data);
-
-    // if (response?.data) {
-    //   // Use the backend response — NOT the stale formData
-    //   // dispatch(setSelectedEmployee(response.data.data));
-    //   dispatch(setFormData(response.data.data));
-    // }
-
+   
     toast({ title: "Profile updated successfully" });
 
     return true;

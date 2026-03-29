@@ -85,6 +85,16 @@ export const blankProfileFormData: ProfileFormData = {
 
   selectedDepartment: firstDept,
   classlevels: [],
+  lga: "",
+  town: "",
+  alternatePhoneNumber: "",
+  meansOfIdentification: "",
+  meansOfIdentificationNumber: "",
+  stateOfIssuance: "",
+  nationalIdNumber: "",
+  numberOfPrimaryDependants: 0,
+  totalMonthlyEarnings: 0,
+  kobo: 0,
 };
 
 export const blankCompanyFormData: CreateCompanyDTO = {

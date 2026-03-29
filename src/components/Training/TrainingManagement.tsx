@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Loader2, Eye, MessageSquare, Search, Users } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useReduxAuth } from "@/hooks/auth/useReduxAuth";
 import { ProfileFormData } from "@/types/user";
@@ -52,11 +52,12 @@ import FeedbackModal from "./FeedbackModal";
 import { setSearchTerm } from "@/store/slices/profile/profileSlice";
 import { EmployeeSelector } from "../ui/employee-selector";
 import { TrainingTableSkeleton } from "../Attendance/AttendanceTableSkeleton";
+import { Switch } from "../ui/switch";
 
 const TrainingManagement: React.FC = () => {
   const { user: currentUser } = useAppSelector((state) => state.auth);
   const { searchTerm } = useAppSelector((state) => state.profile);
-  const { cachedEmployees, shouldShowSkeleton, totalPages } = useReduxAuth();
+  const { cachedEmployees, shouldShowSkeleton, totalPages, triggerFetchAllProfiles } = useReduxAuth();
   const dispatch = useAppDispatch();
   const canManageEmployees = currentUser?.role === "teamlead";
   const {
@@ -73,34 +74,8 @@ const TrainingManagement: React.FC = () => {
   } = useAppSelector((state) => state.training);
   
   const { createTraining, submitFeedback } = useReduxTraining();
+  const [isSelectAllLoading, setIsSelectAllLoading] = useState(false);
 
-  // Handle create training
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   const payload = {
-  //     ...trainingFormData,
-  //     trainer: `${currentUser.firstName} ${currentUser.lastName}`,
-  //     department: `${currentUser.department}`,
-  //   };
-
-  //   const success = await createTraining(payload);
-
-  //   if (success) {
-  //     dispatch(setIsDialogOpen(false));
-  //     // reset form
-  //     dispatch(
-  //       setTrainingFormData({
-  //         title: "",
-  //         date: "",
-  //         trainer: `${currentUser.firstName} ${currentUser.lastName}`,
-  //         department: `${currentUser.department}`,
-  //         noOfTrainees: 0,
-  //         participantEmails: [],
-  //       })
-  //     );
-  //   }
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,246 +134,314 @@ const TrainingManagement: React.FC = () => {
         </div>
         {/* {canManageEmployees && (
         )} */}
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={(isOpen) => {
-            dispatch(setIsDialogOpen(isOpen));
-            if (!isOpen) {
-              dispatch(
-                setTrainingFormData({
-                  title: "",
-                  date: "",
-                  trainer: "",
-                  noOfTrainees: 0,
-                  participantEmails: [],
-                })
-              );
-            }
-          }}
-        >
-          <Button onClick={() => dispatch(setIsDialogOpen(true))}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Training
-          </Button>
+  
 
-          <DialogContent className="bg-white rounded-2xl shadow-xl max-w-2xl w-full sm:mx-4 mx-2 max-h-[90vh] overflow-y-auto p-6">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-semibold text-gray-800">
-                Create Training
-              </DialogTitle>
-              <DialogDescription className="text-gray-600 text-sm mt-1">
-                Fill in the details to create a new training session.
-              </DialogDescription>
-            </DialogHeader>
 
-            {/* Form */}
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Title */}
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  type="text"
-                  value={trainingFormData?.title}
-                  placeholder="Enter training title"
-                  onChange={(e) =>
-                    dispatch(
-                      setTrainingFormData({
-                        ...trainingFormData,
-                        title: e.target.value,
-                      })
-                    )
-                  }
-                  required
-                />
-              </div>
 
-              {/* Date */}
-              <div>
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={trainingFormData?.date}
-                  onChange={(e) =>
-                    dispatch(
-                      setTrainingFormData({
-                        ...trainingFormData,
-                        date: e.target.value,
-                      })
-                    )
-                  }
-                  required
-                />
-              </div>
+<Dialog
+  open={isDialogOpen}
+  onOpenChange={(isOpen) => {
+    dispatch(setIsDialogOpen(isOpen));
+    if (!isOpen) {
+      dispatch(
+        setTrainingFormData({
+          title: "",
+          date: "",
+          trainer: "",
+          noOfTrainees: 0,
+          participantEmails: [],
+        })
+      );
+    }
+  }}
+>
+  <Button onClick={() => dispatch(setIsDialogOpen(true))}>
+    <Plus className="h-4 w-4 mr-2" />
+    Create Training
+  </Button>
 
-              <div>
-                <Label>Facilitators</Label>
+  <DialogContent className="bg-white rounded-2xl shadow-xl max-w-2xl w-full sm:mx-4 mx-2 max-h-[90vh] overflow-y-auto p-6">
+    <DialogHeader>
+      <DialogTitle className="text-2xl font-semibold text-gray-800">
+        Create Training
+      </DialogTitle>
+      <DialogDescription className="text-gray-600 text-sm mt-1">
+        Fill in the details to create a new training session.
+      </DialogDescription>
+    </DialogHeader>
 
-                {/* Render facilitator fields */}
-                {trainingFormData?.facilitators?.map((facilitator, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col sm:flex-row gap-2 mb-2"
-                  >
-                    <Input
-                      type="text"
-                      placeholder="Facilitator name"
-                      value={facilitator.name}
-                      required
-                      onChange={(e) => {
-                        const updated = [...trainingFormData.facilitators];
-                        updated[index] = {
-                          ...updated[index],
-                          name: e.target.value,
-                        };
-                        dispatch(
-                          setTrainingFormData({
-                            ...trainingFormData,
-                            facilitators: updated,
-                          })
-                        );
-                      }}
-                    />
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Title */}
+      <div>
+        <Label htmlFor="title">Title</Label>
+        <Input
+          id="title"
+          type="text"
+          value={trainingFormData?.title}
+          placeholder="Enter training title"
+          onChange={(e) =>
+            dispatch(
+              setTrainingFormData({
+                ...trainingFormData,
+                title: e.target.value,
+              })
+            )
+          }
+          required
+        />
+      </div>
 
-                    <Input
-                      type="email"
-                      placeholder="Facilitator email (optional)"
-                      value={facilitator.email || ""}
-                      onChange={(e) => {
-                        const updated = [...trainingFormData.facilitators];
-                        updated[index] = {
-                          ...updated[index],
-                          email: e.target.value,
-                        };
-                        dispatch(
-                          setTrainingFormData({
-                            ...trainingFormData,
-                            facilitators: updated,
-                          })
-                        );
-                      }}
-                    />
+      {/* Date */}
+      <div>
+        <Label htmlFor="date">Date</Label>
+        <Input
+          id="date"
+          type="date"
+          value={trainingFormData?.date}
+          onChange={(e) =>
+            dispatch(
+              setTrainingFormData({
+                ...trainingFormData,
+                date: e.target.value,
+              })
+            )
+          }
+          required
+        />
+      </div>
 
-                    {trainingFormData?.facilitators?.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const updated =
-                            trainingFormData?.facilitators?.filter(
-                              (_, i) => i !== index
-                            );
-                          dispatch(
-                            setTrainingFormData({
-                              ...trainingFormData,
-                              facilitators: updated,
-                            })
-                          );
-                        }}
-                        className="text-red-500 text-sm hover:underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                ))}
+      <div>
+        <Label>Facilitators</Label>
 
-                {/* Add new facilitator */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    dispatch(
-                      setTrainingFormData({
-                        ...trainingFormData,
-                        facilitators: [
-                          ...trainingFormData.facilitators,
-                          { name: "", email: "" },
-                        ],
-                      })
+        {trainingFormData?.facilitators?.map((facilitator, index) => (
+          <div
+            key={index}
+            className="flex flex-col sm:flex-row gap-2 mb-2"
+          >
+            <Input
+              type="text"
+              placeholder="Facilitator name"
+              value={facilitator.name}
+              required
+              onChange={(e) => {
+                const updated = [...trainingFormData.facilitators];
+                updated[index] = {
+                  ...updated[index],
+                  name: e.target.value,
+                };
+                dispatch(
+                  setTrainingFormData({
+                    ...trainingFormData,
+                    facilitators: updated,
+                  })
+                );
+              }}
+            />
+
+            <Input
+              type="email"
+              placeholder="Facilitator email (optional)"
+              value={facilitator.email || ""}
+              onChange={(e) => {
+                const updated = [...trainingFormData.facilitators];
+                updated[index] = {
+                  ...updated[index],
+                  email: e.target.value,
+                };
+                dispatch(
+                  setTrainingFormData({
+                    ...trainingFormData,
+                    facilitators: updated,
+                  })
+                );
+              }}
+            />
+
+            {trainingFormData?.facilitators?.length > 1 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const updated =
+                    trainingFormData?.facilitators?.filter(
+                      (_, i) => i !== index
                     );
-                  }}
-                  className="text-primary text-sm font-medium mt-1 hover:underline"
-                >
-                  + Add Facilitator
-                </button>
-              </div>
-
-              {/* Participants */}
-              {/* THE CODE IN NODEPAD  */}
-
-              <EmployeeSelector
-                label="Participants"
-                selectedEmails={trainingFormData?.participantEmails || []}
-                onSelectionChange={(emails) =>
                   dispatch(
                     setTrainingFormData({
                       ...trainingFormData,
-                      participantEmails: emails,
-                      noOfTrainees: emails.length,
+                      facilitators: updated,
                     })
-                  )
-                }
-                employees={cachedEmployees}
-                searchTerm={searchTerm}
-                onSearchChange={(term) => dispatch(setSearchTerm(term))}
-                shouldShowSkeleton={shouldShowSkeleton}
-              />
-              {/* Number of trainees (auto-calculated, read-only) */}
-              <div>
-                <Label htmlFor="noOfTrainees">Number of Trainees</Label>
-                <Input
-                  id="noOfTrainees"
-                  type="number"
-                  value={trainingFormData?.noOfTrainees}
-                  readOnly
-                  className="bg-gray-100 cursor-not-allowed"
-                />
-              </div>
+                  );
+                }}
+                className="text-red-500 text-sm hover:underline"
+              >
+                Remove
+              </button>
+            )}
+          </div>
+        ))}
 
-              {/* Footer */}
-              <DialogFooter className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    dispatch(setIsDialogOpen(false));
-                    dispatch(
-                      setTrainingFormData({
-                        title: "",
-                        date: "",
-                        trainer: `${currentUser.firstName} ${currentUser.lastName}`,
-                        noOfTrainees: 0,
-                        participantEmails: [],
-                      })
-                    );
-                    dispatch(setLoading(false));
-                  }}
-                  disabled={isLoading}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    isLoading ||
-                    !trainingFormData?.title ||
-                    !trainingFormData?.date ||
-                    trainingFormData?.participantEmails?.length === 0
-                  }
-                >
-                  {isLoading ? (
-                    <>
-                      Creating <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                    </>
-                  ) : (
-                    "Create Training"
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <button
+          type="button"
+          onClick={() => {
+            dispatch(
+              setTrainingFormData({
+                ...trainingFormData,
+                facilitators: [
+                  ...trainingFormData.facilitators,
+                  { name: "", email: "" },
+                ],
+              })
+            );
+          }}
+          className="text-primary text-sm font-medium mt-1 hover:underline"
+        >
+          + Add Facilitator
+        </button>
+      </div>
+
+      {/* Select All Toggle - Excludes Admin & HR */}
+      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-gray-700">
+            Select All Employees
+          </span>
+          <span className="text-xs text-gray-500">
+            Excludes Admin and HR roles
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {isSelectAllLoading && (
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          )}
+          <Switch
+            checked={
+              trainingFormData?.participantEmails?.length > 0 &&
+              !isSelectAllLoading &&
+              trainingFormData?.participantEmails?.length ===
+                (cachedEmployees?.filter(
+                  (emp) =>
+                    emp.role?.toLowerCase() !== "admin" &&
+                    emp.role?.toLowerCase() !== "hr"
+                ).length || 0)
+            }
+            disabled={isSelectAllLoading}
+            onCheckedChange={async (checked) => {
+              if (checked) {
+                setIsSelectAllLoading(true);
+                try {
+                  const result = await triggerFetchAllProfiles({
+                    page: 1,
+                    limit: -1,
+                  }).unwrap();
+
+                  const allEmployees = result?.data?.data || [];
+                  
+                  const eligibleEmails = allEmployees
+                    .filter(
+                      (emp: any) =>
+                        emp.role?.toLowerCase() !== "admin" &&
+                        emp.role?.toLowerCase() !== "hr"
+                    )
+                    .map((emp: any) => emp.email)
+                    .filter(Boolean);
+
+                  dispatch(
+                    setTrainingFormData({
+                      ...trainingFormData,
+                      participantEmails: eligibleEmails,
+                      noOfTrainees: eligibleEmails.length,
+                    })
+                  );
+                } catch (error) {
+                  // console.error("Failed to fetch all employees:", error);
+                } finally {
+                  setIsSelectAllLoading(false);
+                }
+              } else {
+                dispatch(
+                  setTrainingFormData({
+                    ...trainingFormData,
+                    participantEmails: [],
+                    noOfTrainees: 0,
+                  })
+                );
+              }
+            }}
+          />
+        </div>
+      </div>
+
+      <EmployeeSelector
+        label="Participants"
+        selectedEmails={trainingFormData?.participantEmails || []}
+        onSelectionChange={(emails) =>
+          dispatch(
+            setTrainingFormData({
+              ...trainingFormData,
+              participantEmails: emails,
+              noOfTrainees: emails.length,
+            })
+          )
+        }
+        employees={cachedEmployees}
+        searchTerm={searchTerm}
+        onSearchChange={(term) => dispatch(setSearchTerm(term))}
+        shouldShowSkeleton={shouldShowSkeleton}
+      />
+
+      <div>
+        <Label htmlFor="noOfTrainees">Number of Trainees</Label>
+        <Input
+          id="noOfTrainees"
+          type="number"
+          value={trainingFormData?.noOfTrainees}
+          readOnly
+          className="bg-gray-100 cursor-not-allowed"
+        />
+      </div>
+
+      <DialogFooter className="mt-6 flex flex-col sm:flex-row justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            dispatch(setIsDialogOpen(false));
+            dispatch(
+              setTrainingFormData({
+                title: "",
+                date: "",
+                trainer: `${currentUser.firstName} ${currentUser.lastName}`,
+                noOfTrainees: 0,
+                participantEmails: [],
+              })
+            );
+            dispatch(setLoading(false));
+          }}
+          disabled={isLoading}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={
+            isLoading ||
+            !trainingFormData?.title ||
+            !trainingFormData?.date ||
+            trainingFormData?.participantEmails?.length === 0
+          }
+        >
+          {isLoading ? (
+            <>
+              Creating <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+            </>
+          ) : (
+            "Create Training"
+          )}
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
       </div>
 
       {/* Trainings Table */}
@@ -425,96 +468,96 @@ const TrainingManagement: React.FC = () => {
                 </TableHeader>
 
                <TableBody>
-  {(shouldShowSkeleton ||
-    (isLoading && !Object.values(trainingCache).flat().length)) ? (
-    <TrainingTableSkeleton rows={trainingPagination?.limit || 6} />
-  ) : Object.values(trainingCache).flat().length ? (
-    Object.values(trainingCache)
-      .flat()
-      .map((training) => (
-        <TableRow key={training._id}>
-          <TableCell>{training.title}</TableCell>
-          <TableCell>
-            {new Date(training.date).toLocaleDateString()}
-          </TableCell>
-          <TableCell>
-            {training.facilitators
-              ?.map((f) =>
-                f.email ? `${f.name} (${f.email})` : f.name
-              )
-              .join(", ")}
-          </TableCell>
-          <TableCell>{training.noOfTrainees}</TableCell>
-          <TableCell>
-            {training?.participants
-              ?.map((p) => `${p.firstName} ${p.lastName}`)
-              .join(", ")}
-          </TableCell>
+              {(shouldShowSkeleton ||
+                (isLoading && !Object.values(trainingCache).flat().length)) ? (
+                <TrainingTableSkeleton rows={trainingPagination?.limit || 6} />
+              ) : Object.values(trainingCache).flat().length ? (
+                Object.values(trainingCache)
+                  .flat()
+                  .map((training) => (
+                    <TableRow key={training._id}>
+                      <TableCell>{training.title}</TableCell>
+                      <TableCell>
+                        {new Date(training.date).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        {training.facilitators
+                          ?.map((f) =>
+                            f.email ? `${f.name} (${f.email})` : f.name
+                          )
+                          .join(", ")}
+                      </TableCell>
+                      <TableCell>{training.noOfTrainees}</TableCell>
+                      <TableCell>
+                        {training?.participants
+                          ?.map((p) => `${p.firstName} ${p.lastName}`)
+                          .join(", ")}
+                      </TableCell>
 
-          {/* ✅ Actions column */}
-          <TableCell className="flex gap-2 justify-end">
-            {(training.participants?.some(
-              (p) => p.email === currentUser.email && p.status === "submitted"
-            ) ||
-              (["teamlead", "hr", "employee", "admin"].includes(
-                currentUser.role
-              ) && training.status === "submitted")) && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  dispatch(setSelectedTraining(training));
-                  dispatch(setSelectedActionType("view"));
-                  dispatch(setIsActionDialogOpen(true));
-                }}
-              >
-                <Eye className="h-4 w-4 mr-1" /> View
-              </Button>
-            )}
+                      {/* ✅ Actions column */}
+                      <TableCell className="flex gap-2 justify-end">
+                        {/* {(training.participants?.some(
+                          (p) => p.email === currentUser.email && p.status === "submitted"
+                        ) ||
+                          (["teamlead", "hr", "employee", "admin"].includes(
+                            currentUser.role
+                          ) && training.status === "submitted")) && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              dispatch(setSelectedTraining(training));
+                              dispatch(setSelectedActionType("view"));
+                              dispatch(setIsActionDialogOpen(true));
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Button>
+                        )} */}
 
-            {training.participants?.some(
-              (p) => p.email === currentUser.email && p.status === "pending"
-            ) && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  dispatch(setSelectedTraining(training));
-                  dispatch(setSelectedActionType("feedback"));
-                  dispatch(setIsActionDialogOpen(true));
-                }}
-              >
-                <MessageSquare className="h-4 w-4 mr-1" /> Feedback
-              </Button>
-            )}
-          </TableCell>
-        </TableRow>
-      ))
-  ) : (
-    <TableRow>
-      <TableCell colSpan={6} align="center">
-        No training records available.
-      </TableCell>
-    </TableRow>
-  )}
-</TableBody>
+                        {training.participants?.some((p) => p.status === "submitted") && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              dispatch(setSelectedTraining(training));
+                              dispatch(setSelectedActionType("view"));
+                              dispatch(setIsActionDialogOpen(true));
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" /> View
+                          </Button>
+                        )}
+
+                        {training.participants?.some(
+                          (p) => p.email === currentUser.email && p.status === "pending"
+                        ) && (
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              dispatch(setSelectedTraining(training));
+                              dispatch(setSelectedActionType("feedback"));
+                              dispatch(setIsActionDialogOpen(true));
+                            }}
+                          >
+                            <MessageSquare className="h-4 w-4 mr-1" /> Feedback
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    No training records available.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
 
               </Table>
 
-              {/* {trainingPagination.pages > 1 && (
-                <PaginationNav
-                  page={trainingPagination.page}
-                  totalPages={trainingPagination.pages}
-                  onPageChange={(newPage) =>
-                    dispatch(
-                      setTrainingPagination({
-                        ...trainingPagination,
-                        page: newPage,
-                      })
-                    )
-                  }
-                  className="mt-6"
-                />
-              )} */}
+         
 
               {trainingPagination.pages > 1 && (
 

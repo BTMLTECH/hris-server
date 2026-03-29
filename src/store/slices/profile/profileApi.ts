@@ -101,43 +101,6 @@ export const profileApi = apiSlice.injectEndpoints({
       }),
     }),
 
-    // getAllProfile: builder.query<
-    //   PaginatedProfilesResponse,
-    //   {
-    //     page?: number;
-    //     limit?: number;
-    //     search?: string;
-    //     department?: string;
-    //     status?: string;
-    //   }
-    // >({
-    //   query: ({ page = 1, limit = 20, search, department, status }) => {
-    //     const params = new URLSearchParams({
-    //       page: page.toString(),
-    //       limit: limit.toString(),
-    //     });
-
-    //     if (search) params.append("search", search);
-    //     if (department && department !== "all")
-    //       params.append("department", department);
-    //     if (status) params.append("status", status);
-
-    //     return {
-    //       url: `user/users?${params.toString()}`,
-    //       method: "GET",
-    //     };
-    //   },
-    //   providesTags: (result) =>
-    //     result
-    //       ? [
-    //           ...result.data.data.map(({ _id }) => ({
-    //             type: "Profiles" as const,
-    //             id: _id,
-    //           })),
-    //           { type: "Profiles", id: "LIST" },
-    //         ]
-    //       : [{ type: "Profiles", id: "LIST" }],
-    // }),
 
     getAllProfile: createPaginatedQuery<
       ProfileFormData,
