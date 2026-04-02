@@ -160,23 +160,23 @@ export const groupedTargets : GroupedTargets = {
     name: 'Unit Objective',
     marks: 20,
     kpi: `ADMIN COORDINATOR: 
-o Daily  supervision of day to day activities of Domestic Staff, Despatch Officer and Driving Officers
-o ISO Certificate Maintenance: Quarterly Audits and Liaison with Internal and External Auditors
-o Industrial Relations:  Update and Communicate SOPs, MAIR and Suggestion Link with ISO Consultant
-o Annual renewal with NSITF,  other infrequent related activities (eg requests from ex-employees regarding PFA, reference, payslips etc)
-o Office Management: Desk Allocation, Timely/ Quarterly Vehicle and Equipment Maintenance
-o Meeting Management: Weekly Minutes of Meeting and Meeting Scheduling
-o Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design and Distribute Annual Corporate materials.
-o Monitor the telephone systems, printers and work with IT in managing tools allocation, repairs and quarterly audits
-o  Petty Cash: Manage the petty cash, weekly retirement of petty cash and requests, Vendor management 
-o  Asset management: Manage the vehicles, bikes and other assets with evidence of quarterly maintenance
-o Safety and Safety Wears:  Quarterly maintenance of first aid box, annual allocation of work wears 
-o Daily Stock Management for all outstations and offices
-o Daily Infrastructure Supply Management- power, water, security etc
-o  Schedule company wide / general meetings and assist with communications
-o  Assist with compilation of all supportive Bid/Sales documentation
-o  Processing and directing mail and incoming packages or deliveries
-o  Critical Reports:  Compile and produce quarterly board presentations and reports from all teams as directed by the the MD
+Daily  supervision of day to day activities of Domestic Staff, Despatch Officer and Driving Officers
+ISO Certificate Maintenance: Quarterly Audits and Liaison with Internal and External Auditors
+Industrial Relations:  Update and Communicate SOPs, MAIR and Suggestion Link with ISO Consultant
+Annual renewal with NSITF,  other infrequent related activities (eg requests from ex-employees regarding PFA, reference, payslips etc)
+Office Management: Desk Allocation, Timely/ Quarterly Vehicle and Equipment Maintenance
+Meeting Management: Weekly Minutes of Meeting and Meeting Scheduling
+Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design and Distribute Annual Corporate materials.
+Monitor the telephone systems, printers and work with IT in managing tools allocation, repairs and quarterly audits
+ Petty Cash: Manage the petty cash, weekly retirement of petty cash and requests, Vendor management 
+ Asset management: Manage the vehicles, bikes and other assets with evidence of quarterly maintenance
+Safety and Safety Wears:  Quarterly maintenance of first aid box, annual allocation of work wears 
+Daily Stock Management for all outstations and offices
+Daily Infrastructure Supply Management- power, water, security etc
+ Schedule company wide / general meetings and assist with communications
+ Assist with compilation of all supportive Bid/Sales documentation
+ Processing and directing mail and incoming packages or deliveries
+ Critical Reports:  Compile and produce quarterly board presentations and reports from all teams as directed by the the MD
 
 Office Assistant
 Daily filing of Documents
@@ -190,22 +190,22 @@ Daily conveyance of personnel for meetings and appointments
 Daily check of vehicle/ motorcycle and escalation of issues, where applicable
 
 HRM: 
-o Recruitment : Time to fill: 6-12 weeks
-o Compensation and Benefits: Remuneration Administration including the monthly payroll: Submit Payroll on 23rd of every month; bi monthly transport stipend schedule (on 15th and 30th) ; 13th month schedule latest 15th November, consistency and accuracy in employee compensation calculations, leave allowance schedule alongside staff budget and severance benefits schedule latest on final day of staff, manage staff budget
-o Performance Management System (3 marks): Communicate Quarterly document count, bi annual survey, coordinate  bi annual appraisal
-o Compliance and Documentation: 100% retrieval and documentation of new staff documents, continuously align HR processes with ILO provisions, Guarantor Checks within probation period (6 months), Quarterly Update of Staff Files
-o Foster BTM's Culture: Annual customer service training, Quarterly Englist tests, Quarterly Geography test, Quarterly reminder of core values (CHOICE), ensure minimum of Eight (8) hours of  training and workshops on annual basis,Visible impact on leadership empowerment
-o Manpower Planning, including Succession Planning: Annual staff budget/ plan, Sign off all induction checklist of all new personnel,   Coordinate all Staff related activities from  Employment , Confirmation , and up to Exit Letters, Ensure 100% leave relief/ succession plan for level 4 and above
-o Training and Development: Sign off all induction checklist of all new personnel,  Design and drive the annual training calendar  and coordinate activities with monthly training feedback evidence
-o Staff Welfare: Quarterly Touch Base across all Locations, Follow through disbursement of welfare funds as need arises, Approve leave maximum of 48 hours to commencement, Continuous engagement of employees and leaders for feedback.
-o Staff Discipline and Grievance: Weekly commendation, disciplinary and query points inclusion on the HRIS
-o Internal communication: Monthly internal memos, Whatsapp Birthday Celebration
-o  HMO Management: Renew Biannually; Schedule Preemployment tests for all new personnel
-o Share monthly PFA and Tax remittance schedule
-o Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design an annual event to drive digital awareness of BTM via staff's personal social media handles.
-o Health and Safety Management: Annual renewal of fire extinguishers, renewal of group life and other insurances, including vehicle insurances and management, Quarterly reminder of health and safety tips, and protocols
-o Critical Report Sumbission: Weekly Departmental reports , Quarterly Board report due 5th day of new Quarter
-o Act as leave reliever for the Managing Director
+Recruitment : Time to fill: 6-12 weeks
+Compensation and Benefits: Remuneration Administration including the monthly payroll: Submit Payroll on 23rd of every month; bi monthly transport stipend schedule (on 15th and 30th) ; 13th month schedule latest 15th November, consistency and accuracy in employee compensation calculations, leave allowance schedule alongside staff budget and severance benefits schedule latest on final day of staff, manage staff budget
+Performance Management System (3 marks): Communicate Quarterly document count, bi annual survey, coordinate  bi annual appraisal
+Compliance and Documentation: 100% retrieval and documentation of new staff documents, continuously align HR processes with ILO provisions, Guarantor Checks within probation period (6 months), Quarterly Update of Staff Files
+Foster BTM's Culture: Annual customer service training, Quarterly Englist tests, Quarterly Geography test, Quarterly reminder of core values (CHOICE), ensure minimum of Eight (8) hours of  training and workshops on annual basis,Visible impact on leadership empowerment
+Manpower Planning, including Succession Planning: Annual staff budget/ plan, Sign off all induction checklist of all new personnel,   Coordinate all Staff related activities from  Employment , Confirmation , and up to Exit Letters, Ensure 100% leave relief/ succession plan for level 4 and above
+Training and Development: Sign off all induction checklist of all new personnel,  Design and drive the annual training calendar  and coordinate activities with monthly training feedback evidence
+Staff Welfare: Quarterly Touch Base across all Locations, Follow through disbursement of welfare funds as need arises, Approve leave maximum of 48 hours to commencement, Continuous engagement of employees and leaders for feedback.
+Staff Discipline and Grievance: Weekly commendation, disciplinary and query points inclusion on the HRIS
+Internal communication: Monthly internal memos, Whatsapp Birthday Celebration
+ HMO Management: Renew Biannually; Schedule Preemployment tests for all new personnel
+Share monthly PFA and Tax remittance schedule
+Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design an annual event to drive digital awareness of BTM via staff's personal social media handles.
+Health and Safety Management: Annual renewal of fire extinguishers, renewal of group life and other insurances, including vehicle insurances and management, Quarterly reminder of health and safety tips, and protocols
+Critical Report Sumbission: Weekly Departmental reports , Quarterly Board report due 5th day of new Quarter
+Act as leave reliever for the Managing Director
 `,
     measurementTracker: `"HR: Design and show SMART goals and performance tracking criteria across the organisation aligned with business goals (per appraisal period)
             Show status of training plan achievement (monthly)
@@ -299,143 +299,128 @@ o Act as leave reliever for the Managing Director
 ]
   },
 
+
   account: {
-    financial: [ {
-    id: 'unit-objective-hr-admin',
-    category: 'FINANCIAL',
-    name: 'Unit Objective',
-    marks: 20,
-    kpi: `ADMIN COORDINATOR: 
-o Daily  supervision of day to day activities of Domestic Staff, Despatch Officer and Driving Officers
-o ISO Certificate Maintenance: Quarterly Audits and Liaison with Internal and External Auditors
-o Industrial Relations:  Update and Communicate SOPs, MAIR and Suggestion Link with ISO Consultant
-o Annual renewal with NSITF,  other infrequent related activities (eg requests from ex-employees regarding PFA, reference, payslips etc)
-o Office Management: Desk Allocation, Timely/ Quarterly Vehicle and Equipment Maintenance
-o Meeting Management: Weekly Minutes of Meeting and Meeting Scheduling
-o Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design and Distribute Annual Corporate materials.
-o Monitor the telephone systems, printers and work with IT in managing tools allocation, repairs and quarterly audits
-o  Petty Cash: Manage the petty cash, weekly retirement of petty cash and requests, Vendor management 
-o  Asset management: Manage the vehicles, bikes and other assets with evidence of quarterly maintenance
-o Safety and Safety Wears:  Quarterly maintenance of first aid box, annual allocation of work wears 
-o Daily Stock Management for all outstations and offices
-o Daily Infrastructure Supply Management- power, water, security etc
-o  Schedule company wide / general meetings and assist with communications
-o  Assist with compilation of all supportive Bid/Sales documentation
-o  Processing and directing mail and incoming packages or deliveries
-o  Critical Reports:  Compile and produce quarterly board presentations and reports from all teams as directed by the the MD
+  financial: [
+    {
+      id: 'unit-objective',
+      category: 'FINANCIAL',
+      name: 'Unit Objective',
+      marks: 20,
+      kpi: `Financial Controller, Deputy HOA and Supervisors
+      Timely BSP Payment
+      Timely and accurate monthly management reports; Timely quarterly board report submission
+      Management of cashflow for day to day business operations (weekly account balances and Bank, BSP reconciliations)
 
-Office Assistant
-Daily filing of Documents
-Daily Cleaning of Office environment
-Daily restocking and procurement of consumables
-Daily liaison with facility team for repairs, if applicable
+      Account Officers
+      Daily and accurate billing, invoicing and receipting of transactions (evidence of timely payments by clients and sharing of receipts)
+      Daily POS, Card Swiping Payments, and Card, Platform Reconciliations 
+      Weekly BSP reconciliation and Remittance
+      Daily/Prompt & accurate clients' invoicing
+      Excellent clients relationship management, fees verification and accuracy, ancillary services billing, update on rate of exchange, fees scheduling, contract advisory, receivables management
+      TCC: Annual timely procurement of TCC
+      Internal and External Audit: Annual and infrequent activities
+      Annual budget preparation
+      Monthly budget tracking
+      Monthly management report and advisory on PnL
+      Minimum of quarterly Traacs and other supplier management, financial control
+      Weekly sales and financial reporting, client payment update
+      Annual Filing of Returns
+      Daily team coordination, signatory for banking
+      Monthly ATM cards management, POS management and inclusion in monthly reconciliation reports
+      Timely and accurate financial information around revenue, profitability, liquidity
+      Annual investment strategy that will enhance management decision making and business growth
+      Successfully implement and operate selected Back Office System
+      Payments: Salary Payment: Latest last Day of the month, Vendors Payment, Refunds processing and Refunds, Other Staff, Vendor and Consultants' Schedules management and payments
+      Statutory Remittances: Monthly PFA, VAT and PAYE remittance
+      Contributions Remittances: Welfare, GHI
+      Monthly GHI Ledger Management
+      Credit Control and Treasury Management
+      Critical Report Submission: Weekly Departmental reports, Quarterly Board report due 5th day of new Quarter, Annual Board Report/Budget due Q4 of the preceding year`,
+      measurementTracker: `FC, Dep HOA and Supervisors: Show evidence of timely BSP payments, monthly management and quarterly board report submission, Weekly BSP Reconciliation report
 
-DRIVER and Dispatch officer
-Daily Dispatch of items and documents
-Daily conveyance of personnel for meetings and appointments
-Daily check of vehicle/ motorcycle and escalation of issues, where applicable
-
-HRM: 
-o Recruitment : Time to fill: 6-12 weeks
-o Compensation and Benefits: Remuneration Administration including the monthly payroll: Submit Payroll on 23rd of every month; bi monthly transport stipend schedule (on 15th and 30th) ; 13th month schedule latest 15th November, consistency and accuracy in employee compensation calculations, leave allowance schedule alongside staff budget and severance benefits schedule latest on final day of staff, manage staff budget
-o Performance Management System (3 marks): Communicate Quarterly document count, bi annual survey, coordinate  bi annual appraisal
-o Compliance and Documentation: 100% retrieval and documentation of new staff documents, continuously align HR processes with ILO provisions, Guarantor Checks within probation period (6 months), Quarterly Update of Staff Files
-o Foster BTM's Culture: Annual customer service training, Quarterly Englist tests, Quarterly Geography test, Quarterly reminder of core values (CHOICE), ensure minimum of Eight (8) hours of  training and workshops on annual basis,Visible impact on leadership empowerment
-o Manpower Planning, including Succession Planning: Annual staff budget/ plan, Sign off all induction checklist of all new personnel,   Coordinate all Staff related activities from  Employment , Confirmation , and up to Exit Letters, Ensure 100% leave relief/ succession plan for level 4 and above
-o Training and Development: Sign off all induction checklist of all new personnel,  Design and drive the annual training calendar  and coordinate activities with monthly training feedback evidence
-o Staff Welfare: Quarterly Touch Base across all Locations, Follow through disbursement of welfare funds as need arises, Approve leave maximum of 48 hours to commencement, Continuous engagement of employees and leaders for feedback.
-o Staff Discipline and Grievance: Weekly commendation, disciplinary and query points inclusion on the HRIS
-o Internal communication: Monthly internal memos, Whatsapp Birthday Celebration
-o  HMO Management: Renew Biannually; Schedule Preemployment tests for all new personnel
-o Share monthly PFA and Tax remittance schedule
-o Brand Awareness and Positioning: Create Awareness of BTM towards Annual World Travel Awards, Design an annual event to drive digital awareness of BTM via staff's personal social media handles.
-o Health and Safety Management: Annual renewal of fire extinguishers, renewal of group life and other insurances, including vehicle insurances and management, Quarterly reminder of health and safety tips, and protocols
-o Critical Report Sumbission: Weekly Departmental reports , Quarterly Board report due 5th day of new Quarter
-o Act as leave reliever for the Managing Director
-`,
-measurementTracker: `"HR: Design and show SMART goals and performance tracking criteria across the organisation aligned with business goals (per appraisal period)
-  Show status of training plan achievement (monthly) .Show staffing plan and quarterly efficient recruitment status
-  Track cost savings on staff budget Admin: Show monthly staff attendance records, quarterly vendor evaluation reports, quarterly ISO audit reports Admin Staff (Drivers, Dispatch, and Domestic Officer)
-            Daily update of movement, incidents and needs on log books"
-            `
-  },
-  {
-    id: 'mandatory-sales-hr-admin',
-    category: 'FINANCIAL',
-    name: 'Mandatory Sales Requirement',
-    marks: 15,
-    kpi: 'Mandatory Sales: Close sale/ contribute an initiative that generates revenue. (Show evidence of total individual sales) OR Show savings on expenditure budget',
-    measurementTracker: 'Show evidence of total individual sales'
-  },
-],
-    customer: [ {
-    id: 'internal-customer-service-hr-admin',
-    category: 'CUSTOMER',
-    name: 'Satisfactory service to internal customer',
-    marks: 10,
-    kpi: 'Satisfactory service to internal customer \n Early submission of time bound tasks, Availability via SMS, CUG, Whatsapp, 3CX,  when required.  Immediate acceptable feedback/ dissemination of relevant info to all concerned. Satisfactory and Timely responses to internal requests.',
-    measurementTracker: ' Daily Minutes of meeting/ Weekly Sales Activity/ Monthly Accounts Management/ Quarterly Board Report report submission.\n\nShow screen shots of time stamps and  link to weekly reports on concave). Show evidence /concave links to key specific role related activities eg daily age analysis, daily minutes of meetings with clients, quarterly vendor/ supplier visits and evaluation etc'
-  },
-
-  {
-    id: 'client-complaints-hr-admin',
-    category: 'CUSTOMER',
-    name: 'Must keep the external client complaint volume down for the entire year',
-    marks: 10,
-    kpi: 'Must keep the external client complaint volume down for the entire year, Accurate and timely designs and Celebration of staff and client\'s birthdays. Manage internal or external issues, generate QA investigation report and follow through till resolved',
-    measurementTracker: 'Show QA investigation report of all incidents. Evidence of feedback link for process and corrective trainings, Minimum of 2 internal/ external commendations per appraisal period'
-  },
-  {
-    id: 'sla-compliance-hr-admin',
-    category: 'CUSTOMER',
-    name: 'Followed up via calls, messages, emails etc and responded according to SLA',
-    marks: 10,
-    kpi: 'Followed up via calls, messages, emails etc and responded according to SLA. Kept to agreed terms,  implementation of signed contract and agreed timelines',
-    measurementTracker: 'Minimum of 80% customer satisfaction ratings.  Show evidence of 100% vendor/ supplier visit reports/ Audit reports/ renewal reports/  vendor quarterly evaluation report  to update this'
-  },
-],
-    internal_processes: [ {
-    id: 'sop-compliance-hr-admin',
-    category: 'INTERNAL_PROCESS',
-    name: 'Adherence to SOPs, documentation of processes, back up of key positions',
-    marks: 5,
-    kpi: 'Strict adherence to SOPs/ stipulated guidelines on reports, Up to date documentation in line with expectations, Documented leave reliever training and demonstrated ability to take ownership of tasks and persons assigned',
-    measurementTracker: 'Show evidence of SOPs  on fllow charts,  Identify CHOICE and Mission Statement. Show minimum of three self driven initiatives within appraisal period that demonstrated any of our CHOICE core values. \n\nAddition for team leads, show documented evidence of leave relievers. also show minimum of 3 self driven initiatives within the appraisal period that demonstrates profitability, professionalism, customer priented service, innovative process, adoption of technology or best in ethics and efficiency (GHI Core Values)'
-  },
-  {
-    id: 'punctuality-availability-hr-admin',
-    category: 'INTERNAL_PROCESS',
-    name: 'Punctuality and availability',
-    marks: 5,
-    kpi: 'Resumption as stated in departmental calendar/ as directed at client\'s office, at internal/ external meetings and at training sessions',
-    measurementTracker: 'Average of daily attendance score from the Time and Attendance biometric machine, also from the HRIS . \nEvidence of training feedback form of all scheduled trainings'
-  },
-  {
-    id: 'prime-responsibilities-hr-admin',
-    category: 'INTERNAL_PROCESS',
-    name: 'Prime responsibilities and duties',
-    marks: 10,
-    kpi: 'Prime Responsibilities and Duties (As listed in Job Description)',
-    measurementTracker: 'Average of monthly evaluation scores/ QA  biannual scores attained within appraisal period'
-  },],
-    learning_and_growth: [ {
-    id: 'leadership-evaluation-hr-admin',
-    category: 'LEARNING_AND_GROWTH',
-    name: 'Leadership Evaluation and knowledge sharing',
-    marks: 5,
-    kpi: 'Compliance with BTM Culture tests-  Annual Customer service certificate, Quarterly English and Geography tests',
-    measurementTracker: 'Show certificates and screen shots of quarterly English test, annual Customer service training, annual Business Ethics training and bi-annual Geography tests'
-  },
-  {
-    id: 'self-driven-training-hr-admin',
-    category: 'LEARNING_AND_GROWTH',
-    name: 'Individual/ Self Driven Role Related Training',
-    marks: 10,
-    kpi: 'Identify, attend and document self driven role related trainings, webinars and conferences as assigned or listed in the training calendar/ Personal Brand Positioning across digital platforms',
-    measurementTracker: 'Show evidence of 8 hours of training per appraisal period and 16 hours for the entire year or show links to 8 BTM related  brand awareness published work on social media per appraisal period and 16 hours/ 16 BTM related posts on personal SM handle for the entire year.\nAlternatively, share evidence of degree completed, professional certification attained or research work published on journal.'
-  }
-]
-  },
+      Account Officers: Show evidence of weekly client debt recovery status`
+    },
+    {
+      id: 'mandatory-sales',
+      category: 'FINANCIAL',
+      name: 'Mandatory Sales Requirement',
+      marks: 15,
+      kpi: 'Mandatory Sales: Close sale/ contribute an initiative that generates revenue. (Show evidence of total individual sales) OR Show savings on expenditure budget',
+      measurementTracker: 'Show evidence of total individual sales'
+    }
+  ],
+  customer: [
+    {
+      id: 'internal-customer-service',
+      category: 'CUSTOMER',
+      name: 'Satisfactory service to internal customer',
+      marks: 10,
+      kpi: 'Satisfactory service to internal customer: Early submission of time bound tasks, Availability via SMS, CUG, Whatsapp, 3CX, when required. Immediate acceptable feedback/ dissemination of relevant info to all concerned. Satisfactory and Timely responses to internal requests.',
+      measurementTracker: 'Daily Minutes of meeting/ Weekly Sales Activity/ Monthly Accounts Management/ Quarterly Board Report report submission. Show screenshots of time stamps and links to weekly reports on concave. Show evidence/concave links to key specific role-related activities eg. daily age analysis, daily minutes of meetings with clients, quarterly vendor/supplier visits and evaluation etc.'
+    },
+    {
+      id: 'client-complaints',
+      category: 'CUSTOMER',
+      name: 'Must keep the external client complaint volume down for the entire year',
+      marks: 10,
+      kpi: 'Must keep the external client complaint volume down for the entire year. Manage internal or external issues, generate QA investigation report and follow through till resolved',
+      measurementTracker: 'Show QA investigation report of all incidents. Evidence of feedback link for process and corrective trainings. Minimum of 2 internal/external commendations per appraisal period'
+    },
+    {
+      id: 'sla-compliance',
+      category: 'CUSTOMER',
+      name: 'Followed up via calls, messages, emails etc and responded according to SLA',
+      marks: 10,
+      kpi: 'Followed up via calls, messages, emails etc and responded according to SLA. Kept to agreed terms, implementation of signed contract and agreed timelines',
+      measurementTracker: 'Minimum of 80% customer satisfaction ratings. Show evidence of 100% vendor/supplier visit reports/Audit reports/renewal reports/vendor quarterly evaluation report'
+    }
+  ],
+  internal_processes: [
+    {
+      id: 'sop-adherence',
+      category: 'INTERNAL_PROCESS',
+      name: 'Adherence to SOPs, documentation of processes, back up of key positions',
+      marks: 5,
+      kpi: 'Strict adherence to SOPs/stipulated guidelines on reports, Up to date documentation in line with expectations, Documented leave reliever training and demonstrated ability to take ownership of tasks and persons assigned',
+      measurementTracker: 'Show evidence of SOPs training attendance, Identify CHOICE and Mission Statement. Show minimum of one self driven initiative within appraisal period that demonstrated any of our CHOICE core values. For team leads, show documented evidence of leave relievers. Also show minimum of 2 self driven initiatives within the appraisal period that demonstrates CHOICE core values'
+    },
+    {
+      id: 'punctuality',
+      category: 'INTERNAL_PROCESS',
+      name: 'Punctuality and availability',
+      marks: 5,
+      kpi: 'Resumption as stated in departmental calendar/as directed at client\'s office, at internal/external meetings and at training sessions',
+      measurementTracker: 'Average of daily attendance score from the Time and Attendance biometric machine, also from the HRIS. Evidence of availability and training feedback form for all scheduled training sessions'
+    },
+    {
+      id: 'prime-responsibilities',
+      category: 'INTERNAL_PROCESS',
+      name: 'Prime responsibilities and duties',
+      marks: 10,
+      kpi: 'Prime Responsibilities and Duties (As listed in Job Description)',
+      measurementTracker: 'Average of monthly evaluation scores/QA quarterly scores attained within appraisal period'
+    }
+  ],
+  learning_and_growth: [
+    {
+      id: 'leadership-evaluation',
+      category: 'LEARNING_AND_GROWTH',
+      name: 'Leadership Evaluation and knowledge sharing',
+      marks: 5,
+      kpi: 'Compliance with BTM Culture tests — Annual Customer service certificate, Quarterly English and Geography tests',
+      measurementTracker: 'Show certificates and screenshots of quarterly English test, Customer service training, annual Business Ethics training and bi-annual Geography tests'
+    },
+    {
+      id: 'self-driven-training',
+      category: 'LEARNING_AND_GROWTH',
+      name: 'Individual/Self Driven Role Related Training',
+      marks: 10,
+      kpi: 'Identify, attend and document self driven role related trainings, webinars and conferences as assigned or listed in the training calendar. Personal Brand Positioning across digital platforms',
+      measurementTracker: 'Show evidence of 4 hours of training per appraisal period and 16 hours for the entire year or show links to 4 BTM related brand awareness published work on social media per appraisal period and 16 BTM related posts on personal SM handle for the entire year. Alternatively, share evidence of degree completed, professional certification attained or research work published on journal'
+    }
+  ]
+},
 
   operation :{
   financial: [
