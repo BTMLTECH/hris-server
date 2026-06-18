@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, AlertTriangle } from 'lucide-react';
+import { Plus, Eye, AlertTriangle, Copy } from 'lucide-react';
 import AppraisalScoring from './AppraisalScoring';
 import AppraisalTargetSelection from './AppraisalTargetSelection';
 import { Appraisal } from '@/types/appraisal';
@@ -44,14 +44,38 @@ const AppraisalManagement: React.FC = () => {
     ? (cachedPageData as any).appraisals
     : [];
 
+    console.log("Safe Appraisal Requests:", safeAppraisalRequests);
 
     
   const [hrAdjustments, setHrAdjustments] = useState({
-       innovation: false,
-       commendation: false,
-       query: false,
-       majorError: false,
+       innovation: 0,
+       commendation: 0,
+       query: 0,
+       majorError: 0,
      });
+
+  // Clone mode state
+  const [clonedAppraisal, setClonedAppraisal] = useState<Appraisal | null>(null);
+  const [isCloneMode, setIsCloneMode] = useState(false);
+
+  // Load hrAdjustments from selectedAppraisal when it opens
+  React.useEffect(() => {
+    if (selectedAppraisal?.hrAdjustments) {
+      // Convert any boolean values to 0 for backwards compatibility
+      const converted = Object.entries(selectedAppraisal.hrAdjustments).reduce((acc, [key, val]) => {
+        acc[key as keyof typeof hrAdjustments] = typeof val === 'number' ? val : 0;
+        return acc;
+      }, {} as typeof hrAdjustments);
+      setHrAdjustments(converted);
+    } else {
+      setHrAdjustments({
+        innovation: 0,
+        commendation: 0,
+        query: 0,
+        majorError: 0,
+      });
+    }
+  }, [selectedAppraisal?._id]);
 
 
  
@@ -67,7 +91,7 @@ const AppraisalManagement: React.FC = () => {
 
 const handleAppraisalUpdate = async (
   updatedAppraisal: Appraisal & { _id?: string},
-  action: 'pending' | 'submitted' | 'approved' | 'needs_revision' | 'sent_to_employee' | 'rejected' | 'update'
+  action: 'pending' | 'submitted' | 'approved' | 'needs_revision' | 'sent_to_employee' | 'rejected' | 'awaiting_hr_review' | 'update'
 ) => {
   const id = updatedAppraisal._id ?? updatedAppraisal._id;
 
@@ -80,9 +104,9 @@ const handleAppraisalUpdate = async (
   // Strip _id/id out to avoid conflicts, BUT preserve hrAdjustments explicitly
   const { _id, _id: ignoredId, ...rest } = updatedAppraisal;
 
-  const payload: typeof rest & { status?: typeof action, hrAdjustments?: typeof hrAdjustments } = {
+  const payload: any = {
     ...rest,
-    ...(hrAdjustments ? { hrAdjustments } : {}),  
+    ...(hrAdjustments && Object.values(hrAdjustments).some(v => v !== 0) ? { hrAdjustments } : {}),  
     ...(action !== 'update' ? { status: action } : {}), 
   };
 
@@ -98,14 +122,25 @@ const handleAppraisalUpdate = async (
   ];
 
   try {
+    let result = null;
     if (action === 'approved') {
-      await handleApproveAppraisalRequest(id);
+      result = await handleApproveAppraisalRequest(id, payload);
     } else if (action === 'rejected') {
-      await handleRejectAppraisalRequest(id);
+      result = await handleRejectAppraisalRequest(id, payload);
     } else if (handledByUpdate.includes(action)) {
-      await handleUpdateAppraisalRequest(id, payload);
+      result = await handleUpdateAppraisalRequest(id, payload);
     }
 
+    // Update Redux with the response data for any action that returns data
+    if (result && result.data) {
+      const updatedAppraisal = result.data.data || result.data;
+      dispatch(setSelectedAppraisal({
+        ...updatedAppraisal,
+        employeeId: updatedAppraisal.user?._id,
+      }));
+    }
+
+    // Refetch activity to update the table
     refetchActivity();
   } catch (error) {
   } finally {
@@ -119,6 +154,12 @@ const handleAppraisalUpdate = async (
       ...appraisal,
       employeeId: appraisal.user?._id, 
     }));
+  };
+
+  const handleClone = (appraisal: Appraisal) => {
+    setClonedAppraisal(appraisal);
+    setIsCloneMode(true);
+    dispatch(setIsCreateDialogOpen(true));
   };
 
 if (selectedAppraisal) {
@@ -145,6 +186,7 @@ if (selectedAppraisal) {
       teamlead={isTeamLeadOnly}
       hrAdjustments={hrAdjustments}
       setHrAdjustments={setHrAdjustments}
+      onClone={handleClone}
     />
   );
 }
@@ -361,6 +403,18 @@ if (selectedAppraisal) {
                       <Eye className="h-3 w-3" />
                       <span className="hidden sm:inline">View</span>
                     </Button>
+                    
+                    {appraisal.status === 'approved' && isTeamLeadOnly && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleClone(appraisal)}
+                        className="flex items-center gap-1"
+                      >
+                        <Copy className="h-3 w-3" />
+                        <span className="hidden sm:inline">Recreate</span>
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );
@@ -416,10 +470,14 @@ if (selectedAppraisal) {
         {/* Create Appraisal Dialog */}
         <AppraisalTargetSelection
           isOpen={isCreateDialogOpen}
-          onClose={() => dispatch(setIsCreateDialogOpen(false))}
-          // onCreateAppraisal={handleCreateAppraisal}
+          onClose={() => {
+            dispatch(setIsCreateDialogOpen(false));
+            setIsCloneMode(false);
+            setClonedAppraisal(null);
+          }}
+          clonedAppraisal={isCloneMode ? clonedAppraisal : undefined}
+          isCloneMode={isCloneMode}
           dispatch={dispatch}
-          // employees={mockEmployees}
         />
       </div>
     </div>

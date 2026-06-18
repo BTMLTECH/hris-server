@@ -28,16 +28,30 @@ const AppraisalScoring: React.FC<AppraisalScoringProps> = ({
   setHrAdjustments
 }) => {
   const dispatch =  useAppDispatch()
+  
+  // Derive scoresUpdated from objectives - if any teamLead scores are set, scores are updated
+  const hasTeamLeadScores = objectives.some((obj) => obj.teamLeadScore > 0);
+  const scoresUpdated = hasTeamLeadScores;
+  
   const canEdit =
   (isEmployee && ['pending', 'needs_revision'].includes(appraisal.status)) ||
-  (canReviewAppraisal && ['submitted', 'needs_revision'].includes(appraisal.status));
+  (canReviewAppraisal && ['submitted', 'needs_revision', 'awaiting_hr_review'].includes(appraisal.status));
 
-  const hrScoreMap: Record<'innovation' | 'commendation' | 'query' | 'majorError', number> = {
-    innovation: 3,
-    commendation: 3,
-    query: -4,
-    majorError: -15,
-  };
+  // Check if teamlead has approved
+  const teamLeadApproved = Array.isArray(appraisal.reviewTrail)
+    ? appraisal.reviewTrail.some((r) => r.role === 'teamlead' && r.action === 'approved')
+    : false;
+
+  // Check if HR has approved
+  const hrApproved = Array.isArray(appraisal.reviewTrail)
+    ? appraisal.reviewTrail.some((r) => r.role === 'hr' && r.action === 'approved')
+    : false;
+
+  // Determine if employee can see teamlead score
+  const canEmployeeSeeTeamLeadScore = isEmployee && (teamLeadApproved || hrApproved);
+
+  // Determine if employee can see HR adjustments
+  const canEmployeeSeeHRScore = isEmployee && hrApproved;
 
 const totalScores = useMemo(() => {
 
@@ -60,9 +74,10 @@ const totalScores = useMemo(() => {
     finalTotal = teamLeadTotal;
 
     if (hrAdjustments) {
-      for (const key of Object.keys(hrAdjustments) as (keyof typeof hrScoreMap)[]) {
+      for (const key of Object.keys(hrAdjustments) as ('innovation' | 'commendation' | 'query' | 'majorError')[]) {
+        // Use the actual input value from hrAdjustments, not the fixed scoreMap value
         if (hrAdjustments[key]) {
-          finalTotal += hrScoreMap[key];
+          finalTotal += hrAdjustments[key];
         }
       }
     }
@@ -91,6 +106,9 @@ const updateObjective = (index: number, field: keyof AppraisalObjective, value: 
 
 
 
+// Check if all team lead scores have been set
+const allTeamLeadScoresSet = teamlead && objectives.every((obj) => obj.teamLeadScore > 0);
+
 const handleSubmit = async (
   action: 'submitted' | 'approved' | 'needs_revision' | 'sent_to_employee' | 'rejected' | 'update'
 ) => {
@@ -99,10 +117,17 @@ const handleSubmit = async (
     objectives,
     totalScore: totalScores,
     updatedAt: new Date().toISOString(),
-    hrAdjustments: hr && hrAdjustments 
+    hrAdjustments: hr && hrAdjustments ? hrAdjustments : undefined,
   };
 
   onSubmit(updatedAppraisal, action);
+  
+  // Stay on page for update and approved actions
+  if (action === 'update' || action === 'approved') {
+    return;
+  }
+  
+  // Navigate away for other actions
   onBack?.();
 };
 
@@ -209,7 +234,7 @@ const getStatusColor = (status: string) => {
                 </div>
 
                 {/* Team Lead Score */}
-                {(canReviewAppraisal || objective.teamLeadScore > 0) && (
+                {(canReviewAppraisal || canEmployeeSeeTeamLeadScore || objective.teamLeadScore > 0) && (
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex justify-between items-center">
                       <label className="font-medium text-orange-700">Team Lead Score</label>
@@ -264,43 +289,62 @@ const getStatusColor = (status: string) => {
             </CardHeader>
             <CardContent className="space-y-3">
               {(['innovation', 'commendation', 'query', 'majorError'] as const).map((key) => {
-                const scoreMap: Record<typeof key, number> = {
-                  innovation: 3,
-                  commendation: 3,
-                  query: -4,
-                  majorError: -15,
-                };
+                const isNegativeType = ['query', 'majorError'].includes(key);
+                const label = key.replace(/([A-Z])/g, ' $1').trim();
 
                 return (
-                  <div key={key} className="flex items-center justify-between">
-                    <span className="capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}</span>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`font-bold ${
-                          scoreMap[key] > 0 ? 'text-green-600' : 'text-red-600'
-                        }`}
-                      >
-                        {scoreMap[key] > 0 ? `+${scoreMap[key]}` : scoreMap[key]}
-                      </span>
-                   <input
-                      type="checkbox"
-                      checked={!!hrAdjustments[key]}
-                      onChange={() =>
+                  <div key={key} className="flex items-center justify-between p-3 border rounded-lg">
+                    <span className="capitalize font-medium">
+                      {isNegativeType ? '- ' : ''}{label}
+                    </span>
+                    <input
+                      type="number"
+                      value={hrAdjustments[key] || 0}
+                      onChange={(e) =>
                         setHrAdjustments((prev) => ({
                           ...prev,
-                          [key]: !prev[key],
+                          [key]: parseInt(e.target.value) || 0,
                         }))
                       }
+                      className="border rounded px-3 py-2 w-20 text-center"
+                      placeholder="0"
                     />
-
-
-                    </div>
                   </div>
                 );
               })}
             </CardContent>
           </Card>
         )}
+
+        {/* HR Adjustments Display for Employee (Read-only when HR approved) */}
+        {canEmployeeSeeHRScore && appraisal.hrAdjustments && (
+          <Card className="mt-6 border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="text-blue-900">HR Final Adjustments</CardTitle>
+              <CardDescription>Applied HR scoring adjustments to your appraisal</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(['innovation', 'commendation', 'query', 'majorError'] as const).map((key) => {
+                const adjustmentValue = appraisal.hrAdjustments?.[key];
+                const isApplied = adjustmentValue && adjustmentValue !== 0;
+
+                return isApplied ? (
+                  <div key={key} className="flex items-center justify-between p-2 bg-white rounded">
+                    <span className="capitalize font-medium">{key.replace(/([A-Z])/g, ' $1')}</span>
+                    <span
+                      className={`font-bold ${
+                        adjustmentValue > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}
+                    >
+                      {adjustmentValue > 0 ? `+${adjustmentValue}` : adjustmentValue}
+                    </span>
+                  </div>
+                ) : null;
+              })}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Total Score Summary */}
     <Card className="mt-6">
   <CardHeader>
@@ -349,7 +393,32 @@ const getStatusColor = (status: string) => {
      
         {/* Action Buttons */}
         {canEdit && (
-          <div className="flex flex-col sm:flex-row gap-4 justify-end">
+          <div className="space-y-4">
+            {/* Teamlead Update Reminder */}
+            {teamlead && !scoresUpdated && allTeamLeadScoresSet && (
+              <Card className="border-blue-200 bg-blue-50">
+                <CardContent className="pt-6">
+                  <p className="text-blue-900 font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please click "Update Score" to save your assessments before approving.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            {/* Incomplete Scores Warning */}
+            {teamlead && !allTeamLeadScoresSet && (
+              <Card className="border-yellow-200 bg-yellow-50">
+                <CardContent className="pt-6">
+                  <p className="text-yellow-900 font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Please score all objectives before updating and approving the appraisal.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-end">
             {isEmployee && (
               <Button
                 onClick={() => handleSubmit('submitted')}
@@ -367,8 +436,8 @@ const getStatusColor = (status: string) => {
               <Button
                   size="sm"
                   variant="secondary"
-                  onClick={() => onSubmit(appraisal, 'update')}
-                  disabled={loading(appraisal._id ?? appraisal._id, 'update')}
+                  onClick={() => handleSubmit('update')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'update') || !allTeamLeadScoresSet}
                 >
                   {loading(appraisal._id ?? appraisal._id, 'update') && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -379,8 +448,9 @@ const getStatusColor = (status: string) => {
                 <Button
                   size="sm"
                   variant="default"
-                  onClick={() => onSubmit(appraisal, 'approved')}
-                  disabled={loading(appraisal._id ?? appraisal._id, 'approved')}
+                  onClick={() => handleSubmit('approved')}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'approved') || !scoresUpdated}
+                  title={!scoresUpdated ? "Please click 'Update Score' first before approving" : ""}
                 >
                   {loading(appraisal._id ?? appraisal._id, 'approved') && (
                   
@@ -425,6 +495,7 @@ const getStatusColor = (status: string) => {
                 }
               </>
             )}
+            </div>
           </div>
         )}
       </div>

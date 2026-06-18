@@ -173,11 +173,16 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
   }, [user?._id, dispatch]);
 
   const handleCreateAppraisalRequest = async (
-    data: Partial<Appraisal>
+    data: Partial<Appraisal>,
+    employeeId?: string
   ): Promise<boolean> => {
     dispatch(setIsLoading(true));
     try {
-      await createAppraisalRequest(data).unwrap();
+      const payload = {
+        ...data,
+        ...(employeeId && { employeeId }),
+      };
+      await createAppraisalRequest(payload).unwrap();
       refetchActivity()
       toast({ title: "Appraisal Request Submitted" });
 
@@ -201,13 +206,12 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
   const handleUpdateAppraisalRequest = async (
     id: string,
     data: Partial<Appraisal>
-  ): Promise<boolean> => {
+  ): Promise<any> => {
     dispatch(setIsLoading(true));
     try {
-      await updateAppraisalRequest({ id, ...data }).unwrap();
+      const result = await updateAppraisalRequest({ id, ...data }).unwrap();
       toast({ title: "Appraisal Updated Successfully" });
-
-      return true;
+      return result;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error, "Update Failed");
       toast({
@@ -215,21 +219,21 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
         description: errorMessage,
         variant: "destructive",
       });
-      return false;
+      return null;
     } finally {
       dispatch(setIsLoading(false));
     }
   };
 
   const handleApproveAppraisalRequest = async (
-    id: string
-  ): Promise<boolean> => {
+    id: string,
+    data?: Partial<Appraisal>
+  ): Promise<any> => {
     dispatch(setIsLoading(true));
     try {
-      await approveAppraisalRequest({ id }).unwrap();
+      const result = await approveAppraisalRequest({ id, ...(data || {}) }).unwrap();
       toast({ title: "Appraisal Approved" });
-
-      return true;
+      return result;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error, "Approval Failed");
       toast({
@@ -237,19 +241,21 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
         description: errorMessage,
         variant: "destructive",
       });
-      return false;
+      return null;
     } finally {
       dispatch(setIsLoading(false));
     }
   };
 
-  const handleRejectAppraisalRequest = async (id: string): Promise<boolean> => {
+  const handleRejectAppraisalRequest = async (
+    id: string,
+    data?: Partial<Appraisal>
+  ): Promise<any> => {
     dispatch(setIsLoading(true));
     try {
-      await rejectAppraisalRequest({ id }).unwrap();
+      const result = await rejectAppraisalRequest({ id, ...(data || {}) }).unwrap();
       toast({ title: "Appraisal Rejected" });
-
-      return true;
+      return result;
     } catch (error: any) {
       const errorMessage = extractErrorMessage(error, "Rejection Failed");
       toast({
@@ -257,7 +263,7 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
         description: errorMessage,
         variant: "destructive",
       });
-      return false;
+      return null;
     } finally {
       dispatch(setIsLoading(false));
     }

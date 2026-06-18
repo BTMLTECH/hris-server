@@ -23,6 +23,7 @@ interface EmployeeSelectorProps {
   employeeFilter?: (emp: ProfileFormData) => boolean;
   requiredMin?: number;
   className?: string;
+  onBackendSearch?: (term: string) => Promise<ProfileFormData[]>;
 }
 
 export function EmployeeSelector({
@@ -37,8 +38,42 @@ export function EmployeeSelector({
   employeeFilter = () => true,
   requiredMin = 1,
   className = "",
+  onBackendSearch,
 }: EmployeeSelectorProps) {
+  const [backendResults, setBackendResults] = React.useState<ProfileFormData[]>([]);
+  const [isSearchingBackend, setIsSearchingBackend] = React.useState(false);
+
   const filteredEmployees = employees.filter(employeeFilter);
+  const displayedEmployees = backendResults.length > 0 && searchTerm.trim() ? backendResults : filteredEmployees;
+
+  const handleSearchWithBackend = async (term: string) => {
+    onSearchChange(term);
+    setBackendResults([]);
+
+    // If search term is provided and no local results, try backend search
+    if (term.trim() && onBackendSearch) {
+      const localFilteredCount = filteredEmployees.filter(
+        (emp) =>
+          emp.firstName?.toLowerCase().includes(term.toLowerCase()) ||
+          emp.lastName?.toLowerCase().includes(term.toLowerCase()) ||
+          emp.email?.toLowerCase().includes(term.toLowerCase())
+      ).length;
+
+      // If local search returned no results, search backend
+      if (localFilteredCount === 0) {
+        setIsSearchingBackend(true);
+        try {
+          const results = await onBackendSearch(term);
+          setBackendResults(results.filter(employeeFilter));
+        } catch (error) {
+          console.error("Backend search failed:", error);
+          setBackendResults([]);
+        } finally {
+          setIsSearchingBackend(false);
+        }
+      }
+    }
+  };
 
   const handleEmployeeToggle = (email: string) => {
     let updated = [...selectedEmails];
@@ -85,7 +120,7 @@ export function EmployeeSelector({
             <Input
               placeholder={`Search ${label.toLowerCase()}...`}
               value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => handleSearchWithBackend(e.target.value)}
               className="pl-10 h-9 rounded-xl"
             />
           </div>
@@ -97,7 +132,7 @@ export function EmployeeSelector({
               overscrollBehavior: "contain",
             }}
           >
-            {shouldShowSkeleton ? (
+            {shouldShowSkeleton || isSearchingBackend ? (
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
@@ -118,17 +153,17 @@ export function EmployeeSelector({
                   </div>
                 ))}
               </div>
-            ) : filteredEmployees.length === 0 ? (
+            ) : displayedEmployees.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Users className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-sm font-medium">No employees found</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  No employees match your search criteria
+                  {searchTerm ? "No employees match your search criteria" : "Start typing to search"}
                 </p>
               </div>
             ) : (
               <div className="space-y-2 pb-2">
-                {filteredEmployees.map((emp) => {
+                {displayedEmployees.map((emp) => {
                   const isChecked = selectedEmails.includes(emp.email);
                   return (
                     <div

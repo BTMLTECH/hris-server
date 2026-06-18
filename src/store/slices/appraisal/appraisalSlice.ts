@@ -7,10 +7,30 @@ import { AppraisalTarget } from "@/data/appraisalTargets";
 import { mapAndCacheAppraisals } from "@/utils/normalize";
 import { stat } from "fs";
 
+interface ManualObjective {
+  id: string;
+  category: string;
+  name: string;
+  kpi: string;
+  marks: number;
+  measurementTracker?: string;
+}
+
+interface SelectedEmployee {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  position: string;
+}
+
 interface AppraisalFormData {
   title: string;
   period: string;
   dueDate: Date | null;
+  selectedEmployeeId: string;
+  selectedEmployee: SelectedEmployee | null;
 }
 
 interface AppraisalState {
@@ -20,11 +40,14 @@ interface AppraisalState {
   isCreateDialogOpen: boolean;
   isLoading: boolean;
   error: string | null;
-  step: "basic" | "targets" | "preview";
+  step: "employee-selection" | "basic" | "objectives" | "preview";
   formData: AppraisalFormData;
   selectedTargets: AppraisalTarget[];
-  availableTargets: AppraisalTarget[]
+  availableTargets: AppraisalTarget[];
   objectives: AppraisalObjective[];
+  manualObjectives: Record<string, ManualObjective[]>;
+  employeeSearchTerm: string;
+  employeeSearchResults: SelectedEmployee[];
   activityPagination: {
     total: number;
     page: number;
@@ -37,6 +60,11 @@ interface AppraisalState {
     approved: Record<number, Appraisal[]>;
     rejected: Record<number, Appraisal[]>;
   };
+  clonedAppraisalTemplate: {
+    objectives: Record<string, ManualObjective[]>;
+    employeeId: string | null;
+    teamLeadId: string | null;
+  } | null;
 }
 
 const initialState: AppraisalState = {
@@ -45,16 +73,27 @@ const initialState: AppraisalState = {
   isCreateDialogOpen: false,
   isLoading: false,
   error: null,
-  step: "basic",
+  step: "employee-selection",
   formData: {
     title: "",
     period: "monthly",
     dueDate: null,
+    selectedEmployeeId: "",
+    selectedEmployee: null,
   },
   selectedTargets: [],
   availableTargets: [],
   selectedAppraisal: null,
   objectives: [],
+  manualObjectives: {
+    OBJECTIVES: [],
+    FINANCIAL: [],
+    CUSTOMER: [],
+    INTERNAL_PROCESS: [],
+    LEARNING_AND_GROWTH: [],
+  },
+  employeeSearchTerm: "",
+  employeeSearchResults: [],
   activityPagination: {
     total: 0,
     page: 1,
@@ -67,6 +106,7 @@ const initialState: AppraisalState = {
     approved: {},
     rejected: {},
   },
+  clonedAppraisalTemplate: null,
 };
 
 const appraisalSlice = createSlice({
@@ -99,6 +139,67 @@ const appraisalSlice = createSlice({
     },
     setSelectedAppraisal(state, action: PayloadAction<Appraisal | null>) {
       state.selectedAppraisal = action.payload;
+    },
+    setSelectedEmployee(state, action: PayloadAction<SelectedEmployee | null>) {
+      state.formData.selectedEmployee = action.payload;
+      state.formData.selectedEmployeeId = action.payload?._id || "";
+    },
+    setEmployeeSearchTerm(state, action: PayloadAction<string>) {
+      state.employeeSearchTerm = action.payload;
+    },
+    setEmployeeSearchResults(state, action: PayloadAction<SelectedEmployee[]>) {
+      state.employeeSearchResults = action.payload;
+    },
+    addManualObjective(
+      state,
+      action: PayloadAction<{ category: string; objective: ManualObjective }>
+    ) {
+      const { category, objective } = action.payload;
+      if (!state.manualObjectives[category]) {
+        state.manualObjectives[category] = [];
+      }
+      state.manualObjectives[category].push(objective);
+    },
+    updateManualObjective(
+      state,
+      action: PayloadAction<{ category: string; objectiveId: string; objective: ManualObjective }>
+    ) {
+      const { category, objectiveId, objective } = action.payload;
+      if (state.manualObjectives[category]) {
+        const index = state.manualObjectives[category].findIndex((o) => o.id === objectiveId);
+        if (index !== -1) {
+          state.manualObjectives[category][index] = objective;
+        }
+      }
+    },
+    removeManualObjective(state, action: PayloadAction<{ category: string; objectiveId: string }>) {
+      const { category, objectiveId } = action.payload;
+      if (state.manualObjectives[category]) {
+        state.manualObjectives[category] = state.manualObjectives[category].filter(
+          (o) => o.id !== objectiveId
+        );
+      }
+    },
+    clearManualObjectives(state) {
+      state.manualObjectives = {
+        OBJECTIVES: [],
+        FINANCIAL: [],
+        CUSTOMER: [],
+        INTERNAL_PROCESS: [],
+        LEARNING_AND_GROWTH: [],
+      };
+    },
+
+    setClonedAppraisalTemplate(state, action: PayloadAction<{
+      objectives: Record<string, ManualObjective[]>;
+      employeeId: string | null;
+      teamLeadId: string | null;
+    }>) {
+      state.clonedAppraisalTemplate = action.payload;
+    },
+
+    clearClonedAppraisalTemplate(state) {
+      state.clonedAppraisalTemplate = null;
     },
 
     updateAppraisalInState(
@@ -392,6 +493,13 @@ export const {
   toggleTarget,
   setSelectedTargets,
   setSelectedAppraisal,
+  setSelectedEmployee,
+  setEmployeeSearchTerm,
+  setEmployeeSearchResults,
+  addManualObjective,
+  updateManualObjective,
+  removeManualObjective,
+  clearManualObjectives,
   setAppraisalObjectives,
   updateAppraisalInState,
   setActivityPagination,
@@ -401,6 +509,8 @@ export const {
   clearActivityCache,
   updateAppraisalActivityFeed,
   resetAppraisalForm,
+  setClonedAppraisalTemplate,
+  clearClonedAppraisalTemplate,
 } = appraisalSlice.actions;
 
 export default appraisalSlice.reducer;

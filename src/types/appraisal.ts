@@ -18,10 +18,10 @@ export interface AppraisalScoringProps {
   appraisal: Appraisal & {
     _id?: string;
     hrAdjustments?: {
-      innovation: boolean;
-      commendation: boolean;
-      query: boolean;
-      majorError: boolean;
+      innovation: number;
+      commendation: number;
+      query: number;
+      majorError: number;
     };
   };
   canReviewAppraisal: boolean;
@@ -35,10 +35,10 @@ export interface AppraisalScoringProps {
   onSubmit: (
     appraisal: Appraisal & {
       hrAdjustments?: {
-        innovation: boolean;
-        commendation: boolean;
-        query: boolean;
-        majorError: boolean;
+        innovation: number;
+        commendation: number;
+        query: number;
+        majorError: number;
       };
     },
     action:
@@ -48,24 +48,26 @@ export interface AppraisalScoringProps {
       | 'needs_revision'
       | 'sent_to_employee'
       | 'rejected'
+      | 'awaiting_hr_review'
       | 'update'
   ) => void;
 
   // ✅ NEW props
   hrAdjustments: {
-    innovation: boolean;
-    commendation: boolean;
-    query: boolean;
-    majorError: boolean;
+    innovation: number;
+    commendation: number;
+    query: number;
+    majorError: number;
   };
   setHrAdjustments: React.Dispatch<
     React.SetStateAction<{
-      innovation: boolean;
-      commendation: boolean;
-      query: boolean;
-      majorError: boolean;
+      innovation: number;
+      commendation: number;
+      query: number;
+      majorError: number;
     }>
   >;
+  onClone?: (appraisal: Appraisal) => void;
 }
 
 
@@ -95,6 +97,7 @@ export interface Appraisal {
   | 'sent_to_employee'
   | 'needs_revision'
   | 'submitted'
+  | 'awaiting_hr_review'
   | 'update';
   objectives: AppraisalObjective[];
   reviewLevel?:'teamlead' | 'hr' | 'relievers';
@@ -111,10 +114,10 @@ export interface Appraisal {
   };
   revisionReason?: string;
   hrAdjustments?: {
-    innovation: boolean;
-    commendation: boolean;
-    query: boolean;
-    majorError: boolean;
+    innovation: number;
+    commendation: number;
+    query: number;
+    majorError: number;
   };
 }
 
@@ -146,7 +149,7 @@ export interface UseReduxAppraisalReturnType {
     appraisaActivityLoading: boolean;    
   };
 
-  handleCreateAppraisalRequest: (data: Partial<Appraisal>) => Promise<boolean>;
+  handleCreateAppraisalRequest: (data: Partial<Appraisal>, employeeId?: string) => Promise<boolean>;
   handleUpdateAppraisalRequest: (id: string, data: Partial<Appraisal>) => Promise<boolean>;
   handleApproveAppraisalRequest: (id: string) => Promise<boolean>;
   handleRejectAppraisalRequest: (id: string) => Promise<boolean>;
