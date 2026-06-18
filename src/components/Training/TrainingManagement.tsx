@@ -124,6 +124,9 @@ const TrainingManagement: React.FC = () => {
     dispatch(resetFeedback());
   };
 
+  // d
+  
+
   return (
     <div className="space-y-6">
       {/* Header */}
