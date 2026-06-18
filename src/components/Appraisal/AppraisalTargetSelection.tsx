@@ -355,7 +355,7 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>
             {isCloneMode ? (

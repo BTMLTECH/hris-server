@@ -1,14 +1,16 @@
 import React from "react";
 import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Users } from "lucide-react";
+import { Search, Users, ChevronDown } from "lucide-react";
 import { ProfileFormData } from "@/types/user";
 
 interface EmployeeSelectorProps {
@@ -42,6 +44,7 @@ export function EmployeeSelector({
 }: EmployeeSelectorProps) {
   const [backendResults, setBackendResults] = React.useState<ProfileFormData[]>([]);
   const [isSearchingBackend, setIsSearchingBackend] = React.useState(false);
+  const [isOpen, setIsOpen] = React.useState(false);
 
   const filteredEmployees = employees.filter(employeeFilter);
   const displayedEmployees = backendResults.length > 0 && searchTerm.trim() ? backendResults : filteredEmployees;
@@ -88,112 +91,151 @@ export function EmployeeSelector({
 
   return (
     <div className={className}>
-      <Label className="text-gray-800 text-sm font-semibold mb-2 block">
+      <Label className="text-gray-700 text-sm font-semibold mb-3 block">
         {label}
       </Label>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className="w-full justify-between 
-              rounded-2xl px-4 py-3 
-              bg-white/60 backdrop-blur-md 
-              border border-gray-200 shadow-sm
-              hover:bg-white/80 hover:shadow-md 
-              transition-all duration-300 
-              text-gray-700 font-medium"
-          >
-            {selectedEmails.length
+      <Button
+        variant="outline"
+        className="w-full justify-between 
+          h-11 px-4 
+          bg-white border border-gray-300
+          hover:bg-gray-50 hover:border-gray-400
+          focus:ring-2 focus:ring-blue-500 focus:border-transparent
+          transition-all duration-200 
+          text-gray-700 font-medium text-left"
+        onClick={() => setIsOpen(true)}
+      >
+        <span className="flex items-center gap-2">
+          <span className="text-sm">
+            {selectedEmails.length > 0
               ? `${selectedEmails.length} selected`
               : `Select ${label.toLowerCase()}`}
-            <span className="text-gray-400 text-sm">⌄</span>
-          </Button>
-        </PopoverTrigger>
+          </span>
+          {selectedEmails.length > 0 && (
+            <span className="inline-flex items-center justify-center h-5 px-2 py-0.5 text-xs font-medium text-white bg-blue-500 rounded-full">
+              {selectedEmails.length}
+            </span>
+          )}
+        </span>
+        <ChevronDown 
+          className="h-4 w-4 text-gray-400 transition-transform duration-200"
+          style={{
+            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+          }}
+        />
+      </Button>
 
-        <PopoverContent
-          className="w-full max-w-md p-4 rounded-2xl bg-white/80 backdrop-blur-lg 
-                                   border border-gray-200 shadow-lg max-h-96"
-        >
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder={`Search ${label.toLowerCase()}...`}
-              value={searchTerm}
-              onChange={(e) => handleSearchWithBackend(e.target.value)}
-              className="pl-10 h-9 rounded-xl"
-            />
-          </div>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Search and Select {label}</DialogTitle>
+            <DialogDescription>
+              Type to search for {label.toLowerCase()}
+            </DialogDescription>
+          </DialogHeader>
 
-          <div
-            className="space-y-2 max-h-64 overflow-y-auto"
-            style={{
-              WebkitOverflowScrolling: "touch",
-              overscrollBehavior: "contain",
-            }}
-          >
-            {shouldShowSkeleton || isSearchingBackend ? (
-              <div className="space-y-3">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={`skeleton-${i}`}
-                    className="flex items-center space-x-3 p-3 rounded-xl bg-gray-50/60 animate-pulse"
-                  >
-                    <div className="h-4 w-4 bg-muted rounded" />
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center space-x-3 w-full">
-                        <div className="h-8 w-8 rounded-full bg-muted" />
-                        <div className="space-y-1 flex-1 min-w-0">
-                          <div className="h-4 bg-muted rounded w-24" />
-                          <div className="h-3 bg-muted-foreground/50 rounded w-40" />
-                          <div className="h-3 bg-muted-foreground/40 rounded w-28" />
+          <div className="space-y-4">
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <Input
+                placeholder={`Search ${label.toLowerCase()}...`}
+                value={searchTerm}
+                onChange={(e) => handleSearchWithBackend(e.target.value)}
+                className="pl-10 h-11 rounded-lg border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                autoFocus
+              />
+            </div>
+
+            {/* Results List */}
+            <div className="border border-gray-200 rounded-lg bg-white">
+              <div
+                className="overflow-y-auto"
+                style={{
+                  height: '350px',
+                  WebkitOverflowScrolling: "touch",
+                  overscrollBehavior: "contain",
+                }}
+              >
+                {shouldShowSkeleton || isSearchingBackend ? (
+                  <div className="px-4 py-3 space-y-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div
+                        key={`skeleton-${i}`}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-gray-100 animate-pulse"
+                      >
+                        <div className="h-4 w-4 bg-gray-300 rounded" />
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-gray-300 rounded w-32" />
+                          <div className="h-2 bg-gray-200 rounded w-24" />
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : displayedEmployees.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-sm font-medium">No employees found</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {searchTerm ? "No employees match your search criteria" : "Start typing to search"}
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 pb-2">
-                {displayedEmployees.map((emp) => {
-                  const isChecked = selectedEmails.includes(emp.email);
-                  return (
-                    <div
-                      key={emp._id}
-                      className="flex items-center justify-between rounded-xl px-3 py-2 
-                                 bg-gray-50/60 hover:bg-gray-100/70 transition-all duration-200 cursor-pointer"
-                      onClick={() => handleEmployeeToggle(emp.email)}
-                    >
-                      <div className="flex items-center space-x-3 flex-1">
-                        <Checkbox checked={isChecked} />
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <span className="text-gray-800 text-sm font-medium truncate">
-                            {emp.firstName} {emp.lastName}
-                          </span>
-                          <span className="text-gray-500 text-xs truncate">
-                            {emp.position || emp.role || "-"}
-                          </span>
-                        </div>
-                      </div>
+                ) : displayedEmployees.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full px-4 py-8 text-center">
+                    <div className="mb-3 p-3 bg-gray-100 rounded-full">
+                      <Users className="h-6 w-6 text-gray-400" />
                     </div>
-                  );
-                })}
+                    <h3 className="text-sm font-semibold text-gray-700">No employees found</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {searchTerm ? "Try a different search term" : "Start typing to search"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="px-2 py-2 space-y-1">
+                    {displayedEmployees.map((emp) => {
+                      const isChecked = selectedEmails.includes(emp.email);
+                      return (
+                        <div
+                          key={emp._id}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                     hover:bg-blue-50 transition-colors duration-150 cursor-pointer
+                                     border border-transparent hover:border-blue-200"
+                          onClick={() => handleEmployeeToggle(emp.email)}
+                        >
+                          <Checkbox 
+                            checked={isChecked}
+                            className="h-4 w-4 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                                {(emp.firstName?.charAt(0) || '').toUpperCase()}{(emp.lastName?.charAt(0) || '').toUpperCase()}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-800 truncate">
+                                  {emp.firstName} {emp.lastName}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  {emp.position || emp.role || "-"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
+
+              {selectedEmails.length > 0 && (
+                <div className="border-t border-gray-100 p-3 bg-gray-50 rounded-b-lg">
+                  <p className="text-xs text-gray-600 font-medium">
+                    Selected: <span className="text-blue-600">{selectedEmails.length}</span>
+                    {maxSelections && <span className="text-gray-400"> / {maxSelections}</span>}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
 
       {selectedEmails.length < requiredMin && (
-        <p className="text-sm text-red-500 mt-2">
+        <p className="text-xs text-red-500 mt-2 font-medium">
           Please select at least {requiredMin} {label.toLowerCase()}
         </p>
       )}
