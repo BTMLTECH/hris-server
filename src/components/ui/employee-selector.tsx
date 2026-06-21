@@ -47,13 +47,30 @@ export function EmployeeSelector({
   const [isOpen, setIsOpen] = React.useState(false);
 
   const filteredEmployees = employees.filter(employeeFilter);
-  const displayedEmployees = backendResults.length > 0 && searchTerm.trim() ? backendResults : filteredEmployees;
+  
+  // Combine local and backend results, removing duplicates by email
+  const combinedEmployees = React.useMemo(() => {
+    const all = [...filteredEmployees, ...backendResults];
+    const unique = new Map();
+    all.forEach((emp) => {
+      if (emp.email && !unique.has(emp.email)) {
+        unique.set(emp.email, emp);
+      }
+    });
+    return Array.from(unique.values());
+  }, [filteredEmployees, backendResults]);
+
+  // Show combined list if searching, otherwise just local
+  const displayedEmployees = searchTerm.trim() ? combinedEmployees : filteredEmployees;
+
+  console.log("Displayed Employees:", displayedEmployees);
+  console.log("Selected Emails:", combinedEmployees.filter(emp => selectedEmails.includes(emp.email)).map(emp => emp.email));
 
   const handleSearchWithBackend = async (term: string) => {
     onSearchChange(term);
     setBackendResults([]);
 
-    // If search term is provided and no local results, try backend search
+    // If search term is provided, try backend search
     if (term.trim() && onBackendSearch) {
       const localFilteredCount = filteredEmployees.filter(
         (emp) =>
@@ -68,8 +85,8 @@ export function EmployeeSelector({
         try {
           const results = await onBackendSearch(term);
           setBackendResults(results.filter(employeeFilter));
-        } catch (error) {
-          console.error("Backend search failed:", error);
+        } catch (_) {
+          // console.error("Backend search failed:", error);
           setBackendResults([]);
         } finally {
           setIsSearchingBackend(false);

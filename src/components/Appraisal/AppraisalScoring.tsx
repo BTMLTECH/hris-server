@@ -33,6 +33,10 @@ const AppraisalScoring: React.FC<AppraisalScoringProps> = ({
   const hasTeamLeadScores = objectives.some((obj) => obj.teamLeadScore > 0);
   const scoresUpdated = hasTeamLeadScores;
   
+  // Check if HR has made any adjustments
+  const hasHRJustments = hrAdjustments && 
+    Object.values(hrAdjustments).some(val => val !== 0);
+  
   const canEdit =
   (isEmployee && ['pending', 'needs_revision'].includes(appraisal.status)) ||
   (canReviewAppraisal && ['submitted', 'needs_revision', 'awaiting_hr_review'].includes(appraisal.status));
@@ -55,31 +59,24 @@ const AppraisalScoring: React.FC<AppraisalScoringProps> = ({
 
 const totalScores = useMemo(() => {
 
-  // If appraisal already has final backend totals → USE THEM
-  if (appraisal.status === "approved" && appraisal.totalScore) {
+  const employeeTotal = objectives.reduce((sum, obj) => sum + (obj.employeeScore || 0), 0);
+  const teamLeadTotal = objectives.reduce((sum, obj) => sum + (obj.teamLeadScore || 0), 0);
+
+  // If HR has approved, everyone sees the final HR score from backend
+  if (hrApproved && appraisal.totalScore?.final !== undefined) {
     return {
-      employee: appraisal.totalScore.employee,
-      teamLead: appraisal.totalScore.teamLead,
+      employee: employeeTotal,
+      teamLead: teamLeadTotal,
       final: appraisal.totalScore.final,
     };
   }
 
-  // Otherwise fallback to calculated UI values
-  const employeeTotal = objectives.reduce((sum, obj) => sum + (obj.employeeScore || 0), 0);
-  const teamLeadTotal = objectives.reduce((sum, obj) => sum + (obj.teamLeadScore || 0), 0);
+  let finalTotal = teamLeadTotal;
 
-  let finalTotal = 0;
-
-  if (hr) {
-    finalTotal = teamLeadTotal;
-
-    if (hrAdjustments) {
-      for (const key of Object.keys(hrAdjustments) as ('innovation' | 'commendation' | 'query' | 'majorError')[]) {
-        // Use the actual input value from hrAdjustments, not the fixed scoreMap value
-        if (hrAdjustments[key]) {
-          finalTotal += hrAdjustments[key];
-        }
-      }
+  // For HR: Always calculate final score as Team Lead + Adjustments (updates in real-time as they type)
+  if (hr && hrAdjustments) {
+    for (const key of Object.keys(hrAdjustments) as ('innovation' | 'commendation' | 'query' | 'majorError')[]) {
+      finalTotal += hrAdjustments[key] || 0;
     }
   } else if (teamlead) {
     finalTotal = teamLeadTotal;
@@ -92,7 +89,7 @@ const totalScores = useMemo(() => {
     teamLead: teamLeadTotal,
     final: finalTotal,
   };
-}, [objectives, hrAdjustments, hr, teamlead, appraisal.status, appraisal.totalScore]);
+}, [objectives, hrAdjustments, hr, teamlead, hrApproved, appraisal.totalScore?.final]);
 
 
 const updateObjective = (index: number, field: keyof AppraisalObjective, value: any) => {
@@ -376,8 +373,10 @@ const getStatusColor = (status: string) => {
         {totalScores.final.toFixed(1)}
       </div>
       <div className="text-sm text-green-600">
-        {hr
+        {hrApproved
           ? "Final HR Score"
+          : hr
+          ? "Final HR Score (Preview)"
           : teamlead
           ? "Team Lead Score"
           : "Final Score"}
@@ -437,7 +436,7 @@ const getStatusColor = (status: string) => {
                   size="sm"
                   variant="secondary"
                   onClick={() => handleSubmit('update')}
-                  disabled={loading(appraisal._id ?? appraisal._id, 'update') || !allTeamLeadScoresSet}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'update') || (teamlead && !allTeamLeadScoresSet) || (hr && !hasHRJustments)}
                 >
                   {loading(appraisal._id ?? appraisal._id, 'update') && (
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -449,8 +448,8 @@ const getStatusColor = (status: string) => {
                   size="sm"
                   variant="default"
                   onClick={() => handleSubmit('approved')}
-                  disabled={loading(appraisal._id ?? appraisal._id, 'approved') || !scoresUpdated}
-                  title={!scoresUpdated ? "Please click 'Update Score' first before approving" : ""}
+                  disabled={loading(appraisal._id ?? appraisal._id, 'approved') || (teamlead && !scoresUpdated) || (hr && !hasHRJustments)}
+                  title={!scoresUpdated && teamlead ? "Please click 'Update Score' first before approving" : !hasHRJustments && hr ? "Please add HR adjustments before approving" : ""}
                 >
                   {loading(appraisal._id ?? appraisal._id, 'approved') && (
                   

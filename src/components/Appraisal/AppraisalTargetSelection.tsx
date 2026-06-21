@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Loader2, Plus, Trash2, Search } from 'lucide-react';
+import { CalendarIcon, Loader2, Plus, Trash2, Edit2, X, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Appraisal } from '@/types/appraisal';
@@ -25,6 +25,9 @@ import {
   updateManualObjective,
   clearManualObjectives,
   setSelectedEmployee,
+  addSelectedEmployee,
+  removeSelectedEmployee,
+  setSelectedEmployees,
   setEmployeeSearchTerm,
   setEmployeeSearchResults,
 } from '@/store/slices/appraisal/appraisalSlice';
@@ -90,15 +93,12 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
       
       // Set form data with suggested title and period
       const suggestedTitle = `${clonedAppraisal.title} - Q2 2026`;
-      const newDueDate = new Date();
-      newDueDate.setMonth(newDueDate.getMonth() + 3); // 3 months from now
 
       dispatch(setFormData({
         title: suggestedTitle,
         period: clonedAppraisal.period || 'monthly',
-        dueDate: newDueDate,
-        selectedEmployeeId: clonedAppraisal.employeeId || '',
-        selectedEmployee: selectedEmp,
+        selectedEmployeeIds: [clonedAppraisal.employeeId || ''],
+        selectedEmployees: [selectedEmp],
       }));
 
       // Pre-populate objectives with scores reset to 0
@@ -118,8 +118,8 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
         }));
       });
 
-      // Start from objectives step since employee is already selected
-      dispatch(setStep('objectives'));
+      // Start from basic step (title and period can be edited)
+      dispatch(setStep('basic'));
     }
   }, [isCloneMode, clonedAppraisal, isOpen]);
 
@@ -137,6 +137,9 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
     measurementTracker: '',
   });
 
+  // Track which objective is being edited
+  const [editingObjectiveId, setEditingObjectiveId] = useState<string | null>(null);
+
   // Calculate total marks from all objectives
   const getTotalMarks = () => {
     let total = 0;
@@ -151,29 +154,9 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
   // Mock search employees from department
   const handleEmployeeSearch = (term: string) => {
     dispatch(setEmployeeSearchTerm(term));
-    if (!term.trim()) {
-      dispatch(setEmployeeSearchResults([]));
-      return;
-    }
-
-    const filtered = cachedEmployees.filter(
-      (emp) =>
-        emp.firstName?.toLowerCase().includes(term.toLowerCase()) ||
-        emp.lastName?.toLowerCase().includes(term.toLowerCase()) ||
-        emp.email?.toLowerCase().includes(term.toLowerCase())
-    );
-
-    // Convert ProfileFormData to SelectedEmployee format for Redux
-    const selectedEmployeeFormat = filtered.map((emp) => ({
-      _id: emp._id || '',
-      firstName: emp.firstName || '',
-      lastName: emp.lastName || '',
-      email: emp.email || '',
-      department: emp.department || '',
-      position: emp.position || '',
-    }));
-
-    dispatch(setEmployeeSearchResults(selectedEmployeeFormat));
+    // Note: Don't update employeeSearchResults here - only update search term
+    // The EmployeeSelector component will handle filtering based on the search term
+    // employeeSearchResults is reserved for backend search results only
   };
 
   const handleBackendEmployeeSearch = async (term: string): Promise<any[]> => {
@@ -184,29 +167,55 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
         search: term.trim(),
       }).unwrap();
       
-      const data = Array.isArray(response) ? response : response?.data || [];
+      // Response structure is: { success: boolean; data: { data: TData[]; pagination?: any; count?: number } }
+      const data = Array.isArray(response) ? response : response?.data?.data || [];
+      
+      // Store backend search results in Redux for later lookup
+      const backendSearchFormat = data.map((emp: any) => ({
+        _id: emp._id || '',
+        firstName: emp.firstName || '',
+        lastName: emp.lastName || '',
+        email: emp.email || '',
+        department: emp.department || '',
+        position: emp.position || '',
+      }));
+      
+      dispatch(setEmployeeSearchResults(backendSearchFormat));
       return data as any[];
-    } catch (error) {
-      console.error('Backend employee search failed:', error);
+    } catch (_) {
+      // // console.error('Backend employee search failed:', error);
       return [];
     }
   };
 
   const handleSelectEmployeeFromSelector = (selectedEmails: string[]) => {
-    if (selectedEmails.length > 0) {
-      const selectedEmployee = cachedEmployees.find((emp) => emp.email === selectedEmails[0]);
-      if (selectedEmployee) {
-        dispatch(setSelectedEmployee({
-          _id: selectedEmployee._id || '',
-          firstName: selectedEmployee.firstName || '',
-          lastName: selectedEmployee.lastName || '',
-          email: selectedEmployee.email || '',
-          department: selectedEmployee.department || '',
-          position: selectedEmployee.position || '',
-        }));
-        dispatch(setStep('basic'));
+    // Build combined employee list from both cached and search results
+    const allAvailableEmployees = [...cachedEmployees, ...employeeSearchResults];
+    
+    // Remove duplicates by email
+    const uniqueEmployeeMap = new Map();
+    allAvailableEmployees.forEach((emp) => {
+      if (emp.email && !uniqueEmployeeMap.has(emp.email)) {
+        uniqueEmployeeMap.set(emp.email, emp);
       }
-    }
+    });
+
+    // Map selected emails to employee objects
+    const selectedEmployeesList = selectedEmails
+      .map((email) => {
+        const emp = uniqueEmployeeMap.get(email);
+        return emp ? {
+          _id: emp._id || '',
+          firstName: emp.firstName || '',
+          lastName: emp.lastName || '',
+          email: emp.email || '',
+          department: emp.department || '',
+          position: emp.position || '',
+        } : null;
+      })
+      .filter((emp): emp is any => emp !== null);
+
+    dispatch(setSelectedEmployees(selectedEmployeesList));
   };
 
   const handleAddObjective = () => {
@@ -222,16 +231,33 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
     }
 
     const category = objectiveFormState.category;
-    const newObjective: ManualObjective = {
-      id: `obj_${Date.now()}`,
-      category,
-      name: objectiveFormState.name,
-      kpi: objectiveFormState.kpi,
-      marks,
-      measurementTracker: objectiveFormState.measurementTracker,
-    };
 
-    dispatch(addManualObjective({ category, objective: newObjective }));
+    if (editingObjectiveId) {
+      // Update existing objective
+      const updatedObjective: ManualObjective = {
+        id: editingObjectiveId,
+        category,
+        name: objectiveFormState.name,
+        kpi: objectiveFormState.kpi,
+        marks,
+        measurementTracker: objectiveFormState.measurementTracker,
+      };
+      dispatch(updateManualObjective({ category, objectiveId: editingObjectiveId, objective: updatedObjective }));
+      toast({ title: 'Objective updated successfully' });
+      setEditingObjectiveId(null);
+    } else {
+      // Add new objective
+      const newObjective: ManualObjective = {
+        id: `obj_${Date.now()}`,
+        category,
+        name: objectiveFormState.name,
+        kpi: objectiveFormState.kpi,
+        marks,
+        measurementTracker: objectiveFormState.measurementTracker,
+      };
+      dispatch(addManualObjective({ category, objective: newObjective }));
+      toast({ title: 'Objective added successfully' });
+    }
 
     // Reset form
     setObjectiveFormState({
@@ -241,20 +267,40 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
       marks: '',
       measurementTracker: '',
     });
+  };
 
-    toast({ title: 'Objective added successfully' });
+  const handleEditObjective = (objective: ManualObjective) => {
+    setObjectiveFormState({
+      category: objective.category,
+      name: objective.name,
+      kpi: objective.kpi,
+      marks: objective.marks.toString(),
+      measurementTracker: objective.measurementTracker || '',
+    });
+    setEditingObjectiveId(objective.id);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingObjectiveId(null);
+    setObjectiveFormState({
+      ...objectiveFormState,
+      name: '',
+      kpi: '',
+      marks: '',
+      measurementTracker: '',
+    });
   };
 
   const handleNextStep = () => {
     if (step === 'employee-selection') {
-      if (!formData.selectedEmployeeId) {
-        toast({ title: 'Please select an employee', variant: 'destructive' });
+      if (formData.selectedEmployeeIds.length === 0) {
+        toast({ title: 'Please select at least one employee', variant: 'destructive' });
         return;
       }
       dispatch(setStep('basic'));
     } else if (step === 'basic') {
-      if (!formData.title.trim() || !formData.dueDate) {
-        toast({ title: 'Please fill title and due date', variant: 'destructive' });
+      if (!formData.title.trim()) {
+        toast({ title: 'Please fill in the title', variant: 'destructive' });
         return;
       }
       dispatch(setStep('objectives'));
@@ -282,14 +328,13 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
   };
 
   const resetForm = () => {
-    dispatch(setStep(isCloneMode ? 'objectives' : 'employee-selection'));
+    dispatch(setStep('employee-selection'));
     dispatch(
       setFormData({
         title: '',
         period: 'monthly',
-        dueDate: null,
-        selectedEmployeeId: '',
-        selectedEmployee: null,
+        selectedEmployeeIds: [],
+        selectedEmployees: [],
       })
     );
     dispatch(clearManualObjectives());
@@ -300,6 +345,11 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
   const handleSubmit = async () => {
     if (getTotalMarks() !== 100) {
       toast({ title: 'Total marks must equal 100', variant: 'destructive' });
+      return;
+    }
+
+    if (formData.selectedEmployeeIds.length === 0) {
+      toast({ title: 'Please select at least one employee', variant: 'destructive' });
       return;
     }
 
@@ -321,26 +371,38 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
       }))
     );
 
-    const newAppraisal: Appraisal = {
-      teamLeadId: user?._id || '',
-      teamLeadName: user?.firstName || '',
-      employeeId: formData.selectedEmployeeId,
-      title: formData.title,
-      period: formData.period,
-      dueDate: new Date(formData.dueDate!).toISOString(),
-      status: 'pending',
-      objectives: allObjectives as any,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      totalScore: {
-        employee: 0,
-        teamLead: 0,
-        final: 0,
-      },
-    };
+    // Create appraisals for all selected employees
+    let successCount = 0;
+    for (const employeeId of formData.selectedEmployeeIds) {
+      const newAppraisal: Appraisal = {
+        teamLeadId: user?._id || '',
+        teamLeadName: user?.firstName || '',
+        employeeId,
+        title: formData.title,
+        period: formData.period,
+        status: 'pending',
+        objectives: allObjectives as any,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        totalScore: {
+          employee: 0,
+          teamLead: 0,
+          final: 0,
+        },
+      };
 
-    const success = await handleCreateAppraisalRequest(newAppraisal, formData.selectedEmployeeId);
-    if (success) {
+      const success = await handleCreateAppraisalRequest(newAppraisal, employeeId);
+      if (success) {
+        successCount++;
+      }
+    }
+
+    if (successCount > 0) {
+      const failureCount = formData.selectedEmployeeIds.length - successCount;
+      const message = failureCount > 0 
+        ? `Appraisals created for ${successCount} employee(s) (${failureCount} failed)`
+        : `Appraisals created for ${successCount} employee(s)`;
+      toast({ title: message, variant: 'default' });
       resetForm();
       onClose();
     }
@@ -387,28 +449,40 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
         {step === 'employee-selection' && !isCloneMode && (
           <div className="space-y-4">
             <EmployeeSelector
-              label="Employee"
-              selectedEmails={formData.selectedEmployee ? [formData.selectedEmployee.email] : []}
+              label="Employees"
+              selectedEmails={formData.selectedEmployees.map((emp) => emp.email)}
               onSelectionChange={handleSelectEmployeeFromSelector}
               employees={cachedEmployees}
               searchTerm={employeeSearchTerm}
               onSearchChange={handleEmployeeSearch}
               shouldShowSkeleton={shouldShowSkeleton}
-              maxSelections={1}
+              maxSelections={undefined}
               employeeFilter={(emp) => emp.role === 'employee'}
               requiredMin={1}
               onBackendSearch={handleBackendEmployeeSearch}
             />
 
-            {formData.selectedEmployee && (
+            {formData.selectedEmployees.length > 0 && (
               <Card className="bg-blue-50 border-blue-200">
                 <CardContent className="pt-6">
                   <div className="space-y-2">
-                    <div className="font-semibold">
-                      ✓ Selected: {formData.selectedEmployee.firstName} {formData.selectedEmployee.lastName}
-                    </div>
-                    <div className="text-sm text-gray-600">{formData.selectedEmployee.email}</div>
-                    <div className="text-sm text-gray-600">{formData.selectedEmployee.position}</div>
+                    <div className="font-semibold">✓ Selected Employees ({formData.selectedEmployees.length})</div>
+                    {formData.selectedEmployees.map((employee) => (
+                      <div key={employee._id} className="flex justify-between items-center p-2 bg-white rounded border">
+                        <div>
+                          <div className="font-medium">{employee.firstName} {employee.lastName}</div>
+                          <div className="text-xs text-gray-600">{employee.email}</div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => dispatch(removeSelectedEmployee(employee._id))}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -422,7 +496,14 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
             <Card className="bg-blue-50">
               <CardContent className="pt-6">
                 <div>
-                  <strong>Employee:</strong> {formData.selectedEmployee?.firstName} {formData.selectedEmployee?.lastName}
+                  <strong>Selected Employees ({formData.selectedEmployees.length}):</strong>
+                  <ul className="mt-2 space-y-1">
+                    {formData.selectedEmployees.map((emp) => (
+                      <li key={emp._id} className="text-sm">
+                        • {emp.firstName} {emp.lastName}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -449,36 +530,6 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
                   <SelectItem value="annually">Annually</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Due Date</Label>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      'w-full justify-start text-left font-normal',
-                      !formData.dueDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dueDate ? format(new Date(formData.dueDate), 'PPP') : 'Pick a date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.dueDate ? new Date(formData.dueDate) : undefined}
-                    onSelect={(date) => {
-                      dispatch(setFormData({ ...formData, dueDate: date }));
-                      setIsCalendarOpen(false);
-                    }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
             </div>
           </div>
         )}
@@ -554,9 +605,16 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
                   />
                 </div>
 
-                <Button onClick={handleAddObjective} className="w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Add Objective
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleAddObjective} className="w-full flex-1">
+                    <Plus className="mr-2 h-4 w-4" /> {editingObjectiveId ? 'Update Objective' : 'Add Objective'}
+                  </Button>
+                  {editingObjectiveId && (
+                    <Button onClick={handleCancelEdit} variant="outline" className="flex-1">
+                      <X className="mr-2 h-4 w-4" /> Cancel
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
@@ -578,8 +636,16 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
                         <div className="flex items-center gap-2">
                           <Badge>{objective.marks} marks</Badge>
                           <button
+                            onClick={() => handleEditObjective(objective)}
+                            className="text-blue-500 hover:text-blue-700"
+                            title="Edit objective"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => dispatch(removeManualObjective({ category, objectiveId: objective.id }))}
                             className="text-red-500 hover:text-red-700"
+                            title="Delete objective"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -604,16 +670,20 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
               </CardHeader>
               <CardContent className="space-y-2">
                 <div>
-                  <strong>Employee:</strong> {formData.selectedEmployee?.firstName} {formData.selectedEmployee?.lastName}
+                  <strong>Selected Employees ({formData.selectedEmployees.length}):</strong>
+                  <ul className="mt-2 space-y-1 ml-4">
+                    {formData.selectedEmployees.map((emp) => (
+                      <li key={emp._id} className="text-sm">
+                        • {emp.firstName} {emp.lastName} ({emp.email})
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 <div>
                   <strong>Title:</strong> {formData.title}
                 </div>
                 <div>
                   <strong>Period:</strong> {formData.period}
-                </div>
-                <div>
-                  <strong>Due Date:</strong> {formData.dueDate ? format(new Date(formData.dueDate), 'PPP') : 'Not set'}
                 </div>
                 <div>
                   <strong>Total Score:</strong> {getTotalMarks()}/100 marks
@@ -666,7 +736,7 @@ const AppraisalTargetSelection: React.FC<AppraisalTargetSelectionProps> = ({
             ) : (
               <Button type="button" onClick={handleSubmit} disabled={isLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? 'Recreating...' : isCloneMode ? 'Recreate' : 'Send to Employee'}
+                {isLoading ? 'Creating...' : isCloneMode ? 'Recreate' : `Send to ${formData.selectedEmployees.length} Employee${formData.selectedEmployees.length !== 1 ? 's' : ''}`}
               </Button>
             )}
           </div>

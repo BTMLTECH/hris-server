@@ -4,6 +4,7 @@ import {
   useCreateAppraisalRequestMutation,
   useApproveAppraisalRequestMutation,
   useRejectAppraisalRequestMutation,
+  useDeleteAppraisalMutation,
   // useGetAppraisalApprovalQueueQuery,
   useGetEmployeeByDepartmentQuery,
   useUpdateAppraisalRequestMutation,
@@ -155,6 +156,9 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
   const [rejectAppraisalRequest, { isLoading: rejectingAppraisal }] =
     useRejectAppraisalRequestMutation();
 
+  const [deleteAppraisal, { isLoading: deletingAppraisal }] =
+    useDeleteAppraisalMutation();
+
   const [updateAppraisalRequest, { isLoading: updatingAppraisal }] =
     useUpdateAppraisalRequestMutation();
 
@@ -269,6 +273,26 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
     }
   };
 
+  const handleDeleteAppraisal = async (id: string): Promise<boolean> => {
+    dispatch(setIsLoading(true));
+    try {
+      await deleteAppraisal(id).unwrap();
+      toast({ title: "Appraisal Deleted Successfully" });
+      refetchActivity();
+      return true;
+    } catch (error: any) {
+      const errorMessage = extractErrorMessage(error, "Delete Failed");
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      dispatch(setIsLoading(false));
+    }
+  };
+
   return {
     getEmployeeUnderTeamlead,
     totalPages,
@@ -287,6 +311,7 @@ dispatch(setAppraisalRequests(safeAppraisalRequests));
     handleApproveAppraisalRequest,
     handleRejectAppraisalRequest,
     handleUpdateAppraisalRequest,
+    handleDeleteAppraisal,
     refetchActivity,
   };
 };

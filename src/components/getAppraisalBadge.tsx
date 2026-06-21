@@ -22,8 +22,8 @@ export const getPayrollStatusBadge = (status?: IPayroll["status"]) => {
 // Appraisal badge function
 export const getAppraisalStatusBadge = (appraisal: Appraisal, currentUserRole: Role) => {
 
-  console.log("appraisal", appraisal)
-  console.log("currentUserRole", currentUserRole)
+  // console.log("appraisal", appraisal)
+  // console.log("currentUserRole", currentUserRole)
 
   const { status, reviewLevel, reviewTrail } = appraisal;
 

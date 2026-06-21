@@ -90,7 +90,6 @@ export interface Appraisal {
   teamLeadName: string;
   title: string;
   period: string;
-  dueDate: string;
   status: 'pending'
   | 'approved'
   | 'rejected'
@@ -151,8 +150,9 @@ export interface UseReduxAppraisalReturnType {
 
   handleCreateAppraisalRequest: (data: Partial<Appraisal>, employeeId?: string) => Promise<boolean>;
   handleUpdateAppraisalRequest: (id: string, data: Partial<Appraisal>) => Promise<boolean>;
-  handleApproveAppraisalRequest: (id: string) => Promise<boolean>;
-  handleRejectAppraisalRequest: (id: string) => Promise<boolean>;
+  handleApproveAppraisalRequest: (id: string, data?: Partial<Appraisal>) => Promise<boolean>;
+  handleRejectAppraisalRequest: (id: string, data?: Partial<Appraisal>) => Promise<boolean>;
+  handleDeleteAppraisal: (id: string) => Promise<boolean>;
   // refetchApprovalQueue: () => void;
   refetchActivity: () => void;
 }

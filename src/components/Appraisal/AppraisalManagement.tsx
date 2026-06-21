@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Eye, AlertTriangle, Copy } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Eye, AlertTriangle, Copy, Trash2, MessageSquare, Loader2 } from 'lucide-react';
 import AppraisalScoring from './AppraisalScoring';
 import AppraisalTargetSelection from './AppraisalTargetSelection';
+// import HRRecommendation from './HRRecommendation';
 import { Appraisal } from '@/types/appraisal';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setActivityFilter, setActivityPagination, setIsCreateDialogOpen, setSelectedAppraisal, updateAppraisalInState } from '@/store/slices/appraisal/appraisalSlice';
@@ -34,7 +36,7 @@ const AppraisalManagement: React.FC = () => {
   const { isLocalLoading, setLocalLoading, clearLocalLoading } = useLoadingState();
     
   const { isLocalLoading: loading, setLocalLoading:setLoading, clearLocalLoading:clearLoading } = useLoadingState();
-  const {cachedPageData, isLoading, totalPages,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest, refetchActivity} = useReduxAppraisal()
+  const {cachedPageData, isLoading, totalPages,  handleUpdateAppraisalRequest, handleApproveAppraisalRequest, handleRejectAppraisalRequest, handleDeleteAppraisal, refetchActivity} = useReduxAppraisal()
   const { activityPagination, activityCache, activityFilter:filter, isLoading:appraisalLoading, isCreateDialogOpen, selectedAppraisal} = useAppSelector((state) => state.appraisal);
   // const safeAppraisalRequests = Array.isArray(cachedPageData) ? cachedPageData : [];
  const safeAppraisalRequests = Array.isArray(cachedPageData)
@@ -44,7 +46,7 @@ const AppraisalManagement: React.FC = () => {
     ? (cachedPageData as any).appraisals
     : [];
 
-    console.log("Safe Appraisal Requests:", safeAppraisalRequests);
+    // console.log("Safe Appraisal Requests:", safeAppraisalRequests);
 
     
   const [hrAdjustments, setHrAdjustments] = useState({
@@ -57,6 +59,12 @@ const AppraisalManagement: React.FC = () => {
   // Clone mode state
   const [clonedAppraisal, setClonedAppraisal] = useState<Appraisal | null>(null);
   const [isCloneMode, setIsCloneMode] = useState(false);
+
+  // Delete confirmation state
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // HR Recommendation dialog state
+  const [isRecommendationDialogOpen, setIsRecommendationDialogOpen] = useState(false);
 
   // Load hrAdjustments from selectedAppraisal when it opens
   React.useEffect(() => {
@@ -101,12 +109,14 @@ const handleAppraisalUpdate = async (
     return;
   }
 
-  // Strip _id/id out to avoid conflicts, BUT preserve hrAdjustments explicitly
-  const { _id, _id: ignoredId, ...rest } = updatedAppraisal;
+  // Strip _id/id out to avoid conflicts
+  const { _id, createdAt, updatedAt, typeIdentify, ...rest } = updatedAppraisal;
 
   const payload: any = {
     ...rest,
-    ...(hrAdjustments && Object.values(hrAdjustments).some(v => v !== 0) ? { hrAdjustments } : {}),  
+    // Always include hrAdjustments if HR is making changes
+    ...(isHr && hrAdjustments ? { hrAdjustments } : {}),  
+    // Only set status if action requires it
     ...(action !== 'update' ? { status: action } : {}), 
   };
 
@@ -160,6 +170,25 @@ const handleAppraisalUpdate = async (
     setClonedAppraisal(appraisal);
     setIsCloneMode(true);
     dispatch(setIsCreateDialogOpen(true));
+  };
+
+  const handleDeleteAppraisalButton = (appraisalId: string) => {
+    setDeleteConfirmId(appraisalId);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    
+    setLoading(deleteConfirmId, 'delete');
+    try {
+      const success = await handleDeleteAppraisal(deleteConfirmId);
+      if (success) {
+        refetchActivity();
+      }
+    } finally {
+      clearLoading(deleteConfirmId, 'delete');
+      setDeleteConfirmId(null);
+    }
   };
 
 if (selectedAppraisal) {
@@ -220,12 +249,23 @@ if (selectedAppraisal) {
             <h2 className="text-2xl font-bold">Performance Appraisal</h2>
             <p className="text-gray-600">Manage and track employee performance evaluations</p>
           </div>
-          {isTeamLeadOnly && (
-            <Button onClick={() => dispatch(setIsCreateDialogOpen(true))} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Appraisal
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {isTeamLeadOnly && (
+              <Button onClick={() => dispatch(setIsCreateDialogOpen(true))} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create Appraisal
+              </Button>
+            )}
+            {isHr && (
+              <Button 
+                onClick={() => setIsRecommendationDialogOpen(true)} 
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
+              >
+                <MessageSquare className="h-4 w-4" />
+                Recommendation
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Main Content */}
@@ -262,7 +302,6 @@ if (selectedAppraisal) {
               )}
               <TableHead className="hidden sm:table-cell">Department</TableHead>
               <TableHead className="hidden sm:table-cell">Period</TableHead>
-              <TableHead className="hidden sm:table-cell">Due Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -311,7 +350,6 @@ if (selectedAppraisal) {
               )}
               <TableHead className="hidden sm:table-cell">Department</TableHead>
               <TableHead className="hidden sm:table-cell">Period</TableHead>
-              <TableHead className="hidden sm:table-cell">Due Date</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -361,12 +399,6 @@ if (selectedAppraisal) {
                       : ""}
                   </TableCell>
 
-                  <TableCell className="hidden sm:table-cell">
-                    {appraisal.dueDate
-                      ? new Date(appraisal.dueDate).toLocaleDateString()
-                      : 'N/A'}
-                  </TableCell>
-
                   <TableCell>
                     <motion.div
                       key={finalStatus}
@@ -413,6 +445,19 @@ if (selectedAppraisal) {
                       >
                         <Copy className="h-3 w-3" />
                         <span className="hidden sm:inline">Recreate</span>
+                      </Button>
+                    )}
+
+                    {!hrApproved && (isTeamLeadOnly || isHr || isAdmin) && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteAppraisalButton(appraisal._id!)}
+                        disabled={loading(appraisal._id!, 'delete')}
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span className="hidden sm:inline">Delete</span>
                       </Button>
                     )}
                   </TableCell>
@@ -479,6 +524,47 @@ if (selectedAppraisal) {
           isCloneMode={isCloneMode}
           dispatch={dispatch}
         />
+
+        {/* Delete Confirmation Dialog - Only visible to teamlead, hr, admin */}
+        {!isEmployee && (
+          <Dialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+            <DialogContent className="sm:max-w-[400px]">
+              <DialogHeader>
+                <DialogTitle>Delete Appraisal</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete this appraisal? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirmId(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={confirmDelete}
+                  disabled={loading(deleteConfirmId || '', 'delete')}
+                >
+                  {
+                  loading(deleteConfirmId || '', 'delete') && (
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    )
+                                    }
+
+                  Delete
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* HR Recommendation Dialog */}
+        {/* <HRRecommendation 
+          isOpen={isRecommendationDialogOpen} 
+          onClose={() => setIsRecommendationDialogOpen(false)}
+        /> */}
       </div>
     </div>
   );

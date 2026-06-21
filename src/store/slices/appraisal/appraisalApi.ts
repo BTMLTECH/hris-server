@@ -45,6 +45,15 @@ export const appraisalApi = apiSlice.injectEndpoints({
        invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
     }),
 
+    deleteAppraisal: builder.mutation({
+      query: (id) => ({
+        url: `appraisal/${id}`,
+        method: 'DELETE',
+        credentials: 'include' as const,
+      }),
+       invalidatesTags: [{ type: 'getAppraisalActivity', id: 'LIST' }],
+    }),
+
     
 
     getAppraisalActivity: builder.query<{
@@ -81,6 +90,7 @@ export const {
   useCreateAppraisalRequestMutation,
   useApproveAppraisalRequestMutation,
   useRejectAppraisalRequestMutation,
+  useDeleteAppraisalMutation,
   useGetEmployeeByDepartmentQuery,
   useUpdateAppraisalRequestMutation,
   useGetAppraisalActivityQuery,

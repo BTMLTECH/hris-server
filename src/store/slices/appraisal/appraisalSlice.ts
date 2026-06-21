@@ -29,8 +29,8 @@ interface AppraisalFormData {
   title: string;
   period: string;
   dueDate: Date | null;
-  selectedEmployeeId: string;
-  selectedEmployee: SelectedEmployee | null;
+  selectedEmployeeIds: string[];
+  selectedEmployees: SelectedEmployee[];
 }
 
 interface AppraisalState {
@@ -78,8 +78,8 @@ const initialState: AppraisalState = {
     title: "",
     period: "monthly",
     dueDate: null,
-    selectedEmployeeId: "",
-    selectedEmployee: null,
+    selectedEmployeeIds: [],
+    selectedEmployees: [],
   },
   selectedTargets: [],
   availableTargets: [],
@@ -141,8 +141,34 @@ const appraisalSlice = createSlice({
       state.selectedAppraisal = action.payload;
     },
     setSelectedEmployee(state, action: PayloadAction<SelectedEmployee | null>) {
-      state.formData.selectedEmployee = action.payload;
-      state.formData.selectedEmployeeId = action.payload?._id || "";
+      // Keep for backwards compatibility - sets single employee
+      if (action.payload) {
+        state.formData.selectedEmployees = [action.payload];
+        state.formData.selectedEmployeeIds = [action.payload._id];
+      } else {
+        state.formData.selectedEmployees = [];
+        state.formData.selectedEmployeeIds = [];
+      }
+    },
+    addSelectedEmployee(state, action: PayloadAction<SelectedEmployee>) {
+      const employee = action.payload;
+      // Check if already selected
+      if (!state.formData.selectedEmployeeIds.includes(employee._id)) {
+        state.formData.selectedEmployees.push(employee);
+        state.formData.selectedEmployeeIds.push(employee._id);
+      }
+    },
+    removeSelectedEmployee(state, action: PayloadAction<string>) {
+      const employeeId = action.payload;
+      const index = state.formData.selectedEmployeeIds.indexOf(employeeId);
+      if (index > -1) {
+        state.formData.selectedEmployeeIds.splice(index, 1);
+        state.formData.selectedEmployees.splice(index, 1);
+      }
+    },
+    setSelectedEmployees(state, action: PayloadAction<SelectedEmployee[]>) {
+      state.formData.selectedEmployees = action.payload;
+      state.formData.selectedEmployeeIds = action.payload.map((emp) => emp._id);
     },
     setEmployeeSearchTerm(state, action: PayloadAction<string>) {
       state.employeeSearchTerm = action.payload;
@@ -494,6 +520,9 @@ export const {
   setSelectedTargets,
   setSelectedAppraisal,
   setSelectedEmployee,
+  addSelectedEmployee,
+  removeSelectedEmployee,
+  setSelectedEmployees,
   setEmployeeSearchTerm,
   setEmployeeSearchResults,
   addManualObjective,
