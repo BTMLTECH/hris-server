@@ -17,7 +17,7 @@ export const getPayrollStatusBadge = (status?: IPayroll["status"]) => {
   const label = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown";
 
   return <Badge variant={status ? variants[status] : "outline"}>{label}</Badge>;
-};
+};    
 
 // Appraisal badge function
 export const getAppraisalStatusBadge = (appraisal: Appraisal, currentUserRole: Role) => {
