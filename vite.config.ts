@@ -22,5 +22,15 @@ export default defineConfig(({ mode }) => {
     optimizeDeps: {
       include: ["date-fns"],
     },
+    build: {
+      // Ensure assets are hashed for cache busting
+      rollupOptions: {
+        output: {
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]',
+        }
+      }
+    }
   };
 });
